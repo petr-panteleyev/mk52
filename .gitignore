@@ -1,0 +1,15 @@
+build
+.DS_Store
+/repo/
+*~
+**/private
+
+dependency-reduced-pom.xml
+
+/target/
+*.iml
+.idea
+
+# Ignore Gradle project-specific cache directory
+.gradle
+.run
