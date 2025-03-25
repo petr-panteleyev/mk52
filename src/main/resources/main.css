@@ -1,0 +1,113 @@
+.fButton {
+    -fx-text-fill: black;
+    -fx-background-color: #fbe12a;
+    -fx-text-alignment: center;
+    -fx-font-weight: bolder;
+}
+
+.fButton:pressed {
+    -fx-background-insets: 1;
+}
+
+.kButton {
+    -fx-text-fill: white;
+    -fx-background-color: #7ad2f8;
+    -fx-text-alignment: center;
+    -fx-font-weight: bolder;
+}
+
+.kButton:pressed {
+    -fx-background-insets: 1;
+}
+
+.blackButton {
+    -fx-text-fill: white;
+    -fx-background-color: black;
+    -fx-text-alignment: center;
+    -fx-font-weight: bolder;
+    -fx-background-radius: 5;
+    -fx-background-insets: 0;
+}
+
+.blackButton:pressed {
+    -fx-background-insets: 1;
+}
+
+.grayButton {
+    -fx-text-fill: black;
+    -fx-background-color: #d8d3bf;
+    -fx-text-alignment: center;
+    -fx-font-weight: bolder;
+    -fx-background-radius: 5;
+    -fx-background-insets: 0;
+}
+
+.grayButton:pressed {
+    -fx-background-insets: 1;
+}
+
+.redButton {
+    -fx-text-fill: white;
+    -fx-background-color: red;
+    -fx-text-alignment: center;
+    -fx-font-weight: bolder;
+}
+
+.redButton:pressed {
+    -fx-background-insets: 1;
+}
+
+.fLabel {
+    -fx-text-fill: yellow;
+    -fx-font-weight: bolder;
+    -fx-font-size: medium;
+}
+
+.kLabel {
+    -fx-text-fill: blue;
+    -fx-font-weight: bolder;
+    -fx-font-size: medium;
+}
+
+.buttonGrid {
+    -fx-background-color: #3a3a38;
+    -fx-hgap: 10;
+    -fx-vgap: 10;
+    -fx-padding: 20 20 20 20;
+}
+
+.lcdPanel {
+    -fx-background-color: #283f37;
+    -fx-padding: 40 40 40 40;
+    -fx-background-radius: 5;
+    -fx-background-insets: 0;
+}
+
+.lcd {
+    -fx-font-weight: medium;
+    -fx-font-size: 30;
+    -fx-text-fill: lightgreen;
+    -fx-font-family: 'Neat LCD';
+}
+
+.switchPanel {
+    -fx-font-size: x-small;
+    -fx-background-color: #363942;
+    -fx-background-radius: 5;
+    -fx-background-insets: 0;
+    -fx-padding: 10 10 10 10;
+}
+
+.root {
+    -fx-background-color: #5c5c5c;
+}
+
+.titleLabel {
+    -fx-font-size: medium;
+    -fx-text-fill: white;
+    -fx-font-weight: bolder;
+    -fx-background-color: #48474c;
+    -fx-padding: 10 10 10 10;
+    -fx-background-radius: 15;
+    -fx-background-insets: 0;
+}
