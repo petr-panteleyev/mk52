@@ -15,10 +15,9 @@ class Stack {
     private Value t = Value.ZERO;
     private Value x1 = Value.ZERO;
 
-    private final NumberBuffer numberBuffer;
+    private final NumberBuffer numberBuffer = new NumberBuffer();
 
-    Stack(NumberBuffer numberBuffer) {
-        this.numberBuffer = numberBuffer;
+    Stack() {
     }
 
     NumberBuffer numberBuffer() {
@@ -31,6 +30,7 @@ class Stack {
         y = Value.ZERO;
         z = Value.ZERO;
         t = Value.ZERO;
+        numberBuffer.reset();
     }
 
     Value x() {
@@ -126,6 +126,12 @@ class Stack {
         for (var ch : chars) {
             addCharacter(ch);
         }
+    }
+
+    public String getStringValue() {
+        var strValue = numberBuffer.isInProgress()? numberBuffer.getBuffer() : x.asString();
+        var padLength = 13 - strValue.length();
+        return strValue + " ".repeat(padLength);
     }
 
     void printStack() {

@@ -4,6 +4,8 @@
  */
 package org.panteleyev.mk52.engine;
 
+import org.panteleyev.mk52.math.Converter;
+
 import java.util.Random;
 
 final class Mk52Math {
@@ -87,31 +89,62 @@ final class Mk52Math {
 
     // Тригонометрия
 
-    public static Value sin(Value x, TrigonometricMode mode) {
+    public static Value sin(Value x, Engine.TrigonometricMode mode) {
         return new Value(Math.sin(toRadian(x.value(), mode)));
     }
 
-    public static Value asin(Value x, TrigonometricMode mode) {
+    public static Value asin(Value x, Engine.TrigonometricMode mode) {
         return new Value(fromRadian(Math.asin(x.value()), mode));
     }
 
-    public static Value cos(Value x, TrigonometricMode mode) {
+    public static Value cos(Value x, Engine.TrigonometricMode mode) {
         return new Value(Math.cos(toRadian(x.value(), mode)));
     }
 
-    public static Value acos(Value x, TrigonometricMode mode) {
+    public static Value acos(Value x, Engine.TrigonometricMode mode) {
         return new Value(fromRadian(Math.acos(x.value()), mode));
     }
 
-    public static Value tan(Value x, TrigonometricMode mode) {
+    public static Value tan(Value x, Engine.TrigonometricMode mode) {
         return new Value(Math.tan(toRadian(x.value(), mode)));
     }
 
-    public static Value atan(Value x, TrigonometricMode mode) {
+    public static Value atan(Value x, Engine.TrigonometricMode mode) {
         return new Value(fromRadian(Math.atan(x.value()), mode));
     }
 
-    private static double toRadian(double x, TrigonometricMode mode) {
+    // Логические операции
+
+    public static Value inversion(Value x) {
+        var operand = Converter.toLogicalOperand(x);
+        var mask = 0xF;
+        for (int i = 0; i < operand.length() - 1; i++) {
+            mask = mask << 4 | 0xFF;
+        }
+
+        var result = ~operand.value() & mask;
+        return new Value(result, Value.ValueMode.LOGICAL, operand.length());
+    }
+
+    public static Value and(Value x, Value y) {
+        var lX = Converter.toLogicalOperand(x);
+        var lY = Converter.toLogicalOperand(y);
+        return new Value (lX.value() & lY.value(), Value.ValueMode.LOGICAL, Math.max(lX.length(), lY.length()));
+    }
+
+    public static Value or(Value x, Value y) {
+        var lX = Converter.toLogicalOperand(x);
+        var lY = Converter.toLogicalOperand(y);
+        return new Value (lX.value() | lY.value(), Value.ValueMode.LOGICAL, Math.max(lX.length(), lY.length()));
+    }
+
+    public static Value xor(Value x, Value y) {
+        var lX = Converter.toLogicalOperand(x);
+        var lY = Converter.toLogicalOperand(y);
+        return new Value (lX.value() ^ lY.value(), Value.ValueMode.LOGICAL, Math.max(lX.length(), lY.length()));
+    }
+
+    private static double toRadian(double x, Engine.TrigonometricMode mode) {
         return switch (mode) {
             case RADIAN -> x;
             case DEGREE -> Math.toRadians(x);
@@ -119,7 +152,7 @@ final class Mk52Math {
         };
     }
 
-    private static double fromRadian(double x, TrigonometricMode mode) {
+    private static double fromRadian(double x, Engine.TrigonometricMode mode) {
         return switch (mode) {
             case RADIAN -> x;
             case DEGREE -> Math.toDegrees(x);

@@ -4,6 +4,7 @@
  */
 package org.panteleyev.mk52.ui;
 
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuBar;
@@ -15,9 +16,9 @@ import javafx.stage.WindowEvent;
 import org.controlsfx.control.SegmentedButton;
 import org.panteleyev.fx.Controller;
 import org.panteleyev.fx.grid.GridRowBuilder;
+import org.panteleyev.mk52.engine.DisplayUpdateCallback;
 import org.panteleyev.mk52.engine.Engine;
 import org.panteleyev.mk52.engine.KeyboardButton;
-import org.panteleyev.mk52.engine.TrigonometricMode;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -28,18 +29,25 @@ import static org.panteleyev.fx.MenuFactory.menu;
 import static org.panteleyev.fx.MenuFactory.menuBar;
 import static org.panteleyev.fx.MenuFactory.menuItem;
 import static org.panteleyev.fx.grid.GridBuilder.gridPane;
+import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
+import static org.panteleyev.mk52.engine.Engine.TrigonometricMode.DEGREE;
+import static org.panteleyev.mk52.engine.Engine.TrigonometricMode.GRADIAN;
+import static org.panteleyev.mk52.engine.Engine.TrigonometricMode.RADIAN;
 
 public class Mk52Controller extends Controller {
     public static final String APP_TITLE = "МК-52";
 
-    private final Engine engine = new Engine();
-
-    private final Consumer<KeyboardButton> keyboardButtonConsumer = button -> {
-        engine.processButton(button);
-        updateDisplay();
+    private final DisplayUpdateCallback displayUpdateCallback = new DisplayUpdateCallback() {
+        @Override
+        public void updateDisplay(String content, Engine.OperationMode mode) {
+            Platform.runLater(() -> display.setText(content));
+        }
     };
 
-    private final Label display = new Label("                    ");
+    private final Engine engine = new Engine(displayUpdateCallback);
+    private final Consumer<KeyboardButton> keyboardButtonConsumer = engine::processButton;
+
+    private final Label display = new Label(EMPTY_DISPLAY);
 
     public Mk52Controller(Stage stage) {
         super(stage, "/main.css");
@@ -94,12 +102,10 @@ public class Mk52Controller extends Controller {
         var offButton = new ToggleButton(" ");
         offButton.setOnAction(_ -> {
             engine.togglePower(false);
-            updateDisplay();
         });
         var onButton = new ToggleButton("Вкл");
         onButton.setOnAction(_ -> {
             engine.togglePower(true);
-            updateDisplay();
         });
         var powerSwitch = new SegmentedButton(offButton, onButton);
         offButton.fire();
@@ -111,11 +117,11 @@ public class Mk52Controller extends Controller {
         calcButton.fire();
 
         var radianButton = new ToggleButton("Р");
-        radianButton.setOnAction(_ -> engine.setTrigonometricMode(TrigonometricMode.RADIAN));
+        radianButton.setOnAction(_ -> engine.setTrigonometricMode(RADIAN));
         var gRadianButton = new ToggleButton("ГРД");
-        gRadianButton.setOnAction(_ -> engine.setTrigonometricMode(TrigonometricMode.GRADIAN));
+        gRadianButton.setOnAction(_ -> engine.setTrigonometricMode(GRADIAN));
         var degreeButton = new ToggleButton("Г");
-        degreeButton.setOnAction(_ -> engine.setTrigonometricMode(TrigonometricMode.DEGREE));
+        degreeButton.setOnAction(_ -> engine.setTrigonometricMode(DEGREE));
         var trigonometricSwitch = new SegmentedButton(radianButton, gRadianButton, degreeButton);
         radianButton.fire();
 
@@ -140,15 +146,15 @@ public class Mk52Controller extends Controller {
         var grid = gridPane(List.of(
                 GridRowBuilder.gridRow(
                         new ButtonNode("F", "", "", "fButton", KeyboardButton.F, keyboardButtonConsumer).node(),
-                        new ButtonNode("->", "x<0", "", "blackButton", KeyboardButton.STEP_RIGHT,
+                        new ButtonNode("ШГ>", "x<0", "", "blackButton", KeyboardButton.STEP_RIGHT,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("П→x", "L0", "", "blackButton", KeyboardButton.LOAD,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("7", "sin", "[x]", "grayButton", KeyboardButton.DIGIT_7,
+                        new ButtonNode("7", "sin", "[x]", "grayButton", KeyboardButton.D7,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("8", "cos", "{x}", "grayButton", KeyboardButton.DIGIT_8,
+                        new ButtonNode("8", "cos", "{x}", "grayButton", KeyboardButton.D8,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("9", "tg", "max", "grayButton", KeyboardButton.DIGIT_9,
+                        new ButtonNode("9", "tg", "max", "grayButton", KeyboardButton.D9,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("-", "√", "", "grayButton", KeyboardButton.MINUS, keyboardButtonConsumer).node(),
                         new ButtonNode("/", "1/x", "", "grayButton", KeyboardButton.DIVISION,
@@ -156,17 +162,17 @@ public class Mk52Controller extends Controller {
                 ),
                 GridRowBuilder.gridRow(
                         new ButtonNode("K", "", "", "kButton", KeyboardButton.K, keyboardButtonConsumer).node(),
-                        new ButtonNode("<-", "x=0", "", "blackButton", KeyboardButton.STEP_LEFT,
+                        new ButtonNode("<ШГ", "x=0", "", "blackButton", KeyboardButton.STEP_LEFT,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("x→П", "L1", "", "blackButton", KeyboardButton.STORE,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("4", "sin⁻¹", "|x|", "grayButton", KeyboardButton.DIGIT_4,
+                        new ButtonNode("4", "sin⁻¹", "|x|", "grayButton", KeyboardButton.D4,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("5", "cos⁻¹", "ЗН", "grayButton", KeyboardButton.DIGIT_5,
+                        new ButtonNode("5", "cos⁻¹", "ЗН", "grayButton", KeyboardButton.D5,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("6", "tg⁻¹", ".,<-", "grayButton", KeyboardButton.DIGIT_6,
+                        new ButtonNode("6", "tg⁻¹", "o⃖′", "grayButton", KeyboardButton.D6,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("+", "π", ".,->", "grayButton", KeyboardButton.PLUS,
+                        new ButtonNode("+", "π", "o⃗'", "grayButton", KeyboardButton.PLUS,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("X", "x²", "", "grayButton", KeyboardButton.MULTIPLICATION,
                                 keyboardButtonConsumer).node()
@@ -178,13 +184,13 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("БП", "L2", "", "blackButton", KeyboardButton.GOTO,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("1", "eˣ", "", "grayButton", KeyboardButton.DIGIT_1,
+                        new ButtonNode("1", "eˣ", "", "grayButton", KeyboardButton.D1,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("2", "lg", "", "grayButton", KeyboardButton.DIGIT_2,
+                        new ButtonNode("2", "lg", "", "grayButton", KeyboardButton.D2,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("3", "ln", ".,,<-", "grayButton", KeyboardButton.DIGIT_3,
+                        new ButtonNode("3", "ln", "o⃖′″", "grayButton", KeyboardButton.D3,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("↔", "xy", ".,,->", "grayButton", KeyboardButton.SWAP,
+                        new ButtonNode("↔", "xy", "o⃗′″", "grayButton", KeyboardButton.SWAP,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("В↑", "Вх", "СЧ", "grayButton", KeyboardButton.PUSH,
                                 keyboardButtonConsumer).node()
@@ -195,7 +201,7 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("ПП", "L3", "", "blackButton", KeyboardButton.GOSUB,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("0", "10ˣ", "НОП", "grayButton", KeyboardButton.DIGIT_0,
+                        new ButtonNode("0", "10ˣ", "НОП", "grayButton", KeyboardButton.D0,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode(".", "o", "∧", "grayButton", KeyboardButton.DOT, keyboardButtonConsumer).node(),
                         new ButtonNode("/-/", "АВТ", "∨", "grayButton", KeyboardButton.SIGN,
@@ -212,9 +218,5 @@ public class Mk52Controller extends Controller {
 
     private void onExit() {
         getStage().fireEvent(new WindowEvent(getStage(), WindowEvent.WINDOW_CLOSE_REQUEST));
-    }
-
-    private void updateDisplay() {
-        display.setText(engine.getDisplayString());
     }
 }

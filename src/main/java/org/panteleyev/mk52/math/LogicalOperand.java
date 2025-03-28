@@ -2,9 +2,7 @@
  Copyright © 2025 Petr Panteleyev <petr@panteleyev.org>
  SPDX-License-Identifier: BSD-2-Clause
  */
-package org.panteleyev.mk52.engine;
+package org.panteleyev.mk52.math;
 
-public enum OperationMode {
-    EXECUTION,
-    PROGRAMMING
+public record LogicalOperand(int value, int length) {
 }

@@ -1,8 +1,11 @@
 .fButton {
+    -fx-font-size: medium;
     -fx-text-fill: black;
     -fx-background-color: #fbe12a;
     -fx-text-alignment: center;
     -fx-font-weight: bolder;
+    -fx-background-radius: 5;
+    -fx-background-insets: 0;
 }
 
 .fButton:pressed {
@@ -10,10 +13,13 @@
 }
 
 .kButton {
+    -fx-font-size: medium;
     -fx-text-fill: white;
     -fx-background-color: #7ad2f8;
     -fx-text-alignment: center;
     -fx-font-weight: bolder;
+    -fx-background-radius: 5;
+    -fx-background-insets: 0;
 }
 
 .kButton:pressed {
@@ -21,6 +27,7 @@
 }
 
 .blackButton {
+    -fx-font-size: medium;
     -fx-text-fill: white;
     -fx-background-color: black;
     -fx-text-alignment: center;
@@ -34,6 +41,7 @@
 }
 
 .grayButton {
+    -fx-font-size: medium;
     -fx-text-fill: black;
     -fx-background-color: #d8d3bf;
     -fx-text-alignment: center;
@@ -47,10 +55,13 @@
 }
 
 .redButton {
+    -fx-font-size: medium;
     -fx-text-fill: white;
     -fx-background-color: red;
     -fx-text-alignment: center;
     -fx-font-weight: bolder;
+    -fx-background-radius: 5;
+    -fx-background-insets: 0;
 }
 
 .redButton:pressed {
@@ -64,7 +75,7 @@
 }
 
 .kLabel {
-    -fx-text-fill: blue;
+    -fx-text-fill: lightblue;
     -fx-font-weight: bolder;
     -fx-font-size: medium;
 }

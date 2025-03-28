@@ -4,43 +4,49 @@
  */
 package org.panteleyev.mk52.engine;
 
-enum ValueMode {
-    NORMAL,
-    ADDRESS,
-}
+public record Value(double value, ValueMode mode, int logicalLength) {
+    public enum ValueMode {
+        NORMAL,
+        ADDRESS,
+        LOGICAL
+    }
 
-public record Value(double value, ValueMode mode) {
     public static final Value ZERO = new Value();
     public static final Value PI = new Value(3.1415926);
     public static final Value E = new Value(2.7182818);
 
     private static final double MAX_NATURAL = 99999999;
     private static final int MANTISSA_LIMIT = 8;
+    private static final String ERROR_MSG = "EDDOD";
 
     private static final double MIN_VALUE = Double.parseDouble("1e-99");
     private static final double MAX_VALUE = Double.parseDouble("9.9999999e99");
 
     public Value() {
-        this(0.0, ValueMode.NORMAL);
+        this(0.0, ValueMode.NORMAL, 0);
     }
 
     public Value(double value) {
-        this(value, ValueMode.NORMAL);
+        this(value, ValueMode.NORMAL, 0);
     }
 
     public String asString() {
         if (Double.isInfinite(value) || Double.isNaN(value)) {
-            return "ERROR";
+            return ERROR_MSG;
         }
 
         var absValue = Math.abs(value);
         if (absValue > MAX_VALUE) {
-            return "ERROR";
+            return ERROR_MSG;
         }
 
         if (mode == ValueMode.ADDRESS) {
             return String.format("% 09d.", (int) value);
-        } else {
+        } else if (mode == ValueMode.LOGICAL) {
+            var strValue = Integer.toString((int)value, 16).toUpperCase();
+            var prefix = "0".repeat(logicalLength - strValue.length());
+            return " 8." + prefix + strValue;
+        }else {
             if (this == ZERO || value == 0) {
                 return " 0.";
             }

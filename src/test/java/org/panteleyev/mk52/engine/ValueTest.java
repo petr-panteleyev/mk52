@@ -11,14 +11,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.panteleyev.mk52.engine.Value.ValueMode.ADDRESS;
 
 @SuppressWarnings("ALL")
 public class ValueTest {
 
     private static List<Arguments> testAsString() {
         return List.of(
-                Arguments.of(new Value(Double.NaN), "ERROR"),
-                Arguments.of(new Value(1.0 / 0.0), "ERROR"),
+                Arguments.of(new Value(Double.NaN), "EDDOD"),
+                Arguments.of(new Value(1.0 / 0.0), "EDDOD"),
                 Arguments.of(Value.ZERO, " 0."),
                 Arguments.of(new Value(0), " 0."),
                 Arguments.of(Value.PI, " 3.1415926"),
@@ -46,10 +47,10 @@ public class ValueTest {
                 Arguments.of(new Value(0.0123), " 1.23     -02"),
                 Arguments.of(new Value(0.123), " 1.23     -01"),
                 Arguments.of(new Value(0.100000), " 1.       -01"),
-                Arguments.of(new Value(0, ValueMode.ADDRESS), " 00000000."),
-                Arguments.of(new Value(1, ValueMode.ADDRESS), " 00000001."),
-                Arguments.of(new Value(12345678, ValueMode.ADDRESS), " 12345678."),
-                Arguments.of(new Value(-12345678, ValueMode.ADDRESS), "-12345678.")
+                Arguments.of(new Value(0, ADDRESS, 0), " 00000000."),
+                Arguments.of(new Value(1, ADDRESS, 0), " 00000001."),
+                Arguments.of(new Value(12345678, ADDRESS, 0), " 12345678."),
+                Arguments.of(new Value(-12345678, ADDRESS, 0), "-12345678.")
         );
     }
 

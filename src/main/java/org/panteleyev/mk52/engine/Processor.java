@@ -4,6 +4,8 @@
  */
 package org.panteleyev.mk52.engine;
 
+import org.panteleyev.mk52.program.Instruction;
+
 import java.util.Map;
 
 import static java.util.Map.entry;
@@ -43,6 +45,12 @@ class Processor {
             entry(OpCode.MULTIPLY, e -> e.binary(Mk52Math::multiply)),
             entry(OpCode.DIVIDE, e -> e.binary(Mk52Math::divide)),
 
+            // Логические операции
+            entry(OpCode.INVERSION, e -> e.unary(Mk52Math::inversion)),
+            entry(OpCode.AND, e -> e.binary(Mk52Math::and)),
+            entry(OpCode.OR, e -> e.binary(Mk52Math::or)),
+            entry(OpCode.XOR, e -> e.binary(Mk52Math::xor)),
+
             entry(OpCode.SQRT, e -> e.unary(Mk52Math::sqrt)),
             entry(OpCode.SQR, e -> e.unary(Mk52Math::sqr)),
             entry(OpCode.POWER_OF_TEN, e -> e.unary(Mk52Math::pow10)),
@@ -72,26 +80,44 @@ class Processor {
             entry(OpCode.ATAN, e -> e.unary(x -> Mk52Math.atan(x, e.getTrigonometricMode())))
     );
 
-    public static void execute(OpCode opCode, Engine engine) {
+    public static boolean execute(OpCode opCode, Engine engine) {
         System.out.println("Executing: " + opCode);
 
-        var ordinal = opCode.ordinal();
-
-        if (ordinal >= OpCode.STORE_R0.ordinal() && ordinal <= OpCode.STORE_RE.ordinal()) {
+        if (opCode.inRange(OpCode.STORE_R0, OpCode.STORE_RE)) {
             engine.store(opCode.getRegisterIndex());
-        } else if (ordinal >= OpCode.LOAD_R0.ordinal() && ordinal <= OpCode.LOAD_RE.ordinal()) {
+        } else if (opCode.inRange(OpCode.LOAD_R0, OpCode.LOAD_RE)) {
             engine.load(opCode.getRegisterIndex());
-        } else if (ordinal >= OpCode.IND_STORE_R0.ordinal() && ordinal <= OpCode.IND_STORE_RE.ordinal()) {
+        } else if (opCode.inRange(OpCode.IND_STORE_R0, OpCode.IND_STORE_RE)) {
             engine.indirectStore(opCode.getRegisterIndex());
-        } else if (ordinal >= OpCode.IND_LOAD_R0.ordinal() && ordinal <= OpCode.IND_LOAD_RE.ordinal()) {
+        } else if (opCode.inRange(OpCode.IND_LOAD_R0, OpCode.IND_LOAD_RE)) {
             engine.indirectLoad(opCode.getRegisterIndex());
+        } else if (opCode == OpCode.STOP_RUN) {
+            return false;
         } else {
             var operation = OPERATIONS.get(opCode);
             if (operation == null) {
-                return;
+                return false;
             }
 
             operation.handle(engine);
+        }
+        return true;
+    }
+
+    public static boolean execute(Instruction instruction, Engine engine) {
+        var opCode = instruction.opCode();
+        if (opCode.size() == 2) {
+            System.out.println("Executing: " + instruction);
+
+            var address = instruction.address() / 16 * 10 + instruction.address() % 16;
+            if (opCode == OpCode.GOTO) {
+                engine.goTo(address);
+            } else if (opCode.inRange(OpCode.L0, OpCode.L1)) {
+                engine.loop(address, opCode.getRegisterIndex());
+            }
+            return true;
+        } else {
+            return execute(opCode, engine);
         }
     }
 }

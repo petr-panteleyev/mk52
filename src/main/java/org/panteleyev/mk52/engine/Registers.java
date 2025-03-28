@@ -29,7 +29,7 @@ class Registers {
         } else if (index <= 6) {
             indirectIndex++;
         }
-        registers[index] = new Value(indirectIndex, ValueMode.ADDRESS);
+        registers[index] = new Value(indirectIndex, Value.ValueMode.ADDRESS, 0);
         return indirectIndex;
     }
 

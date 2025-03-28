@@ -13,35 +13,37 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.panteleyev.mk52.engine.KeyboardButton.A_UP;
-import static org.panteleyev.mk52.engine.KeyboardButton.DIGIT_0;
-import static org.panteleyev.mk52.engine.KeyboardButton.DIGIT_1;
-import static org.panteleyev.mk52.engine.KeyboardButton.DIGIT_2;
-import static org.panteleyev.mk52.engine.KeyboardButton.DIGIT_3;
-import static org.panteleyev.mk52.engine.KeyboardButton.DIGIT_4;
-import static org.panteleyev.mk52.engine.KeyboardButton.DIGIT_5;
-import static org.panteleyev.mk52.engine.KeyboardButton.DIGIT_6;
-import static org.panteleyev.mk52.engine.KeyboardButton.DIGIT_7;
-import static org.panteleyev.mk52.engine.KeyboardButton.DIGIT_8;
-import static org.panteleyev.mk52.engine.KeyboardButton.DIGIT_9;
+import static org.panteleyev.mk52.engine.KeyboardButton.D0;
+import static org.panteleyev.mk52.engine.KeyboardButton.D1;
+import static org.panteleyev.mk52.engine.KeyboardButton.D2;
+import static org.panteleyev.mk52.engine.KeyboardButton.D3;
+import static org.panteleyev.mk52.engine.KeyboardButton.D4;
+import static org.panteleyev.mk52.engine.KeyboardButton.D5;
+import static org.panteleyev.mk52.engine.KeyboardButton.D6;
+import static org.panteleyev.mk52.engine.KeyboardButton.D7;
+import static org.panteleyev.mk52.engine.KeyboardButton.D8;
+import static org.panteleyev.mk52.engine.KeyboardButton.D9;
 import static org.panteleyev.mk52.engine.KeyboardButton.DOT;
 import static org.panteleyev.mk52.engine.KeyboardButton.EE;
 import static org.panteleyev.mk52.engine.KeyboardButton.F;
+import static org.panteleyev.mk52.engine.KeyboardButton.GOSUB;
+import static org.panteleyev.mk52.engine.KeyboardButton.K;
+import static org.panteleyev.mk52.engine.KeyboardButton.LOAD;
 import static org.panteleyev.mk52.engine.KeyboardButton.MULTIPLICATION;
 import static org.panteleyev.mk52.engine.KeyboardButton.PLUS;
 import static org.panteleyev.mk52.engine.KeyboardButton.PUSH;
+import static org.panteleyev.mk52.engine.KeyboardButton.RETURN;
+import static org.panteleyev.mk52.engine.KeyboardButton.RUN_STOP;
 import static org.panteleyev.mk52.engine.KeyboardButton.SIGN;
 import static org.panteleyev.mk52.engine.KeyboardButton.STORE;
+import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 import static org.panteleyev.mk52.engine.KeyboardButton.UP_DOWN;
 
-public class EngineShortTest {
-    private static final Engine engine = new Engine();
-    private static final Consumer<Engine> NOOP = _ -> {};
-    private static final Consumer<Engine> POWEROFF = engine -> engine.togglePower(false);
-    private static final Consumer<Engine> DEGREE = engine -> engine.setTrigonometricMode(TrigonometricMode.DEGREE);
-    private static final Consumer<Engine> GRADIAN = engine -> engine.setTrigonometricMode(TrigonometricMode.GRADIAN);
-    private static final Consumer<Engine> RADIAN = engine -> engine.setTrigonometricMode(TrigonometricMode.RADIAN);
+public class EngineShortTest extends BaseTest {
+    private static String displayContent = "";
+    private static final Engine engine = new Engine((content, _) -> displayContent = content);
 
     @BeforeAll
     public static void beforeAll() {
@@ -51,53 +53,45 @@ public class EngineShortTest {
 
     private static List<Arguments> testArguments() {
         return List.of(
-                // [1]
-                arguments(NOOP, List.of(DIGIT_1, DIGIT_2, DIGIT_3, DIGIT_4), " 1234.       "),
-                // [2]
-                arguments(NOOP, List.of(DIGIT_5, DIGIT_6, DIGIT_7, DIGIT_8), " 12345678.   "),
-                // [3]
-                arguments(NOOP, List.of(EE, DIGIT_9, SIGN), " 12345678.-09"),
-                // [4]
-                arguments(NOOP, List.of(PUSH), " 1.2345678-02"),
-                // [5]
-                arguments(NOOP, List.of(DIGIT_0, DOT, DIGIT_9), " 0.9         "),
-                // [6]
-                arguments(NOOP, List.of(MULTIPLICATION), " 1.111111 -02"),
-                // [7] // Расхождение
-                arguments(DEGREE, List.of(F, DIGIT_7), " 1.9392546-04"),
-                // [8]
-                arguments(GRADIAN, List.of(F, DIGIT_8), " 1.          "),
-                // [9] // Расхождение
-                arguments(RADIAN, List.of(F, DIGIT_9), " 1.5574077   "),
-                // [10] - Расхождение
-                arguments(NOOP, List.of(STORE, DIGIT_1), " 1.5574077   "),
-                // [11]
-                arguments(NOOP, List.of(F, PLUS), " 3.1415926   "),
-                // [12]
-                arguments(NOOP, List.of(A_UP), " 3.1415926   "),
-                // [13]
-                arguments(NOOP, List.of(UP_DOWN), " 3.1415926   "),
-                // [14] // Расхождение
-                arguments(NOOP, List.of(F, DIGIT_2), " 4.9714987-01"),
-                // [15] // Расхождение
-                arguments(NOOP, List.of(STORE, DIGIT_2), " 4.9714987-01"),
-                // [16]
-                arguments(NOOP, List.of(F, PLUS), " 3.1415926   "),
-                // [17]
-                arguments(NOOP, List.of(UP_DOWN), " 3.1415926   "),
-                // [18]
-                arguments(NOOP, List.of(), " 3.1415926   "),
-                // [19]
-                arguments(POWEROFF, List.of(), "             "),
-                // [20]
-                arguments((Consumer<Engine>) engine -> {
+                argumentSet("1:" + PASS, NOOP, List.of(D1, D2, D3, D4), " 1234.       "),
+                argumentSet("2:" + PASS, NOOP, List.of(D5, D6, D7, D8), " 12345678.   "),
+                argumentSet("3:" + PASS, NOOP, List.of(EE, D9, SIGN), " 12345678.-09"),
+                argumentSet("4:" + PASS, NOOP, List.of(PUSH), " 1.2345678-02"),
+                argumentSet("5:" + PASS, NOOP, List.of(D0, DOT, D9), " 0.9         "),
+                argumentSet("6:" + PASS, NOOP, List.of(MULTIPLICATION), " 1.111111 -02"),
+                argumentSet("7:" + DIFF, TR_DEGREE, List.of(F, D7), " 1.9392546-04"),
+                argumentSet("8:" + PASS, TR_GRADIAN, List.of(F, D8), " 1.          "),
+                argumentSet("9:" + DIFF, TR_RADIAN, List.of(F, D9), " 1.5574077   "),
+                argumentSet("10:" + DIFF, NOOP, List.of(STORE, D1), " 1.5574077   "),
+                argumentSet("11:" + PASS, NOOP, List.of(F, PLUS), " 3.1415926   "),
+                argumentSet("12:" + PASS, NOOP, List.of(A_UP), " 3.1415926   "),
+                argumentSet("13:" + PASS, NOOP, List.of(UP_DOWN), " 3.1415926   "),
+                argumentSet("14:" + DIFF, NOOP, List.of(F, D2), " 4.9714987-01"),
+                argumentSet("15:" + DIFF, NOOP, List.of(STORE, D2), " 4.9714987-01"),
+                argumentSet("16:" + PASS, NOOP, List.of(F, PLUS), " 3.1415926   "),
+                argumentSet("17:" + PASS, NOOP, List.of(UP_DOWN), " 3.1415926   "),
+                argumentSet("18:" + NOT_IMPLEMENTED, NOOP, List.of(), " 3.1415926   "),
+                argumentSet("19:" + PASS, POWEROFF, List.of(), "             "),
+                argumentSet("20:" + NOT_IMPLEMENTED, (Consumer<Engine>) engine -> {
                     engine.togglePower(true);
                     // СЧ Д
                 }, List.of(F, PLUS), " 3.1415926   "),
-                // [21]
-                arguments(NOOP, List.of(A_UP), " 3.1415926   "),
-                // [22]
-                arguments(NOOP, List.of(UP_DOWN), " 3.1415926   ")
+                argumentSet("21:" + NOT_IMPLEMENTED, NOOP, List.of(A_UP), " 3.1415926   "),
+                argumentSet("22:" + NOT_IMPLEMENTED, NOOP, List.of(UP_DOWN), " 3.1415926   "),
+                argumentSet("23:" + NOT_IMPLEMENTED, NOOP, List.of(LOAD, D1), " 1.5574078   "),
+                argumentSet("24:" + NOT_IMPLEMENTED, NOOP, List.of(LOAD, D2), " 4.9714983-01"),
+                argumentSet("25:" + PASS, NOOP, List.of(F, EE), "           00"),
+                argumentSet("26:" + PASS, NOOP, List.of(K, D9), "  36       01"),
+                argumentSet("27:" + PASS, NOOP, List.of(K, D4), "  31 36    02"),
+                argumentSet("28:" + PASS, NOOP, List.of(STORE, D3), "  43 31 36 03"),
+                argumentSet("29:" + PASS, NOOP, List.of(F, SWAP), "  24 43 31 04"),
+                argumentSet("30:" + PASS, NOOP, List.of(K, SIGN), "  38 24 43 05"),
+                argumentSet("31:" + PASS, NOOP, List.of(F, GOSUB), "  5A 38 24 06"),
+                argumentSet("32:" + PASS, NOOP, List.of(D0, D4), "  04 5A 38 07"),
+                argumentSet("33:" + PASS, NOOP, List.of(RUN_STOP), "  50 04 5A 08"),
+                argumentSet("34:" + NOT_IMPLEMENTED, NOOP, List.of(F, SIGN), " 4.9714983-01"),
+                argumentSet("34:" + NOT_IMPLEMENTED, NOOP, List.of(RETURN), " 4.9714983-01"),
+                argumentSet("34:" + NOT_IMPLEMENTED, NOOP, List.of(RUN_STOP), " 8.DD76578   ")
         );
     }
 
@@ -106,6 +100,6 @@ public class EngineShortTest {
     public void test(Consumer<Engine> preOperation, List<KeyboardButton> buttons, String expected) {
         preOperation.accept(engine);
         buttons.forEach(engine::processButton);
-        assertEquals(expected, engine.getDisplayString());
+        assertEquals(expected, displayContent);
     }
 }

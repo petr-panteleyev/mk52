@@ -6,11 +6,10 @@ package org.panteleyev.mk52.engine;
 
 import java.util.Arrays;
 
-import static org.panteleyev.mk52.engine.Display.DISPLAY_SIZE;
+import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;
+import static org.panteleyev.mk52.engine.Constants.MANTISSA_SIZE;
 
 class NumberBuffer {
-    private static final int MANTISSA_SIZE = 8;
-
     private boolean hasDot = false;
 
     private final char[] buffer = new char[DISPLAY_SIZE];

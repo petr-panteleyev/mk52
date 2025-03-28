@@ -4,8 +4,6 @@
  */
 package org.panteleyev.mk52.engine;
 
-public enum TrigonometricMode {
-    RADIAN,
-    GRADIAN,
-    DEGREE
+public interface DisplayUpdateCallback {
+    void updateDisplay(String content, Engine.OperationMode mode);
 }
