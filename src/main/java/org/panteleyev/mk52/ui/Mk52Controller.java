@@ -16,6 +16,8 @@ import javafx.stage.WindowEvent;
 import org.controlsfx.control.SegmentedButton;
 import org.panteleyev.fx.Controller;
 import org.panteleyev.fx.grid.GridRowBuilder;
+import org.panteleyev.mk52.eeprom.EepromMode;
+import org.panteleyev.mk52.eeprom.EepromOperation;
 import org.panteleyev.mk52.engine.DisplayUpdateCallback;
 import org.panteleyev.mk52.engine.Engine;
 import org.panteleyev.mk52.engine.KeyboardButton;
@@ -67,10 +69,7 @@ public class Mk52Controller extends Controller {
                 createKeyboardGrid()
         );
         center.setCenter(centerHorizontal);
-
-
         root.setCenter(center);
-
         setupWindow(root);
     }
 
@@ -110,11 +109,14 @@ public class Mk52Controller extends Controller {
         var powerSwitch = new SegmentedButton(offButton, onButton);
         offButton.fire();
 
-        var calcButton = new ToggleButton("С");
-        var storeButton = new ToggleButton("З");
-        var loadButton = new ToggleButton("СЧ");
-        var eepromModeSwitch = new SegmentedButton(calcButton, storeButton, loadButton);
-        calcButton.fire();
+        var eraseButton = new ToggleButton("С");
+        eraseButton.setOnAction(_ -> engine.setEepromOperation(EepromOperation.ERASE));
+        var writeButton = new ToggleButton("З");
+        writeButton.setOnAction(_ -> engine.setEepromOperation(EepromOperation.WRITE));
+        var readButton = new ToggleButton("СЧ");
+        readButton.setOnAction(_ -> engine.setEepromOperation(EepromOperation.READ));
+        var eepromModeSwitch = new SegmentedButton(eraseButton, writeButton, readButton);
+        readButton.fire();
 
         var radianButton = new ToggleButton("Р");
         radianButton.setOnAction(_ -> engine.setTrigonometricMode(RADIAN));
@@ -126,7 +128,9 @@ public class Mk52Controller extends Controller {
         radianButton.fire();
 
         var dataButton = new ToggleButton("Д");
+        dataButton.setOnAction(_ -> engine.setEepromMode(EepromMode.DATA));
         var programButton = new ToggleButton("П");
+        programButton.setOnAction(_ -> engine.setEepromMode(EepromMode.PROGRAM));
         var eepromTypeSwitch = new SegmentedButton(dataButton, programButton);
         dataButton.fire();
 
@@ -178,7 +182,7 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node()
                 ),
                 GridRowBuilder.gridRow(
-                        new ButtonNode("⇅", "", "", "blackButton", KeyboardButton.UP_DOWN,
+                        new ButtonNode("⇅", "", "", "blackButton", KeyboardButton.EEPROM_EXCHANGE,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("В/О", "x≥0", "", "blackButton", KeyboardButton.RETURN,
                                 keyboardButtonConsumer).node(),
@@ -196,7 +200,7 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node()
                 ),
                 GridRowBuilder.gridRow(
-                        new ButtonNode("A↑", "", "", "blackButton", KeyboardButton.A_UP, keyboardButtonConsumer).node(),
+                        new ButtonNode("A↑", "", "", "blackButton", KeyboardButton.EEPROM_ADDRESS, keyboardButtonConsumer).node(),
                         new ButtonNode("С/П", "x≠0", "", "blackButton", KeyboardButton.RUN_STOP,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("ПП", "L3", "", "blackButton", KeyboardButton.GOSUB,

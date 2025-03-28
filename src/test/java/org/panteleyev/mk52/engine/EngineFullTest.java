@@ -9,13 +9,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.panteleyev.mk52.eeprom.EepromMode;
+import org.panteleyev.mk52.eeprom.EepromOperation;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
-import static org.panteleyev.mk52.engine.KeyboardButton.A_UP;
+import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.CLEAR_X;
 import static org.panteleyev.mk52.engine.KeyboardButton.D0;
 import static org.panteleyev.mk52.engine.KeyboardButton.D1;
@@ -46,7 +48,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.STEP_LEFT;
 import static org.panteleyev.mk52.engine.KeyboardButton.STEP_RIGHT;
 import static org.panteleyev.mk52.engine.KeyboardButton.STORE;
 import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
-import static org.panteleyev.mk52.engine.KeyboardButton.UP_DOWN;
+import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_EXCHANGE;
 
 public class EngineFullTest extends BaseTest {
     private static String displayContent = "";
@@ -60,13 +62,17 @@ public class EngineFullTest extends BaseTest {
 
     private static List<Arguments> testArguments() {
         return List.of(
+                argumentSet("0:" + PASS, (Consumer<Engine>) engine -> {
+                    engine.setEepromOperation(EepromOperation.ERASE);
+                    engine.setEepromMode(EepromMode.PROGRAM);
+                }, List.of(), " 0.          "),
                 argumentSet("1:" + PASS, NOOP, List.of(D6, D1), " 61.         "),
                 argumentSet("2:" + PASS, NOOP, List.of(STORE, CLEAR_X), " 61.         "),
                 argumentSet("3:" + PASS, NOOP, List.of(D3, D1, D5), " 315.        "),
                 argumentSet("4:" + PASS, NOOP, List.of(DOT, D0, D7), " 315.07      "),
                 argumentSet("5:" + PASS, NOOP, List.of(F, PLUS), " 3.1415926   "),
-                argumentSet("6:" + NOT_IMPLEMENTED, NOOP, List.of(A_UP), " 3.1415926   "),
-                argumentSet("7:" + NOT_IMPLEMENTED, NOOP, List.of(UP_DOWN), " 3.1415926   "),
+                argumentSet("6:" + PASS, NOOP, List.of(EEPROM_ADDRESS), " 3.1415926   "),
+                argumentSet("7:" + PASS, NOOP, List.of(EEPROM_EXCHANGE), " 3.1415926   "),
                 argumentSet("8:" + PASS, NOOP, List.of(EE, D2), " 3.1415926 02"),
                 argumentSet("9:" + PASS, NOOP, List.of(SWAP), " 315.07      "),
                 argumentSet("10:" + PASS, NOOP, List.of(MINUS), "-9.1074   -01"),
@@ -171,28 +177,31 @@ public class EngineFullTest extends BaseTest {
                 argumentSet("109:" + NOT_IMPLEMENTED, NOOP, List.of(RETURN), " 2.          "),
                 argumentSet("110:" + NOT_IMPLEMENTED, NOOP, List.of(RUN_STOP), " 8.60005     "),
                 argumentSet("111:" + NOT_IMPLEMENTED, (Consumer<Engine>) engine -> {
-                    // "З" "П"
+                    engine.setEepromOperation(EepromOperation.WRITE);
+                    engine.setEepromMode(EepromMode.PROGRAM);
                 }, List.of(F, PLUS), " 3.1415926   "),
-                argumentSet("112:" + NOT_IMPLEMENTED, NOOP, List.of(A_UP, UP_DOWN), " 3.1415926   "),
+                argumentSet("112:" + NOT_IMPLEMENTED, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 3.1415926   "),
                 argumentSet("113:" + NOT_IMPLEMENTED, (Consumer<Engine>) engine -> {
-                    // "СЧ" "Д"
-                }, List.of(UP_DOWN), " 3.1415926   "),
+                    engine.setEepromOperation(EepromOperation.READ);
+                    engine.setEepromMode(EepromMode.DATA);
+                }, List.of(EEPROM_EXCHANGE), " 3.1415926   "),
                 argumentSet("114:" + NOT_IMPLEMENTED, NOOP, List.of(LOAD, D9), " 0.0005054   "),
                 argumentSet("115:" + PASS, POWEROFF, List.of(), "             "),
                 argumentSet("116:" + NOT_IMPLEMENTED, (Consumer<Engine>) engine -> {
                     engine.togglePower(true);
-                    // "СЧ" "Д"
+                    engine.setEepromOperation(EepromOperation.READ);
+                    engine.setEepromMode(EepromMode.DATA);
                 }, List.of(), " 0.          "),
                 argumentSet("117:" + NOT_IMPLEMENTED, (Consumer<Engine>) engine -> {
-                    // "С"
+                    engine.setEepromOperation(EepromOperation.ERASE);
                 }, List.of(D1, D0, D0, D0, D0, D9, D8), " 1000098.    "),
-                argumentSet("118:" + NOT_IMPLEMENTED, NOOP, List.of(A_UP, UP_DOWN), " 1000098.    "),
+                argumentSet("118:" + NOT_IMPLEMENTED, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1000098.    "),
                 argumentSet("119:" + PASS, NOOP, List.of(CLEAR_X, D1, D0, D2, D1, D0, D8, D4), " 1021084.    "),
-                argumentSet("120:" + NOT_IMPLEMENTED, NOOP, List.of(A_UP, UP_DOWN), " 1021084.    "),
+                argumentSet("120:" + NOT_IMPLEMENTED, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1021084.    "),
                 argumentSet("121:" + PASS, NOOP, List.of(CLEAR_X, D1, D0, D6, D3, D0, D9, D8), " 1063098.    "),
-                argumentSet("122:" + NOT_IMPLEMENTED, NOOP, List.of(A_UP, UP_DOWN), " 1063098.    "),
+                argumentSet("122:" + NOT_IMPLEMENTED, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1063098.    "),
                 argumentSet("123:" + PASS, NOOP, List.of(CLEAR_X, D1, D0, D8, D4, D0, D9, D8), " 1084098.    "),
-                argumentSet("124:" + NOT_IMPLEMENTED, NOOP, List.of(A_UP, UP_DOWN), " 1084098.    "),
+                argumentSet("124:" + NOT_IMPLEMENTED, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1084098.    "),
                 argumentSet("125:" + PASS, NOOP, List.of(F, PLUS), " 3.1415926   ")
         );
     }

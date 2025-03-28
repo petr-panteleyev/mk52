@@ -18,6 +18,10 @@ public final class Converter {
                 .replace(".", "")
                 .replace(" ", "");
         // Интерпретируем как hex
-        return new LogicalOperand(Integer.parseInt(mantissa, 16), mantissa.length());
+        if (mantissa.isEmpty()) {
+            return new LogicalOperand(0, 1);
+        } else {
+            return new LogicalOperand(Integer.parseInt(mantissa, 16), mantissa.length());
+        }
     }
 }

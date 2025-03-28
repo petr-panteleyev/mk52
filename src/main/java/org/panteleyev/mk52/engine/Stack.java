@@ -41,6 +41,14 @@ class Stack {
         return x;
     }
 
+    Value xOrBuffer() {
+        if (numberBuffer.isInProgress()) {
+            return numberBuffer.getCurrentValue();
+        } else {
+            return x;
+        }
+    }
+
     void setX(Value x) {
         this.x = x;
     }
@@ -108,6 +116,15 @@ class Stack {
         z = t;
     }
 
+    void binaryKeepYOperation(BinaryOperator<Value> operation) {
+        if (numberBuffer.isInProgress()) {
+            x = numberBuffer.getValue();
+        }
+
+        x1 = x;
+        x = operation.apply(x, y);
+    }
+
     void addCharacter(char c) {
         if (!numberBuffer.isInProgress()) {
             push();
@@ -135,6 +152,6 @@ class Stack {
     }
 
     void printStack() {
-        System.out.println("x = " + x.asString() + "\ny = " + y.asString());
+        System.out.println("x = " + getStringValue() + "\ny = " + y.asString() + "\nz = " + z.asString());
     }
 }

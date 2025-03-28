@@ -9,8 +9,8 @@ import java.util.Map;
 public enum KeyboardButton {
     F(OpCode.EMPTY, OpCode.EMPTY, OpCode.EMPTY),
     K(OpCode.EMPTY, OpCode.EMPTY, OpCode.EMPTY),
-    UP_DOWN(OpCode.EMPTY, OpCode.EMPTY, OpCode.EMPTY),
-    A_UP(OpCode.EMPTY, OpCode.EMPTY, OpCode.EMPTY),
+    EEPROM_EXCHANGE(OpCode.EMPTY, OpCode.EMPTY, OpCode.EMPTY),
+    EEPROM_ADDRESS(OpCode.EMPTY, OpCode.EMPTY, OpCode.EMPTY),
     STEP_RIGHT(OpCode.EMPTY, OpCode.X_LT_0, OpCode.GOTO_LT_0_R0),
     STEP_LEFT(OpCode.EMPTY, OpCode.X_EQ_0, OpCode.GOTO_EQ_0_R0),
     RETURN(OpCode.RETURN, OpCode.X_GE_0, OpCode.GOTO_GE_0_R0),

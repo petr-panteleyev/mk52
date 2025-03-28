@@ -7,10 +7,16 @@ package org.panteleyev.mk52.engine;
 import org.panteleyev.mk52.program.Instruction;
 
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static java.util.Map.entry;
 
 class Processor {
+    private static final Predicate<Value> LT_0 = v -> v.value() < 0;
+    private static final Predicate<Value> EQ_0 = v -> v.value() == 0;
+    private static final Predicate<Value> GE_0 = v -> v.value() >= 0;
+    private static final Predicate<Value> NE_0 = v -> v.value() != 0;
+
     private static final Map<OpCode, OpcodeHandler> OPERATIONS = Map.ofEntries(
             entry(OpCode.ZERO, e -> e.getStack().addCharacter('0')),
             entry(OpCode.ONE, e -> e.getStack().addCharacter('1')),
@@ -58,7 +64,7 @@ class Processor {
             entry(OpCode.LN, e -> e.unary(Mk52Math::ln)),
             entry(OpCode.EXP, e -> e.unary(Mk52Math::exp)),
             entry(OpCode.ONE_BY_X, e -> e.unary(Mk52Math::oneByX)),
-            entry(OpCode.POWER_OF_X, e -> e.binary(Mk52Math::pow)),
+            entry(OpCode.POWER_OF_X, e -> e.binaryKeepY(Mk52Math::pow)),
             entry(OpCode.PI, e -> {
                 e.getStack().push();
                 e.getStack().addCharacters("3.1415926".toCharArray());
@@ -68,7 +74,7 @@ class Processor {
             entry(OpCode.ABS, e -> e.unary(Mk52Math::abs)),
             entry(OpCode.INTEGER, e -> e.unary(Mk52Math::integer)),
             entry(OpCode.FRACTIONAL, e -> e.unary(Mk52Math::fractional)),
-            entry(OpCode.MAX, e -> e.binary(Mk52Math::max)),
+            entry(OpCode.MAX, e -> e.binaryKeepY(Mk52Math::max)),
             entry(OpCode.SIGNUM, e -> e.unary(Mk52Math::signum)),
 
             // Тригонометрия
@@ -91,6 +97,20 @@ class Processor {
             engine.indirectStore(opCode.getRegisterIndex());
         } else if (opCode.inRange(OpCode.IND_LOAD_R0, OpCode.IND_LOAD_RE)) {
             engine.indirectLoad(opCode.getRegisterIndex());
+        } else if (opCode.inRange(OpCode.GOTO_R0, OpCode.GOTO_RE)) {
+            engine.indirectGoto(opCode.getRegisterIndex());
+        } else if (opCode.inRange(OpCode.GOTO_LT_0_R0, OpCode.GOTO_LT_0_RE)) {
+            engine.conditionalIndirectGoto(opCode.getRegisterIndex(), LT_0);
+        } else if (opCode.inRange(OpCode.GOTO_EQ_0_R0, OpCode.GOTO_EQ_0_RE)) {
+            engine.conditionalIndirectGoto(opCode.getRegisterIndex(), EQ_0);
+        } else if (opCode.inRange(OpCode.GOTO_GE_0_R0, OpCode.GOTO_GE_0_RE)) {
+            engine.conditionalIndirectGoto(opCode.getRegisterIndex(), GE_0);
+        } else if (opCode.inRange(OpCode.GOTO_NE_0_R0, OpCode.GOTO_NE_0_RE)) {
+            engine.conditionalIndirectGoto(opCode.getRegisterIndex(), NE_0);
+        } else if (opCode.inRange(OpCode.GOSUB_R0, OpCode.GOSUB_RE)) {
+            engine.indirectGoSub(opCode.getRegisterIndex());
+        } else if (opCode == OpCode.RETURN) {
+            engine.returnFromSubroutine();
         } else if (opCode == OpCode.STOP_RUN) {
             return false;
         } else {
@@ -112,8 +132,18 @@ class Processor {
             var address = instruction.address() / 16 * 10 + instruction.address() % 16;
             if (opCode == OpCode.GOTO) {
                 engine.goTo(address);
-            } else if (opCode.inRange(OpCode.L0, OpCode.L1)) {
+            } else if (opCode == OpCode.GOSUB) {
+                engine.goSub(address);
+            } else if (opCode.inRange(OpCode.L0, OpCode.L3)) {
                 engine.loop(address, opCode.getRegisterIndex());
+            } else if (opCode == OpCode.X_LT_0) {
+                engine.conditionalGoto(address, LT_0);
+            } else if (opCode == OpCode.X_EQ_0) {
+                engine.conditionalGoto(address, EQ_0);
+            } else if (opCode == OpCode.X_GE_0) {
+                engine.conditionalGoto(address, GE_0);
+            } else if (opCode == OpCode.X_NE_0) {
+                engine.conditionalGoto(address, NE_0);
             }
             return true;
         } else {

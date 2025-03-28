@@ -4,20 +4,28 @@
  */
 package org.panteleyev.mk52.engine;
 
+import org.panteleyev.mk52.eeprom.Eeprom;
+import org.panteleyev.mk52.eeprom.EepromMode;
+import org.panteleyev.mk52.eeprom.EepromOperation;
 import org.panteleyev.mk52.program.Instruction;
 import org.panteleyev.mk52.program.ProgramMemory;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BinaryOperator;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
+import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.BUTTON_TO_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.GOSUB;
 import static org.panteleyev.mk52.engine.KeyboardButton.RETURN;
 import static org.panteleyev.mk52.engine.KeyboardButton.RUN_STOP;
 import static org.panteleyev.mk52.engine.KeyboardButton.STEP_LEFT;
 import static org.panteleyev.mk52.engine.KeyboardButton.STEP_RIGHT;
+import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_EXCHANGE;
 import static org.panteleyev.mk52.engine.OpCode.EMPTY;
 
 public final class Engine {
@@ -45,6 +53,10 @@ public final class Engine {
     private OperationMode operationMode = OperationMode.EXECUTION;
     private KeyboardMode keyboardMode = KeyboardMode.NORMAL;
     private final AtomicInteger programCounter = new AtomicInteger(0);
+    private final Deque<Integer> callStack = new ArrayDeque<>(5);
+
+    private EepromOperation eepromOperation = EepromOperation.READ;
+    private EepromMode eepromMode = EepromMode.DATA;
 
     // Сюда сохраняем цифры адреса при вводе двухбайтовой команды
     private final int[] addressBuffer = new int[2];
@@ -52,6 +64,8 @@ public final class Engine {
     private OpCode registerOpCode = OpCode.EMPTY;
     // Сюда сохраняем начало адресной команды
     private OpCode addressOpCode = OpCode.EMPTY;
+
+    private Value eepromAddressValue = null;
 
     private final DisplayUpdateCallback displayUpdateCallback;
 
@@ -79,6 +93,7 @@ public final class Engine {
 
         stack.reset();
         registers.reset();
+        callStack.clear();
 
         displayUpdateCallback.updateDisplay(stack.getStringValue(), operationMode);
     }
@@ -101,6 +116,16 @@ public final class Engine {
     }
 
     private void processButtonExecutionMode(KeyboardButton button) {
+        if (button == EEPROM_ADDRESS) {
+            eepromAddressValue = stack.xOrBuffer();
+            return;
+        }
+
+        if (button == EEPROM_EXCHANGE) {
+            handleEepromOperation();
+            return;
+        }
+
         if (keyboardMode == KeyboardMode.NORMAL && button == RETURN) {
             programCounter.set(0);
             return;
@@ -296,12 +321,16 @@ public final class Engine {
         stack.binaryOperation(operation);
     }
 
+    public void binaryKeepY(BinaryOperator<Value> operation) {
+        stack.binaryKeepYOperation(operation);
+    }
+
     public void store(int index) {
         registers.store(index, stack.x());
     }
 
     public void indirectStore(int index) {
-        var indirectIndex = registers.modifyAndGetIndirectIndex(index);
+        var indirectIndex = registers.modifyAndGetRegisterValue(index);
         registers.store(indirectIndex, stack.x());
     }
 
@@ -311,7 +340,7 @@ public final class Engine {
     }
 
     public void indirectLoad(int index) {
-        var indirectIndex = registers.modifyAndGetIndirectIndex(index);
+        var indirectIndex = registers.modifyAndGetRegisterValue(index);
         stack.push();
         stack.setX(registers.load(indirectIndex));
     }
@@ -325,8 +354,44 @@ public final class Engine {
         programCounter.set(pc);
     }
 
+    public void goSub(int pc) {
+        callStack.push(programCounter.get());
+        goTo(pc);
+    }
+
+    public void returnFromSubroutine() {
+        var newPc = callStack.poll();
+        if (newPc != null) {
+            goTo(newPc);
+        }
+    }
+
+    public void conditionalGoto(int pc, Predicate<Value> predicate) {
+        var condition = predicate.test(stack.x());
+        if (!condition) {
+            goTo(pc);
+        }
+    }
+
+    public void indirectGoto(int register) {
+        var indirect = registers.modifyAndGetRegisterValue(register);
+        programCounter.set(indirect);
+    }
+
+    public void conditionalIndirectGoto(int register, Predicate<Value> predicate) {
+        var condition = predicate.test(stack.x());
+        if (!condition) {
+            indirectGoto(register);
+        }
+    }
+
+    public void indirectGoSub(int register) {
+        var indirect = registers.modifyAndGetRegisterValue(register);
+        goSub(indirect);
+    }
+
     public void loop(int pc, int register) {
-        var counter = registers.modifyAndGetIndirectIndex(register);
+        var counter = registers.modifyAndGetRegisterValue(register);
         if (counter != 0) {
             programCounter.set(pc);
         }
@@ -334,10 +399,44 @@ public final class Engine {
 
     public void run() {
         while (true) {
+            stack.printStack();
             var instruction = programMemory.fetchInstruction(programCounter);
             if (!Processor.execute(instruction, this)) {
                 break;
             }
+            stack.printStack();
         }
+    }
+
+    private void handleEepromOperation() {
+        switch (eepromOperation) {
+            case ERASE -> Eeprom.erase(eepromAddressValue, eepromMode);
+
+            case READ -> {
+                if (eepromMode == EepromMode.DATA) {
+                    registers.copyFrom(Eeprom.readRegisters(eepromAddressValue));
+                }
+            }
+
+            case WRITE -> {
+                if (eepromMode == EepromMode.DATA) {
+                    Eeprom.write(eepromAddressValue, registers);
+                } else {
+                    //
+                }
+            }
+        }
+
+        if (eepromOperation == EepromOperation.ERASE) {
+            Eeprom.erase(eepromAddressValue, eepromMode);
+        }
+    }
+
+    public void setEepromOperation(EepromOperation eepromOperation) {
+        this.eepromOperation = eepromOperation;
+    }
+
+    public void setEepromMode(EepromMode eepromMode) {
+        this.eepromMode = eepromMode;
     }
 }

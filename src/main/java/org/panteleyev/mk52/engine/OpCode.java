@@ -19,8 +19,9 @@ public enum OpCode {
     FIVE(0x05), SIX(0x06), SEVEN(0x07), EIGHT(0x08), NINE(0x09),
     // Арифметика
     ADD(0x10), SUBTRACT(0x11), MULTIPLY(0x12), DIVIDE(0x13),
-    SWAP(0x14),
-    PUSH(0x0E),
+    // Стек
+    SWAP(0x14), PUSH(0x0E), RESTORE_X(0x0F), ROTATE(0x25),
+    //
     DOT(0x0A),
     SIGN(0x0B),
     ENTER_EXPONENT(0x0C),
@@ -44,8 +45,6 @@ public enum OpCode {
     SQR(0x22),
     ONE_BY_X(0x23),
     POWER_OF_X(0x24),
-    RESTORE_X(0x0F),
-    ROTATE(0x25),
     // Условный переход
     X_LT_0(0x5C, 2), X_EQ_0(0x5E, 2), X_GE_0(0x59, 2), X_NE_0(0x57, 2),
     // Цикл

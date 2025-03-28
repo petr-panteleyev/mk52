@@ -107,7 +107,10 @@ class NumberBuffer {
     Value getValue() {
         enteringMantissa = false;
         enteringExponent = false;
+        return getCurrentValue();
+    }
 
+    Value getCurrentValue() {
         var valueString = new StringBuilder(getMantissaDigits().trim());
         var exponent = getExponentDigits();
         if (!exponent.isBlank()) {
