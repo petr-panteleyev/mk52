@@ -46,9 +46,10 @@ import static org.panteleyev.mk52.engine.KeyboardButton.STEP_RIGHT;
 import static org.panteleyev.mk52.engine.KeyboardButton.STORE;
 import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 
+@DisplayName("Ввод в режиме Программирование")
 public class ProgrammingModeTest extends BaseTest {
     private static String displayContent = "";
-    private static final Engine engine = new Engine(false, (content, _) -> displayContent = content);
+    private static final Engine engine = new Engine(false, (content, _, _) -> displayContent = content);
 
     @BeforeAll
     public static void beforeAll() {
@@ -242,7 +243,6 @@ public class ProgrammingModeTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("testArguments")
-    @DisplayName("Ввод всех кодов в режиме ввода программы")
     public void test(Consumer<Engine> preOperation, List<KeyboardButton> buttons, String expected) {
         preOperation.accept(engine);
         buttons.forEach(engine::processButton);

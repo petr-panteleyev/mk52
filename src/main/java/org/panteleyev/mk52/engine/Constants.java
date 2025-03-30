@@ -10,6 +10,7 @@ import java.time.temporal.ChronoUnit;
 public final class Constants {
     public static final int DISPLAY_SIZE = 13;
     public static final String EMPTY_DISPLAY = " ".repeat(DISPLAY_SIZE);
+    public static final String INITIAL_DISPLAY = " 0." + " ".repeat(DISPLAY_SIZE - 3);
 
     public static final int MANTISSA_SIZE = 8;
 
@@ -19,6 +20,8 @@ public final class Constants {
     public static final int EXPONENT_POSITION = 11;
 
     public static final int PROGRAM_MEMORY_SIZE = 105;
+    public static final int CALL_STACK_SIZE = 5;
+    public static final int REGISTERS_SIZE = 15;
 
     // Время исполнения команд
     public static final Duration DUR_023 = Duration.of(230, ChronoUnit.MILLIS);
@@ -30,6 +33,9 @@ public final class Constants {
     public static final Duration DUR_090 = Duration.of(900, ChronoUnit.MILLIS);
     public static final Duration DUR_150 = Duration.of(1500, ChronoUnit.MILLIS);
     public static final Duration DUR_250 = Duration.of(2500, ChronoUnit.MILLIS);
+
+    public static final Duration TURN_OFF_DISPLAY_DELAY = Duration.of(20, ChronoUnit.MILLIS);
+    public static final Duration STORE_CODE_DURATION = DUR_023;
 
     private Constants() {
     }

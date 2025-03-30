@@ -35,9 +35,10 @@ import static org.panteleyev.mk52.engine.KeyboardButton.RUN_STOP;
 import static org.panteleyev.mk52.engine.KeyboardButton.SIGN;
 import static org.panteleyev.mk52.engine.KeyboardButton.STORE;
 
+@DisplayName("Таблица 11")
 public class Table11Test extends BaseTest {
     private static String displayContent = "";
-    private static final Engine engine = new Engine(false, (content, _) -> displayContent = content);
+    private static final Engine engine = new Engine(false, (content, _, _) -> displayContent = content);
 
     @BeforeAll
     public static void beforeAll() {
@@ -70,7 +71,6 @@ public class Table11Test extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("testArguments")
-    @DisplayName("Таблица 11")
     public void test(List<KeyboardButton> buttons, String expected) {
         buttons.forEach(engine::processButton);
         assertEquals(expected, displayContent);

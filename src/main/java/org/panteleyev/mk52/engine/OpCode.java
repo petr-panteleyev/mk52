@@ -22,6 +22,8 @@ public enum OpCode {
     EMPTY(-1, Duration.ZERO),
     TO_PROGRAMMING_MODE(-2, Duration.ZERO),
     TO_EXECUTION_MODE(-3, Duration.ZERO),
+    STEP_LEFT(-4, DUR_023),
+    STEP_RIGHT(-5, DUR_023),
     // Недокументированные команды
     K_1(0x55, DUR_023),
     K_2(0x56, DUR_023),
@@ -175,12 +177,12 @@ public enum OpCode {
         return duration;
     }
 
-    public int size() {
-        return size;
-    }
-
     public boolean isRegister() {
         return register;
+    }
+
+    public boolean hasAddress() {
+        return size == 2;
     }
 
     public int getRegisterIndex() {

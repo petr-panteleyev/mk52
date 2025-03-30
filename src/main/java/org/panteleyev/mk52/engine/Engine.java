@@ -8,22 +8,23 @@ import org.panteleyev.mk52.eeprom.Eeprom;
 import org.panteleyev.mk52.eeprom.EepromMode;
 import org.panteleyev.mk52.eeprom.EepromOperation;
 import org.panteleyev.mk52.program.Instruction;
-import org.panteleyev.mk52.program.ProgramMemory;
 import org.panteleyev.mk52.program.StepExecutionCallback;
 import org.panteleyev.mk52.program.StepExecutionResult;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;
 import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
+import static org.panteleyev.mk52.engine.Constants.INITIAL_DISPLAY;
 import static org.panteleyev.mk52.engine.KeyboardButton.BUTTON_TO_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_EXCHANGE;
 import static org.panteleyev.mk52.engine.KeyboardButton.GOSUB;
 import static org.panteleyev.mk52.engine.KeyboardButton.RETURN;
 import static org.panteleyev.mk52.engine.KeyboardButton.RUN_STOP;
-import static org.panteleyev.mk52.engine.KeyboardButton.STEP_LEFT;
-import static org.panteleyev.mk52.engine.KeyboardButton.STEP_RIGHT;
 import static org.panteleyev.mk52.engine.OpCode.EMPTY;
 
 public final class Engine {
@@ -36,39 +37,40 @@ public final class Engine {
         ExecutionThread(Runnable runnable) {
             super(runnable);
             setDaemon(true);
+            setName("Processor");
         }
     }
 
     private final boolean async;
 
-    private final ProgramMemory programMemory = new ProgramMemory();
-
     private boolean powered = false;
 
+    private final AtomicReference<OpCode> lastExecutedOpCode = new AtomicReference<>(null);
+
     // Stack
-    private final Stack stack = new Stack();
+    private final Stack stack = new Stack(lastExecutedOpCode);
     // Регистры
     private final Registers registers = new Registers();
 
     private final StepExecutionCallback stepCallback = new StepExecutionCallback() {
         @Override
         public void before() {
-            displayUpdateCallback.updateDisplay(EMPTY_DISPLAY, true);
+            displayUpdateCallback.updateDisplay(EMPTY_DISPLAY, null, true);
         }
 
         @Override
         public void after(StepExecutionResult stepExecutionResult) {
-            System.out.println(stepExecutionResult);
             var content = stepExecutionResult.display() + " ".repeat(
                     DISPLAY_SIZE - stepExecutionResult.display().length());
-            displayUpdateCallback.updateDisplay(content, running.get());
+            displayUpdateCallback.updateDisplay(content, stepExecutionResult, running.get());
         }
     };
     private final Processor processor;
+    private final Executor processorExecutor = Executors.newSingleThreadExecutor(ExecutionThread::new);
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    private OperationMode operationMode = OperationMode.EXECUTION;
+    private final AtomicReference<OperationMode> operationMode = new AtomicReference<>(OperationMode.EXECUTION);
     private KeyboardMode keyboardMode = KeyboardMode.NORMAL;
 
     private EepromOperation eepromOperation = EepromOperation.READ;
@@ -87,18 +89,19 @@ public final class Engine {
 
     public Engine(boolean async, DisplayUpdateCallback displayUpdateCallback) {
         this.async = async;
-        this.processor = new Processor(async, stack, registers, programMemory, running, stepCallback);
+        this.processor = new Processor(async, stack, registers, running, operationMode, lastExecutedOpCode,
+                stepCallback);
         this.displayUpdateCallback = displayUpdateCallback;
         init();
     }
 
     public void init() {
-        operationMode = OperationMode.EXECUTION;
+        operationMode.set(OperationMode.EXECUTION);
         keyboardMode = KeyboardMode.NORMAL;
 
         processor.reset();
 
-        displayUpdateCallback.updateDisplay(stack.getStringValue(), false);
+        displayUpdateCallback.updateDisplay(INITIAL_DISPLAY, null, false);
     }
 
     public void processButton(KeyboardButton button) {
@@ -113,16 +116,9 @@ public final class Engine {
             return;
         }
 
-        switch (operationMode) {
+        switch (operationMode.get()) {
             case EXECUTION -> processButtonExecutionMode(button);
             case PROGRAMMING -> processButtonProgrammingMode(button);
-        }
-
-        switch (operationMode) {
-            case EXECUTION -> displayUpdateCallback.updateDisplay(stack.getStringValue(), false);
-            case PROGRAMMING ->
-                    displayUpdateCallback.updateDisplay(programMemory.getStringValue(processor.getProgramCounter()),
-                            false);
         }
     }
 
@@ -138,15 +134,7 @@ public final class Engine {
         }
 
         if (keyboardMode == KeyboardMode.NORMAL && button == RETURN) {
-            processor.returnTo0();
-            return;
-        }
-        if (keyboardMode == KeyboardMode.NORMAL && button == STEP_LEFT) {
-            processor.stepLeft();
-            return;
-        }
-        if (keyboardMode == KeyboardMode.NORMAL && button == STEP_RIGHT) {
-            processor.stepRight();
+            execute(new Instruction(OpCode.RETURN));
             return;
         }
 
@@ -210,32 +198,19 @@ public final class Engine {
                     return;
                 }
 
-                if (opCode.size() == 2) {
+                if (opCode.hasAddress()) {
                     keyboardMode = KeyboardMode.ADDRESS_DIGIT_1;
                     addressOpCode = opCode;
                     return;
                 }
 
-                if (opCode == OpCode.TO_PROGRAMMING_MODE) {
-                    operationMode = OperationMode.PROGRAMMING;
-                } else {
-                    execute(new Instruction(opCode));
-                }
+                execute(new Instruction(opCode));
                 keyboardMode = KeyboardMode.NORMAL;
             }
         }
     }
 
     private void processButtonProgrammingMode(KeyboardButton button) {
-        if (keyboardMode == KeyboardMode.NORMAL && button == STEP_LEFT) {
-            processor.stepLeft();
-            return;
-        }
-        if (keyboardMode == KeyboardMode.NORMAL && button == STEP_RIGHT) {
-            processor.stepRight();
-            return;
-        }
-
         switch (button) {
             case F -> keyboardMode = KeyboardMode.F;
             case K -> keyboardMode = KeyboardMode.K;
@@ -261,7 +236,7 @@ public final class Engine {
                             addressBuffer[1] = val;
                         }
                         var code = addressBuffer[0] * 16 + addressBuffer[1];
-                        processor.storeCode(code);
+                        storeCode(code);
                         keyboardMode = KeyboardMode.NORMAL;
                         yield OpCode.EMPTY;
                     }
@@ -271,7 +246,7 @@ public final class Engine {
                             register = 0;
                         }
                         var effectiveCode = registerOpCode.code() + register;
-                        processor.storeCode(effectiveCode);
+                        storeCode(effectiveCode);
                         keyboardMode = KeyboardMode.NORMAL;
                         yield OpCode.EMPTY;
                     }
@@ -287,13 +262,13 @@ public final class Engine {
                     return;
                 }
 
-                if (opCode == OpCode.TO_EXECUTION_MODE) {
-                    operationMode = OperationMode.EXECUTION;
+                if (opCode == OpCode.TO_EXECUTION_MODE || opCode == OpCode.STEP_LEFT || opCode == OpCode.STEP_RIGHT) {
+                    execute(new Instruction(opCode));
                 } else {
-                    processor.storeCode(opCode.code());
+                    storeCode(opCode.code());
                 }
 
-                if (opCode.size() == 2) {
+                if (opCode.hasAddress()) {
                     keyboardMode = KeyboardMode.ADDRESS_DIGIT_1;
                 } else {
                     keyboardMode = KeyboardMode.NORMAL;
@@ -309,7 +284,7 @@ public final class Engine {
         }
         if (!on) {
             // turn off display
-            displayUpdateCallback.updateDisplay(EMPTY_DISPLAY, false);
+            displayUpdateCallback.updateDisplay(EMPTY_DISPLAY, null, false);
             powered = false;
         }
     }
@@ -321,7 +296,7 @@ public final class Engine {
     private void execute(Instruction instruction) {
         running.set(true);
         if (async) {
-            new ExecutionThread(() -> processor.execute(instruction)).start();
+            processorExecutor.execute(() -> processor.execute(instruction));
         } else {
             processor.execute(instruction);
         }
@@ -330,7 +305,7 @@ public final class Engine {
     private void step() {
         running.set(true);
         if (async) {
-            new ExecutionThread(processor::step).start();
+            processorExecutor.execute(processor::step);
         } else {
             processor.step();
         }
@@ -339,9 +314,18 @@ public final class Engine {
     public void run() {
         running.set(true);
         if (async) {
-            new ExecutionThread(processor::run).start();
+            processorExecutor.execute(processor::run);
         } else {
             processor.run();
+        }
+    }
+
+    public void storeCode(int code) {
+        running.set(true);
+        if (async) {
+            processorExecutor.execute(() -> processor.storeCode(code));
+        } else {
+            processor.storeCode(code);
         }
     }
 

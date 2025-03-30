@@ -4,6 +4,7 @@
  */
 package org.panteleyev.mk52.engine;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
@@ -19,7 +20,10 @@ class Stack {
 
     private final NumberBuffer numberBuffer = new NumberBuffer();
 
-    Stack() {
+    private final AtomicReference<OpCode> lastExecutedOpCode;
+
+    Stack(AtomicReference<OpCode> lastExecutedOpCode) {
+        this.lastExecutedOpCode = lastExecutedOpCode;
     }
 
     NumberBuffer numberBuffer() {
@@ -49,6 +53,16 @@ class Stack {
         } else {
             return x;
         }
+    }
+
+    public StackSnapshot getSnapshot() {
+        return new StackSnapshot(
+                getStringValue(),
+                y.asString(),
+                z.asString(),
+                t.asString(),
+                x1.asString()
+        );
     }
 
     void setX(Value x) {
@@ -128,14 +142,14 @@ class Stack {
     }
 
     void addCharacter(char c) {
-        if (!numberBuffer.isInProgress()) {
+        if (!numberBuffer.isInProgress() && lastExecutedOpCode.get() != OpCode.PUSH) {
             push();
         }
         numberBuffer.addDigit(c);
     }
 
     void enterExponent() {
-        if (!numberBuffer.isInProgress()) {
+        if (!numberBuffer.isInProgress() && lastExecutedOpCode.get() != OpCode.PUSH) {
             push();
         }
         numberBuffer.enterExponent();

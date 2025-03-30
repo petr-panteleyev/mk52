@@ -5,33 +5,43 @@
 package org.panteleyev.mk52.ui;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.geometry.HPos;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.controlsfx.control.SegmentedButton;
 import org.panteleyev.fx.Controller;
-import org.panteleyev.fx.grid.GridRowBuilder;
 import org.panteleyev.mk52.eeprom.EepromMode;
 import org.panteleyev.mk52.eeprom.EepromOperation;
 import org.panteleyev.mk52.engine.DisplayUpdateCallback;
 import org.panteleyev.mk52.engine.Engine;
 import org.panteleyev.mk52.engine.KeyboardButton;
 import org.panteleyev.mk52.engine.TrigonometricMode;
+import org.panteleyev.mk52.program.StepExecutionResult;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.panteleyev.fx.BoxFactory.hBox;
 import static org.panteleyev.fx.BoxFactory.vBox;
+import static org.panteleyev.fx.LabelFactory.label;
+import static org.panteleyev.fx.MenuFactory.checkMenuItem;
 import static org.panteleyev.fx.MenuFactory.menu;
 import static org.panteleyev.fx.MenuFactory.menuBar;
 import static org.panteleyev.fx.MenuFactory.menuItem;
 import static org.panteleyev.fx.grid.GridBuilder.gridPane;
+import static org.panteleyev.fx.grid.GridRowBuilder.gridRow;
 import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
 
 public class Mk52Controller extends Controller {
@@ -39,10 +49,13 @@ public class Mk52Controller extends Controller {
 
     private final DisplayUpdateCallback displayUpdateCallback = new DisplayUpdateCallback() {
         @Override
-        public void updateDisplay(String content, boolean running) {
+        public void updateDisplay(String content, StepExecutionResult snapshot, boolean running) {
             Platform.runLater(() -> {
                 display.setOpacity(running ? 0.3 : 1.0);
                 display.setText(content);
+                if (snapshot != null) {
+                    stackAndRegistersPanel.displaySnapshot(snapshot);
+                }
             });
         }
     };
@@ -51,13 +64,16 @@ public class Mk52Controller extends Controller {
     private final Consumer<KeyboardButton> keyboardButtonConsumer = engine::processButton;
 
     private final Label display = new Label(EMPTY_DISPLAY);
+    private final StackAndRegistersPanel stackAndRegistersPanel = new StackAndRegistersPanel();
+
+    private final BorderPane root = new BorderPane();
 
     public Mk52Controller(Stage stage) {
         super(stage, "/main.css");
         stage.setResizable(false);
+
         stage.getIcons().add(Picture.ICON.getImage());
 
-        var root = new BorderPane();
         root.getStyleClass().add("root");
         root.setTop(createMenuBar());
 
@@ -70,8 +86,13 @@ public class Mk52Controller extends Controller {
                 createKeyboardGrid()
         );
         center.setCenter(centerHorizontal);
+
         root.setCenter(center);
+        root.setBottom(stackAndRegistersPanel);
+        BorderPane.setMargin(stackAndRegistersPanel, new Insets(10, 0, 0, 0));
+
         setupWindow(root);
+        getStage().sizeToScene();
     }
 
     @Override
@@ -104,7 +125,7 @@ public class Mk52Controller extends Controller {
         var onButton = new ToggleButton("Вкл");
         onButton.setOnAction(_ -> engine.togglePower(true));
         var powerSwitch = new SegmentedButton(offButton, onButton);
-        offButton.fire();
+        onButton.fire();
 
         var eraseButton = new ToggleButton("С");
         eraseButton.setOnAction(_ -> engine.setEepromOperation(EepromOperation.ERASE));
@@ -131,7 +152,7 @@ public class Mk52Controller extends Controller {
         var eepromTypeSwitch = new SegmentedButton(dataButton, programButton);
         dataButton.fire();
 
-        var pane = gridPane(List.of(GridRowBuilder.gridRow(
+        var pane = gridPane(List.of(gridRow(
                 powerSwitch,
                 eepromModeSwitch,
                 trigonometricSwitch,
@@ -144,8 +165,13 @@ public class Mk52Controller extends Controller {
     }
 
     private GridPane createKeyboardGrid() {
+        var aLabel = new RegisterLabel("a");
+        var bLabel = new RegisterLabel("b");
+        var cLabel = new RegisterLabel("c");
+        var dLabel = new RegisterLabel("d");
+
         var grid = gridPane(List.of(
-                GridRowBuilder.gridRow(
+                gridRow(
                         new ButtonNode("F", "", "", "fButton", KeyboardButton.F, keyboardButtonConsumer).node(),
                         new ButtonNode("ШГ>", "x<0", "", "blackButton", KeyboardButton.STEP_RIGHT,
                                 keyboardButtonConsumer).node(),
@@ -157,11 +183,11 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("9", "tg", "max", "grayButton", KeyboardButton.D9,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("-", "√", "", "grayButton", KeyboardButton.MINUS, keyboardButtonConsumer).node(),
-                        new ButtonNode("/", "1/x", "", "grayButton", KeyboardButton.DIVISION,
+                        new ButtonNode("➖", "√", "", "grayButton", KeyboardButton.MINUS, keyboardButtonConsumer).node(),
+                        new ButtonNode("➗", "1/x", "", "grayButton", KeyboardButton.DIVISION,
                                 keyboardButtonConsumer).node()
                 ),
-                GridRowBuilder.gridRow(
+                gridRow(
                         new ButtonNode("K", "", "", "kButton", KeyboardButton.K, keyboardButtonConsumer).node(),
                         new ButtonNode("<ШГ", "x=0", "", "blackButton", KeyboardButton.STEP_LEFT,
                                 keyboardButtonConsumer).node(),
@@ -173,13 +199,13 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("6", "tg⁻¹", "o⃖′", "grayButton", KeyboardButton.D6,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("+", "π", "o⃗'", "grayButton", KeyboardButton.PLUS,
+                        new ButtonNode("➕", "π", "o⃗'", "grayButton", KeyboardButton.PLUS,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("X", "x²", "", "grayButton", KeyboardButton.MULTIPLICATION,
+                        new ButtonNode("✖", "x²", "", "grayButton", KeyboardButton.MULTIPLICATION,
                                 keyboardButtonConsumer).node()
                 ),
-                GridRowBuilder.gridRow(
-                        new ButtonNode("⇅", "", "", "blackButton", KeyboardButton.EEPROM_EXCHANGE,
+                gridRow(
+                        new ButtonNode("↑↓", "", "", "blackButton", KeyboardButton.EEPROM_EXCHANGE,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("В/О", "x≥0", "", "blackButton", KeyboardButton.RETURN,
                                 keyboardButtonConsumer).node(),
@@ -189,14 +215,15 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("2", "lg", "", "grayButton", KeyboardButton.D2,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("3", "ln", "o⃖′″", "grayButton", KeyboardButton.D3,
+                        new ButtonNode("3", "ln", "o⃖‴", "grayButton", KeyboardButton.D3,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("↔", "xy", "o⃗′″", "grayButton", KeyboardButton.SWAP,
+                        new ButtonNode("←→", "xy", "o⃗‴", "grayButton", KeyboardButton.SWAP,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("В↑", "Вх", "СЧ", "grayButton", KeyboardButton.PUSH,
-                                keyboardButtonConsumer).node()
+                                keyboardButtonConsumer).node(),
+                        new RegisterLabel("e")
                 ),
-                GridRowBuilder.gridRow(
+                gridRow(
                         new ButtonNode("A↑", "", "", "blackButton", KeyboardButton.EEPROM_ADDRESS,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("С/П", "x≠0", "", "blackButton", KeyboardButton.RUN_STOP,
@@ -205,16 +232,23 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("0", "10ˣ", "НОП", "grayButton", KeyboardButton.D0,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode(".", "o", "∧", "grayButton", KeyboardButton.DOT, keyboardButtonConsumer).node(),
+                        new ButtonNode(".", "↻", "∧", "grayButton", KeyboardButton.DOT, keyboardButtonConsumer).node(),
                         new ButtonNode("/-/", "АВТ", "∨", "grayButton", KeyboardButton.SIGN,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("ВП", "ПРГ", "⊕", "grayButton", KeyboardButton.EE,
+                        new ButtonNode("ВП", "ПРГ", "⨁", "grayButton", KeyboardButton.EE,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("Cx", "CF", "ИНВ", "redButton", KeyboardButton.CLEAR_X,
                                 keyboardButtonConsumer).node()
-                )
+                ),
+                gridRow(label(""), label(""), label(""), label(""),
+                        aLabel, bLabel, cLabel, dLabel)
         ));
+
         grid.getStyleClass().add("buttonGrid");
+        GridPane.setHalignment(aLabel, HPos.CENTER);
+        GridPane.setHalignment(bLabel, HPos.CENTER);
+        GridPane.setHalignment(cLabel, HPos.CENTER);
+        GridPane.setHalignment(dLabel, HPos.CENTER);
         return grid;
     }
 

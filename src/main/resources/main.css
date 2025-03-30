@@ -1,83 +1,90 @@
 .fButton {
-    -fx-font-size: medium;
+    -fx-font-size: large;
     -fx-text-fill: black;
     -fx-background-color: #fbe12a;
     -fx-text-alignment: center;
     -fx-font-weight: bolder;
     -fx-background-radius: 5;
     -fx-background-insets: 0;
+    -fx-font-family: 'JetBrains Mono';
 }
 
 .fButton:pressed {
-    -fx-background-insets: 1;
+    -fx-background-insets: 2;
 }
 
 .kButton {
-    -fx-font-size: medium;
+    -fx-font-size: large;
     -fx-text-fill: white;
-    -fx-background-color: #7ad2f8;
+    -fx-background-color: lightblue;
     -fx-text-alignment: center;
     -fx-font-weight: bolder;
     -fx-background-radius: 5;
     -fx-background-insets: 0;
+    -fx-font-family: 'JetBrains Mono';
 }
 
 .kButton:pressed {
-    -fx-background-insets: 1;
+    -fx-background-insets: 2;
 }
 
 .blackButton {
-    -fx-font-size: medium;
+    -fx-font-size: large;
     -fx-text-fill: white;
     -fx-background-color: black;
     -fx-text-alignment: center;
     -fx-font-weight: bolder;
     -fx-background-radius: 5;
     -fx-background-insets: 0;
+    -fx-font-family: 'JetBrains Mono';
 }
 
 .blackButton:pressed {
-    -fx-background-insets: 1;
+    -fx-background-insets: 2;
 }
 
 .grayButton {
-    -fx-font-size: medium;
+    -fx-font-size: large;
     -fx-text-fill: black;
     -fx-background-color: #d8d3bf;
     -fx-text-alignment: center;
     -fx-font-weight: bolder;
     -fx-background-radius: 5;
     -fx-background-insets: 0;
+    -fx-font-family: 'JetBrains Mono';
 }
 
 .grayButton:pressed {
-    -fx-background-insets: 1;
+    -fx-background-insets: 2;
 }
 
 .redButton {
-    -fx-font-size: medium;
+    -fx-font-size: large;
     -fx-text-fill: white;
     -fx-background-color: red;
     -fx-text-alignment: center;
     -fx-font-weight: bolder;
     -fx-background-radius: 5;
     -fx-background-insets: 0;
+    -fx-font-family: 'JetBrains Mono';
 }
 
 .redButton:pressed {
-    -fx-background-insets: 1;
+    -fx-background-insets: 2;
 }
 
 .fLabel {
     -fx-text-fill: yellow;
     -fx-font-weight: bolder;
     -fx-font-size: medium;
+    -fx-font-family: 'JetBrains Mono';
 }
 
 .kLabel {
     -fx-text-fill: lightblue;
     -fx-font-weight: bolder;
     -fx-font-size: medium;
+    -fx-font-family: 'JetBrains Mono';
 }
 
 .buttonGrid {
@@ -101,13 +108,6 @@
     -fx-font-family: 'Neat LCD';
 }
 
-.lcdRunning {
-    -fx-font-weight: normal;
-    -fx-font-size: 30;
-    -fx-text-fill: red;
-    -fx-font-family: 'Neat LCD';
-}
-
 .switchPanel {
     -fx-font-size: x-small;
     -fx-background-color: #363942;
@@ -128,4 +128,30 @@
     -fx-padding: 10 10 10 10;
     -fx-background-radius: 15;
     -fx-background-insets: 0;
+}
+
+.registerAndStackPanel {
+    -fx-background-color: #363942;
+    -fx-background-radius: 10;
+    -fx-background-insets: 0;
+    -fx-padding: 10 10 10 10;
+}
+
+.registerLabel {
+    -fx-font-weight: bolder;
+    -fx-font-size: medium;
+    -fx-text-fill: white;
+}
+
+.registerContentLabel {
+    -fx-font-family: 'JetBrains Mono';
+    -fx-text-fill: white;
+    -fx-font-size: 20;
+}
+
+.registerContent {
+    -fx-font-family: 'JetBrains Mono';
+    -fx-background-color: #283f37;
+    -fx-text-fill: lightgreen;
+    -fx-font-size: 20;
 }

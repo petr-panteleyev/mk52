@@ -10,13 +10,16 @@ import org.panteleyev.mk52.program.StepExecutionCallback;
 import org.panteleyev.mk52.program.StepExecutionResult;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+
+import static org.panteleyev.mk52.engine.Constants.CALL_STACK_SIZE;
+import static org.panteleyev.mk52.engine.Constants.STORE_CODE_DURATION;
+import static org.panteleyev.mk52.engine.Constants.TURN_OFF_DISPLAY_DELAY;
 
 final class Processor {
     private static final Predicate<Value> LT_0 = v -> v.value() < 0;
@@ -27,12 +30,17 @@ final class Processor {
     private final AtomicInteger programCounter = new AtomicInteger(0);
     private final Stack stack;
     private final Registers registers;
-    private final ProgramMemory programMemory;
-    private final Deque<Integer> callStack = new ArrayDeque<>(5);
+    private final ProgramMemory programMemory = new ProgramMemory();
+    private final Deque<Integer> callStack = new ArrayDeque<>(CALL_STACK_SIZE);
 
     private final boolean async;
     private final AtomicBoolean running;
+    private final AtomicReference<Engine.OperationMode> operationMode;
     private final StepExecutionCallback stepCallback;
+
+    private final AtomicReference<OpCode> lastExecutedOpCode;
+
+    private final AtomicBoolean fetchedInstruction = new AtomicBoolean(false);
 
     private final AtomicReference<TrigonometricMode> trigonometricMode =
             new AtomicReference<>(TrigonometricMode.RADIAN);
@@ -41,20 +49,18 @@ final class Processor {
             boolean async,
             Stack stack,
             Registers registers,
-            ProgramMemory programMemory,
             AtomicBoolean running,
+            AtomicReference<Engine.OperationMode> operationMode,
+            AtomicReference<OpCode> lastExecutedOpCode,
             StepExecutionCallback stepCallback
     ) {
         this.async = async;
         this.stack = stack;
         this.registers = registers;
-        this.programMemory = programMemory;
         this.running = running;
+        this.operationMode = operationMode;
+        this.lastExecutedOpCode = lastExecutedOpCode;
         this.stepCallback = stepCallback;
-    }
-
-    public int getProgramCounter() {
-        return programCounter.get();
     }
 
     public void setTrigonometricMode(TrigonometricMode trigonometricMode) {
@@ -74,7 +80,10 @@ final class Processor {
 
     private boolean step(boolean single) {
         var instruction = programMemory.fetchInstruction(programCounter);
-        return execute(instruction, single);
+        fetchedInstruction.set(true);
+        var result = execute(instruction, single);
+        fetchedInstruction.set(false);
+        return result;
     }
 
     public void run() {
@@ -82,7 +91,7 @@ final class Processor {
         while (true) {
             if (!running.get() || !cont) {
                 running.set(false);
-                stepCallback.after(new StepExecutionResult(stack.x().asString()));
+                stepCallback.after(newStepExecutionResult(stack.x().asString()));
                 break;
             }
             cont = step(false);
@@ -97,16 +106,12 @@ final class Processor {
         }
     }
 
-    public void stepLeft() {
+    private void stepLeft() {
         programCounter.decrementAndGet();
     }
 
-    public void stepRight() {
+    private void stepRight() {
         programCounter.incrementAndGet();
-    }
-
-    public void storeCode(int code) {
-        programMemory.storeCode(programCounter, code);
     }
 
     private void store(int index) {
@@ -203,12 +208,22 @@ final class Processor {
         } else if (opCode.inRange(OpCode.GOSUB_R0, OpCode.GOSUB_RE)) {
             indirectGoSub(opCode.getRegisterIndex());
         } else if (opCode == OpCode.RETURN) {
-            returnFromSubroutine();
+            if (fetchedInstruction.get()) {
+                returnFromSubroutine();
+            } else {
+                returnTo0();
+            }
         } else if (opCode == OpCode.STOP_RUN) {
             stack.x();
             return false;
         } else {
             switch (opCode) {
+                // Инструкции эмулятора
+                case OpCode.STEP_LEFT -> stepLeft();
+                case OpCode.STEP_RIGHT -> stepRight();
+                case OpCode.TO_EXECUTION_MODE -> operationMode.set(Engine.OperationMode.EXECUTION);
+                case OpCode.TO_PROGRAMMING_MODE -> operationMode.set(Engine.OperationMode.PROGRAMMING);
+
                 case OpCode.ZERO -> stack.addCharacter('0');
                 case OpCode.ONE -> stack.addCharacter('1');
                 case OpCode.TWO -> stack.addCharacter('2');
@@ -275,6 +290,12 @@ final class Processor {
                 case OpCode.ACOS -> stack.unaryOperation(x -> Mk52Math.acos(x, trigonometricMode.get()));
                 case OpCode.TAN -> stack.unaryOperation(x -> Mk52Math.tan(x, trigonometricMode.get()));
                 case OpCode.ATAN -> stack.unaryOperation(x -> Mk52Math.atan(x, trigonometricMode.get()));
+
+                // Угловые
+                case OpCode.HH_MM_TO_DEG -> stack.unaryOperation(Mk52Math::hoursMinutesToDegrees);
+                case OpCode.HH_MM_SS_TO_DEG -> stack.unaryOperation(Mk52Math::hoursMinutesSecondsToDegrees);
+                case OpCode.DEG_TO_HH_MM -> stack.unaryOperation(Mk52Math::degreesToHoursMinutes);
+                case OpCode.DEG_TO_HH_MM_SS -> stack.unaryOperation(Mk52Math::degreesToHoursMinutesSeconds);
             }
         }
         return true;
@@ -286,14 +307,14 @@ final class Processor {
 
     private boolean execute(Instruction instruction, boolean single) {
         if (async) {
-            sleep(Duration.of(20, ChronoUnit.MILLIS));
+            sleep(TURN_OFF_DISPLAY_DELAY);
         }
 
         stepCallback.before();
 
         var opCode = instruction.opCode();
         var cont = true;
-        if (opCode.size() == 2) {
+        if (opCode.hasAddress()) {
             var address = instruction.address() / 16 * 10 + instruction.address() % 16;
             if (opCode == OpCode.GOTO) {
                 goTo(address);
@@ -311,8 +332,10 @@ final class Processor {
                 conditionalGoto(address, NE_0);
             }
         } else {
-            cont =  execute(opCode);
+            cont = execute(opCode);
         }
+
+        lastExecutedOpCode.set(opCode);
 
         if (async) {
             sleep(instruction.opCode().duration());
@@ -321,7 +344,39 @@ final class Processor {
         if (single) {
             running.set(false);
         }
-        stepCallback.after(new StepExecutionResult(stack.getStringValue()));
+
+        var display = switch (operationMode.get()) {
+            case EXECUTION -> stack.getStringValue();
+            case PROGRAMMING -> programMemory.getStringValue(programCounter.get());
+        };
+        stepCallback.after(newStepExecutionResult(display));
         return cont;
+    }
+
+    public void storeCode(int code) {
+        if (async) {
+            sleep(TURN_OFF_DISPLAY_DELAY);
+        }
+
+        stepCallback.before();
+        programMemory.storeCode(programCounter, code);
+
+        if (async) {
+            sleep(STORE_CODE_DURATION);
+        }
+
+        running.set(false);
+        var pc = programCounter.get();
+        stepCallback.after(newStepExecutionResult(programMemory.getStringValue(pc)));
+    }
+
+    private StepExecutionResult newStepExecutionResult(String display) {
+        return new StepExecutionResult(
+                display,
+                programCounter.get(),
+                stack.getSnapshot(),
+                registers.getSnapshot(),
+                new ArrayDeque<>(callStack)
+        );
     }
 }

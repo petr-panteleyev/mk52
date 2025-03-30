@@ -20,25 +20,22 @@ import static org.panteleyev.mk52.engine.KeyboardButton.D2;
 import static org.panteleyev.mk52.engine.KeyboardButton.D3;
 import static org.panteleyev.mk52.engine.KeyboardButton.D4;
 import static org.panteleyev.mk52.engine.KeyboardButton.D5;
-import static org.panteleyev.mk52.engine.KeyboardButton.D7;
 import static org.panteleyev.mk52.engine.KeyboardButton.D9;
 import static org.panteleyev.mk52.engine.KeyboardButton.DIVISION;
 import static org.panteleyev.mk52.engine.KeyboardButton.EE;
 import static org.panteleyev.mk52.engine.KeyboardButton.F;
-import static org.panteleyev.mk52.engine.KeyboardButton.GOTO;
-import static org.panteleyev.mk52.engine.KeyboardButton.K;
 import static org.panteleyev.mk52.engine.KeyboardButton.LOAD;
 import static org.panteleyev.mk52.engine.KeyboardButton.MULTIPLICATION;
 import static org.panteleyev.mk52.engine.KeyboardButton.PLUS;
 import static org.panteleyev.mk52.engine.KeyboardButton.RETURN;
 import static org.panteleyev.mk52.engine.KeyboardButton.RUN_STOP;
 import static org.panteleyev.mk52.engine.KeyboardButton.SIGN;
-import static org.panteleyev.mk52.engine.KeyboardButton.STEP_LEFT;
 import static org.panteleyev.mk52.engine.KeyboardButton.STORE;
 
+@DisplayName("Таблица 16")
 public class Table16Test extends BaseTest {
     private static String displayContent = "";
-    private static final Engine engine = new Engine(false, (content, _) -> displayContent = content);
+    private static final Engine engine = new Engine(false, (content, _, _) -> displayContent = content);
 
     @BeforeAll
     public static void beforeAll() {
@@ -64,7 +61,6 @@ public class Table16Test extends BaseTest {
 
     @ParameterizedTest
     @MethodSource("testArguments")
-    @DisplayName("Таблица 16")
     public void test(List<KeyboardButton> buttons, String expected) {
         buttons.forEach(engine::processButton);
         assertEquals(expected, displayContent);

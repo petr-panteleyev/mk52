@@ -4,5 +4,16 @@
  */
 package org.panteleyev.mk52.program;
 
-public record StepExecutionResult(String display) {
+import org.panteleyev.mk52.engine.StackSnapshot;
+
+import java.util.Deque;
+import java.util.List;
+
+public record StepExecutionResult(
+        String display,
+        int programCounter,
+        StackSnapshot stack,
+        List<String> registers,
+        Deque<Integer> callStack
+) {
 }

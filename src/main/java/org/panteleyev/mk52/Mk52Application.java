@@ -16,6 +16,10 @@ public class Mk52Application extends Application {
                 Mk52Application.class.getResource("/fonts/neat-lcd.ttf").toString(),
                 14
         );
+        Font.loadFont(
+                Mk52Application.class.getResource("/fonts/JetBrainsMono-Medium.ttf").toString(),
+                14
+        );
 
         new Mk52Controller(stage);
         stage.show();

@@ -6,10 +6,16 @@ package org.panteleyev.mk52.engine;
 
 import org.panteleyev.mk52.math.Converter;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Random;
+
+import static org.panteleyev.mk52.engine.Constants.MANTISSA_SIZE;
 
 final class Mk52Math {
     private static final Random RANDOM = new Random(System.currentTimeMillis());
+    private static final BigDecimal SIXTY = BigDecimal.valueOf(60);
+    private static final BigDecimal D_3600 = BigDecimal.valueOf(3600);
 
     public static Value add(Value x, Value y) {
         return new Value(x.value() + y.value());
@@ -76,7 +82,12 @@ final class Mk52Math {
     }
 
     public static Value max(Value x, Value y) {
-        return new Value(Math.max(x.value(), y.value()));
+        if (x.value() == 0 || y.value() == 0) {
+            // Известный дефект
+            return Value.ZERO;
+        } else {
+            return new Value(Math.max(x.value(), y.value()));
+        }
     }
 
     public static Value signum(Value x) {
@@ -144,6 +155,56 @@ final class Mk52Math {
         return new Value(lX.value() ^ lY.value(), Value.ValueMode.LOGICAL, Math.max(lX.length(), lY.length()));
     }
 
+    // Угловые операции
+
+    public static Value hoursMinutesToDegrees(Value x) {
+        var hhMM = Converter.toHoursMinutes(x);
+
+        var result = toBigDecimal(hhMM.minutes())
+                .divide(SIXTY, MANTISSA_SIZE, RoundingMode.FLOOR)
+                .add(toBigDecimal(hhMM.hours()));
+
+        return new Value(downScale(result).doubleValue());
+    }
+
+    public static Value hoursMinutesSecondsToDegrees(Value x) {
+        var hhMmSs = Converter.toHoursMinutesSeconds(x);
+        var result = toBigDecimal(hhMmSs.hours())
+                .add(toBigDecimal(hhMmSs.minutes()).divide(SIXTY,  MANTISSA_SIZE, RoundingMode.FLOOR))
+                .add(toBigDecimal(hhMmSs.seconds()).divide(D_3600, MANTISSA_SIZE, RoundingMode.FLOOR));
+
+        return new Value(downScale(result).doubleValue());
+    }
+
+    public static Value degreesToHoursMinutes(Value x) {
+        var hours = BigDecimal.valueOf(x.value());
+        var fraction = hours.remainder(BigDecimal.ONE);
+
+        var result = fraction.multiply(SIXTY)
+                .stripTrailingZeros()
+                .movePointLeft(2)
+                .add(BigDecimal.valueOf(hours.intValue()));
+
+        return new Value(downScale(result).doubleValue());
+    }
+
+    public static Value degreesToHoursMinutesSeconds(Value x) {
+        var hours = BigDecimal.valueOf(x.value());
+        var fraction = hours.remainder(BigDecimal.ONE);
+
+        var minutes = fraction.multiply(SIXTY);
+
+        var minuteFraction = minutes.remainder(BigDecimal.ONE);
+        var seconds = minuteFraction.multiply(SIXTY).stripTrailingZeros();
+        var secondsFraction = seconds.remainder(BigDecimal.ONE);
+
+        var result = BigDecimal.valueOf(hours.intValue())
+                .add(BigDecimal.valueOf(minutes.intValue()).movePointLeft(2))
+                .add(BigDecimal.valueOf(seconds.intValue()).movePointLeft(4))
+                .add(secondsFraction.movePointLeft(4));
+        return new Value(downScale(result).doubleValue());
+    }
+
     private static double toRadian(double x, TrigonometricMode mode) {
         return switch (mode) {
             case RADIAN -> x;
@@ -158,5 +219,22 @@ final class Mk52Math {
             case DEGREE -> Math.toDegrees(x);
             case GRADIAN -> 200.0 * x / Math.PI;
         };
+    }
+
+    private static BigDecimal toBigDecimal(int x) {
+        return BigDecimal.valueOf(x);
+    }
+
+    private static BigDecimal toBigDecimal(double x) {
+        return BigDecimal.valueOf(x);
+    }
+
+    private static BigDecimal downScale(BigDecimal x) {
+        var extraPrecision = x.precision() - MANTISSA_SIZE;
+        if (extraPrecision > 0) {
+            return x.setScale(x.scale() - extraPrecision, RoundingMode.FLOOR);
+        } else {
+            return x;
+        }
     }
 }

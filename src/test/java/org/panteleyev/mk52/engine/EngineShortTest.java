@@ -5,6 +5,7 @@
 package org.panteleyev.mk52.engine;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,9 +44,10 @@ import static org.panteleyev.mk52.engine.KeyboardButton.STORE;
 import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_EXCHANGE;
 
+@DisplayName("Таблица 1")
 public class EngineShortTest extends BaseTest {
     private static String displayContent = "";
-    private static final Engine engine = new Engine(false, (content, _) -> displayContent = content);
+    private static final Engine engine = new Engine(false, (content, _, _) -> displayContent = content);
 
     @BeforeAll
     public static void beforeAll() {

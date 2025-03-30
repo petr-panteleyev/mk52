@@ -13,7 +13,6 @@ public record Value(double value, ValueMode mode, int logicalLength) {
 
     public static final Value ZERO = new Value();
     public static final Value PI = new Value(3.1415926);
-    public static final Value E = new Value(2.7182818);
 
     private static final double MAX_NATURAL = 99999999;
     private static final int MANTISSA_LIMIT = 8;
