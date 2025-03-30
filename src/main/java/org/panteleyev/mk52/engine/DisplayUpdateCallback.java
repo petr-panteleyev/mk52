@@ -5,5 +5,5 @@
 package org.panteleyev.mk52.engine;
 
 public interface DisplayUpdateCallback {
-    void updateDisplay(String content, Engine.OperationMode mode);
+    void updateDisplay(String content, boolean running);
 }

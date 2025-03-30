@@ -38,13 +38,13 @@ import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 
 public class Table13Test extends BaseTest {
     private static String displayContent = "";
-    private static final Engine engine = new Engine((content, _) -> displayContent = content);
+    private static final Engine engine = new Engine(false, (content, _) -> displayContent = content);
 
     @BeforeAll
     public static void beforeAll() {
         engine.init();
         engine.togglePower(true);
-        engine.setTrigonometricMode(Engine.TrigonometricMode.RADIAN);
+        engine.setTrigonometricMode(TrigonometricMode.RADIAN);
     }
 
     private static List<Arguments> testArguments() {

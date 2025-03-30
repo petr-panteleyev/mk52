@@ -21,9 +21,6 @@ public class Registers {
     }
 
     public void store(int index, Value value) {
-        if (index < 0 || index > COUNT) {
-            return;
-        }
         registers[index] = value;
     }
 
@@ -33,11 +30,19 @@ public class Registers {
 
     public int modifyAndGetRegisterValue(int index) {
         var indirectIndex = (int) registers[index].value();
+        var sign = indirectIndex < 0 ? -1 : 1;
         if (index <= 3) {
-            indirectIndex--;
+            indirectIndex = sign * (Math.abs(indirectIndex) - 1);
         } else if (index <= 6) {
             indirectIndex++;
         }
+
+        if (indirectIndex > 99999999) {
+            indirectIndex = 0;
+        } else if (indirectIndex == -1) {
+            indirectIndex = -99999999;
+        }
+
         registers[index] = new Value(indirectIndex, Value.ValueMode.ADDRESS, 0);
         return indirectIndex;
     }

@@ -95,9 +95,16 @@
 }
 
 .lcd {
-    -fx-font-weight: medium;
+    -fx-font-weight: normal;
     -fx-font-size: 30;
     -fx-text-fill: lightgreen;
+    -fx-font-family: 'Neat LCD';
+}
+
+.lcdRunning {
+    -fx-font-weight: normal;
+    -fx-font-size: 30;
+    -fx-text-fill: red;
     -fx-font-family: 'Neat LCD';
 }
 

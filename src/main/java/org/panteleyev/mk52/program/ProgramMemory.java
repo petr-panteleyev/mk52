@@ -43,11 +43,10 @@ public class ProgramMemory {
         return new Instruction(opCode, address);
     }
 
-    public String getStringValue(AtomicInteger programCounter) {
+    public String getStringValue(int pc) {
         var buffer = new char[DISPLAY_SIZE];
         Arrays.fill(buffer, ' ');
 
-        var pc = programCounter.get();
         var pcString = pc <= 99 ? String.format("%02d", pc) : String.format("A%1d", pc - 100);
         buffer[11] = pcString.charAt(0);
         buffer[12] = pcString.charAt(1);

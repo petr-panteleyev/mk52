@@ -37,7 +37,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.STORE;
 
 public class Table11Test extends BaseTest {
     private static String displayContent = "";
-    private static final Engine engine = new Engine((content, _) -> displayContent = content);
+    private static final Engine engine = new Engine(false, (content, _) -> displayContent = content);
 
     @BeforeAll
     public static void beforeAll() {

@@ -4,6 +4,8 @@
  */
 package org.panteleyev.mk52.engine;
 
-interface OpcodeHandler {
-    void handle(Engine engine);
+public enum TrigonometricMode {
+    RADIAN,
+    GRADIAN,
+    DEGREE
 }

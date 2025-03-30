@@ -21,6 +21,7 @@ import org.panteleyev.mk52.eeprom.EepromOperation;
 import org.panteleyev.mk52.engine.DisplayUpdateCallback;
 import org.panteleyev.mk52.engine.Engine;
 import org.panteleyev.mk52.engine.KeyboardButton;
+import org.panteleyev.mk52.engine.TrigonometricMode;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -32,21 +33,21 @@ import static org.panteleyev.fx.MenuFactory.menuBar;
 import static org.panteleyev.fx.MenuFactory.menuItem;
 import static org.panteleyev.fx.grid.GridBuilder.gridPane;
 import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
-import static org.panteleyev.mk52.engine.Engine.TrigonometricMode.DEGREE;
-import static org.panteleyev.mk52.engine.Engine.TrigonometricMode.GRADIAN;
-import static org.panteleyev.mk52.engine.Engine.TrigonometricMode.RADIAN;
 
 public class Mk52Controller extends Controller {
     public static final String APP_TITLE = "МК-52";
 
     private final DisplayUpdateCallback displayUpdateCallback = new DisplayUpdateCallback() {
         @Override
-        public void updateDisplay(String content, Engine.OperationMode mode) {
-            Platform.runLater(() -> display.setText(content));
+        public void updateDisplay(String content, boolean running) {
+            Platform.runLater(() -> {
+                display.setOpacity(running ? 0.3 : 1.0);
+                display.setText(content);
+            });
         }
     };
 
-    private final Engine engine = new Engine(displayUpdateCallback);
+    private final Engine engine = new Engine(true, displayUpdateCallback);
     private final Consumer<KeyboardButton> keyboardButtonConsumer = engine::processButton;
 
     private final Label display = new Label(EMPTY_DISPLAY);
@@ -99,13 +100,9 @@ public class Mk52Controller extends Controller {
 
     private GridPane createSwitches() {
         var offButton = new ToggleButton(" ");
-        offButton.setOnAction(_ -> {
-            engine.togglePower(false);
-        });
+        offButton.setOnAction(_ -> engine.togglePower(false));
         var onButton = new ToggleButton("Вкл");
-        onButton.setOnAction(_ -> {
-            engine.togglePower(true);
-        });
+        onButton.setOnAction(_ -> engine.togglePower(true));
         var powerSwitch = new SegmentedButton(offButton, onButton);
         offButton.fire();
 
@@ -119,11 +116,11 @@ public class Mk52Controller extends Controller {
         readButton.fire();
 
         var radianButton = new ToggleButton("Р");
-        radianButton.setOnAction(_ -> engine.setTrigonometricMode(RADIAN));
+        radianButton.setOnAction(_ -> engine.setTrigonometricMode(TrigonometricMode.RADIAN));
         var gRadianButton = new ToggleButton("ГРД");
-        gRadianButton.setOnAction(_ -> engine.setTrigonometricMode(GRADIAN));
+        gRadianButton.setOnAction(_ -> engine.setTrigonometricMode(TrigonometricMode.GRADIAN));
         var degreeButton = new ToggleButton("Г");
-        degreeButton.setOnAction(_ -> engine.setTrigonometricMode(DEGREE));
+        degreeButton.setOnAction(_ -> engine.setTrigonometricMode(TrigonometricMode.DEGREE));
         var trigonometricSwitch = new SegmentedButton(radianButton, gRadianButton, degreeButton);
         radianButton.fire();
 
@@ -200,7 +197,8 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node()
                 ),
                 GridRowBuilder.gridRow(
-                        new ButtonNode("A↑", "", "", "blackButton", KeyboardButton.EEPROM_ADDRESS, keyboardButtonConsumer).node(),
+                        new ButtonNode("A↑", "", "", "blackButton", KeyboardButton.EEPROM_ADDRESS,
+                                keyboardButtonConsumer).node(),
                         new ButtonNode("С/П", "x≠0", "", "blackButton", KeyboardButton.RUN_STOP,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("ПП", "L3", "", "blackButton", KeyboardButton.GOSUB,

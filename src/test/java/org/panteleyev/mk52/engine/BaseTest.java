@@ -13,7 +13,7 @@ public class BaseTest {
 
     static final Consumer<Engine> NOOP = _ -> {};
     static final Consumer<Engine> POWEROFF = e -> e.togglePower(false);
-    static final Consumer<Engine> TR_DEGREE = e -> e.setTrigonometricMode(Engine.TrigonometricMode.DEGREE);
-    static final Consumer<Engine> TR_GRADIAN = e -> e.setTrigonometricMode(Engine.TrigonometricMode.GRADIAN);
-    static final Consumer<Engine> TR_RADIAN = e -> e.setTrigonometricMode(Engine.TrigonometricMode.RADIAN);
+    static final Consumer<Engine> TR_DEGREE = e -> e.setTrigonometricMode(TrigonometricMode.DEGREE);
+    static final Consumer<Engine> TR_GRADIAN = e -> e.setTrigonometricMode(TrigonometricMode.GRADIAN);
+    static final Consumer<Engine> TR_RADIAN = e -> e.setTrigonometricMode(TrigonometricMode.RADIAN);
 }

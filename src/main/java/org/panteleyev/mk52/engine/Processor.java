@@ -5,149 +5,323 @@
 package org.panteleyev.mk52.engine;
 
 import org.panteleyev.mk52.program.Instruction;
+import org.panteleyev.mk52.program.ProgramMemory;
+import org.panteleyev.mk52.program.StepExecutionCallback;
+import org.panteleyev.mk52.program.StepExecutionResult;
 
-import java.util.Map;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-import static java.util.Map.entry;
-
-class Processor {
+final class Processor {
     private static final Predicate<Value> LT_0 = v -> v.value() < 0;
     private static final Predicate<Value> EQ_0 = v -> v.value() == 0;
     private static final Predicate<Value> GE_0 = v -> v.value() >= 0;
     private static final Predicate<Value> NE_0 = v -> v.value() != 0;
 
-    private static final Map<OpCode, OpcodeHandler> OPERATIONS = Map.ofEntries(
-            entry(OpCode.ZERO, e -> e.getStack().addCharacter('0')),
-            entry(OpCode.ONE, e -> e.getStack().addCharacter('1')),
-            entry(OpCode.TWO, e -> e.getStack().addCharacter('2')),
-            entry(OpCode.THREE, e -> e.getStack().addCharacter('3')),
-            entry(OpCode.FOUR, e -> e.getStack().addCharacter('4')),
-            entry(OpCode.FIVE, e -> e.getStack().addCharacter('5')),
-            entry(OpCode.SIX, e -> e.getStack().addCharacter('6')),
-            entry(OpCode.SEVEN, e -> e.getStack().addCharacter('7')),
-            entry(OpCode.EIGHT, e -> e.getStack().addCharacter('8')),
-            entry(OpCode.NINE, e -> e.getStack().addCharacter('9')),
-            entry(OpCode.DOT, e -> e.getStack().addCharacter('.')),
-            entry(OpCode.SIGN, e -> {
-                        if (e.getStack().numberBuffer().isInProgress()) {
-                            e.getStack().addCharacter('-');
-                        } else {
-                            e.unary(Mk52Math::negate);
-                        }
-                    }
-            ),
-            entry(OpCode.ENTER_EXPONENT, e -> e.getStack().enterExponent()),
+    private final AtomicInteger programCounter = new AtomicInteger(0);
+    private final Stack stack;
+    private final Registers registers;
+    private final ProgramMemory programMemory;
+    private final Deque<Integer> callStack = new ArrayDeque<>(5);
 
-            entry(OpCode.PUSH, e -> e.getStack().push()),
-            entry(OpCode.SWAP, e -> e.getStack().swap()),
-            entry(OpCode.ROTATE, e -> e.getStack().rotate()),
-            entry(OpCode.RESTORE_X, e -> e.getStack().restoreX()),
-            entry(OpCode.CLEAR_X, e -> e.unary(_ -> Value.ZERO)),
+    private final boolean async;
+    private final AtomicBoolean running;
+    private final StepExecutionCallback stepCallback;
 
-            // Арифметика
-            entry(OpCode.ADD, e -> e.binary(Mk52Math::add)),
-            entry(OpCode.SUBTRACT, e -> e.binary(Mk52Math::subtract)),
-            entry(OpCode.MULTIPLY, e -> e.binary(Mk52Math::multiply)),
-            entry(OpCode.DIVIDE, e -> e.binary(Mk52Math::divide)),
+    private final AtomicReference<TrigonometricMode> trigonometricMode =
+            new AtomicReference<>(TrigonometricMode.RADIAN);
 
-            // Логические операции
-            entry(OpCode.INVERSION, e -> e.unary(Mk52Math::inversion)),
-            entry(OpCode.AND, e -> e.binary(Mk52Math::and)),
-            entry(OpCode.OR, e -> e.binary(Mk52Math::or)),
-            entry(OpCode.XOR, e -> e.binary(Mk52Math::xor)),
+    public Processor(
+            boolean async,
+            Stack stack,
+            Registers registers,
+            ProgramMemory programMemory,
+            AtomicBoolean running,
+            StepExecutionCallback stepCallback
+    ) {
+        this.async = async;
+        this.stack = stack;
+        this.registers = registers;
+        this.programMemory = programMemory;
+        this.running = running;
+        this.stepCallback = stepCallback;
+    }
 
-            entry(OpCode.SQRT, e -> e.unary(Mk52Math::sqrt)),
-            entry(OpCode.SQR, e -> e.unary(Mk52Math::sqr)),
-            entry(OpCode.POWER_OF_TEN, e -> e.unary(Mk52Math::pow10)),
-            entry(OpCode.LG, e -> e.unary(Mk52Math::lg)),
-            entry(OpCode.LN, e -> e.unary(Mk52Math::ln)),
-            entry(OpCode.EXP, e -> e.unary(Mk52Math::exp)),
-            entry(OpCode.ONE_BY_X, e -> e.unary(Mk52Math::oneByX)),
-            entry(OpCode.POWER_OF_X, e -> e.binaryKeepY(Mk52Math::pow)),
-            entry(OpCode.PI, e -> {
-                e.getStack().push();
-                e.getStack().addCharacters("3.1415926".toCharArray());
-            }),
-            entry(OpCode.RANDOM, e -> e.unary(_ -> Mk52Math.rand())),
+    public int getProgramCounter() {
+        return programCounter.get();
+    }
 
-            entry(OpCode.ABS, e -> e.unary(Mk52Math::abs)),
-            entry(OpCode.INTEGER, e -> e.unary(Mk52Math::integer)),
-            entry(OpCode.FRACTIONAL, e -> e.unary(Mk52Math::fractional)),
-            entry(OpCode.MAX, e -> e.binaryKeepY(Mk52Math::max)),
-            entry(OpCode.SIGNUM, e -> e.unary(Mk52Math::signum)),
+    public void setTrigonometricMode(TrigonometricMode trigonometricMode) {
+        this.trigonometricMode.set(trigonometricMode);
+    }
 
-            // Тригонометрия
-            entry(OpCode.SIN, e -> e.unary(x -> Mk52Math.sin(x, e.getTrigonometricMode()))),
-            entry(OpCode.ASIN, e -> e.unary(x -> Mk52Math.asin(x, e.getTrigonometricMode()))),
-            entry(OpCode.COS, e -> e.unary(x -> Mk52Math.cos(x, e.getTrigonometricMode()))),
-            entry(OpCode.ACOS, e -> e.unary(x -> Mk52Math.acos(x, e.getTrigonometricMode()))),
-            entry(OpCode.TAN, e -> e.unary(x -> Mk52Math.tan(x, e.getTrigonometricMode()))),
-            entry(OpCode.ATAN, e -> e.unary(x -> Mk52Math.atan(x, e.getTrigonometricMode())))
-    );
+    public void reset() {
+        programCounter.set(0);
+        stack.reset();
+        registers.reset();
+        callStack.clear();
+    }
 
-    public static boolean execute(OpCode opCode, Engine engine) {
-        System.out.println("Executing: " + opCode);
+    public void step() {
+        step(true);
+    }
 
+    private boolean step(boolean single) {
+        var instruction = programMemory.fetchInstruction(programCounter);
+        return execute(instruction, single);
+    }
+
+    public void run() {
+        var cont = true;
+        while (true) {
+            if (!running.get() || !cont) {
+                running.set(false);
+                stepCallback.after(new StepExecutionResult(stack.x().asString()));
+                break;
+            }
+            cont = step(false);
+        }
+    }
+
+    private void sleep(Duration duration) {
+        try {
+            Thread.sleep(duration);
+        } catch (Exception ex) {
+            //
+        }
+    }
+
+    public void stepLeft() {
+        programCounter.decrementAndGet();
+    }
+
+    public void stepRight() {
+        programCounter.incrementAndGet();
+    }
+
+    public void storeCode(int code) {
+        programMemory.storeCode(programCounter, code);
+    }
+
+    private void store(int index) {
+        registers.store(index, stack.x());
+    }
+
+    private void indirectStore(int index) {
+        var indirectIndex = registers.modifyAndGetRegisterValue(index);
+        registers.store(indirectIndex, stack.x());
+    }
+
+    private void load(int index) {
+        stack.push();
+        stack.setX(registers.load(index));
+    }
+
+    private void indirectLoad(int index) {
+        var indirectIndex = registers.modifyAndGetRegisterValue(index);
+        stack.push();
+        stack.setX(registers.load(indirectIndex));
+    }
+
+    public void returnTo0() {
+        programCounter.set(0);
+    }
+
+    private void goTo(int pc) {
+        programCounter.set(pc);
+    }
+
+    private void goSub(int pc) {
+        callStack.push(programCounter.get());
+        goTo(pc);
+    }
+
+    public void returnFromSubroutine() {
+        stack.x();
+        var newPc = callStack.poll();
+        if (newPc != null) {
+            goTo(newPc);
+        }
+    }
+
+    private void conditionalGoto(int pc, Predicate<Value> predicate) {
+        var condition = predicate.test(stack.x());
+        if (!condition) {
+            goTo(pc);
+        }
+    }
+
+    private void indirectGoto(int register) {
+        var indirect = registers.modifyAndGetRegisterValue(register);
+        programCounter.set(indirect);
+    }
+
+    private void loop(int pc, int register) {
+        var counter = registers.modifyAndGetRegisterValue(register);
+        if (counter != 0) {
+            programCounter.set(pc);
+        }
+    }
+
+    private void conditionalIndirectGoto(int register, Predicate<Value> predicate) {
+        var condition = predicate.test(stack.x());
+        if (!condition) {
+            indirectGoto(register);
+        }
+    }
+
+    private void indirectGoSub(int register) {
+        var indirect = registers.modifyAndGetRegisterValue(register);
+        goSub(indirect);
+    }
+
+    private boolean execute(OpCode opCode) {
         if (opCode.inRange(OpCode.STORE_R0, OpCode.STORE_RE)) {
-            engine.store(opCode.getRegisterIndex());
+            store(opCode.getRegisterIndex());
         } else if (opCode.inRange(OpCode.LOAD_R0, OpCode.LOAD_RE)) {
-            engine.load(opCode.getRegisterIndex());
+            load(opCode.getRegisterIndex());
         } else if (opCode.inRange(OpCode.IND_STORE_R0, OpCode.IND_STORE_RE)) {
-            engine.indirectStore(opCode.getRegisterIndex());
+            indirectStore(opCode.getRegisterIndex());
         } else if (opCode.inRange(OpCode.IND_LOAD_R0, OpCode.IND_LOAD_RE)) {
-            engine.indirectLoad(opCode.getRegisterIndex());
+            indirectLoad(opCode.getRegisterIndex());
         } else if (opCode.inRange(OpCode.GOTO_R0, OpCode.GOTO_RE)) {
-            engine.indirectGoto(opCode.getRegisterIndex());
+            indirectGoto(opCode.getRegisterIndex());
         } else if (opCode.inRange(OpCode.GOTO_LT_0_R0, OpCode.GOTO_LT_0_RE)) {
-            engine.conditionalIndirectGoto(opCode.getRegisterIndex(), LT_0);
+            conditionalIndirectGoto(opCode.getRegisterIndex(), LT_0);
         } else if (opCode.inRange(OpCode.GOTO_EQ_0_R0, OpCode.GOTO_EQ_0_RE)) {
-            engine.conditionalIndirectGoto(opCode.getRegisterIndex(), EQ_0);
+            conditionalIndirectGoto(opCode.getRegisterIndex(), EQ_0);
         } else if (opCode.inRange(OpCode.GOTO_GE_0_R0, OpCode.GOTO_GE_0_RE)) {
-            engine.conditionalIndirectGoto(opCode.getRegisterIndex(), GE_0);
+            conditionalIndirectGoto(opCode.getRegisterIndex(), GE_0);
         } else if (opCode.inRange(OpCode.GOTO_NE_0_R0, OpCode.GOTO_NE_0_RE)) {
-            engine.conditionalIndirectGoto(opCode.getRegisterIndex(), NE_0);
+            conditionalIndirectGoto(opCode.getRegisterIndex(), NE_0);
         } else if (opCode.inRange(OpCode.GOSUB_R0, OpCode.GOSUB_RE)) {
-            engine.indirectGoSub(opCode.getRegisterIndex());
+            indirectGoSub(opCode.getRegisterIndex());
         } else if (opCode == OpCode.RETURN) {
-            engine.returnFromSubroutine();
+            returnFromSubroutine();
         } else if (opCode == OpCode.STOP_RUN) {
+            stack.x();
             return false;
         } else {
-            var operation = OPERATIONS.get(opCode);
-            if (operation == null) {
-                return false;
-            }
+            switch (opCode) {
+                case OpCode.ZERO -> stack.addCharacter('0');
+                case OpCode.ONE -> stack.addCharacter('1');
+                case OpCode.TWO -> stack.addCharacter('2');
+                case OpCode.THREE -> stack.addCharacter('3');
+                case OpCode.FOUR -> stack.addCharacter('4');
+                case OpCode.FIVE -> stack.addCharacter('5');
+                case OpCode.SIX -> stack.addCharacter('6');
+                case OpCode.SEVEN -> stack.addCharacter('7');
+                case OpCode.EIGHT -> stack.addCharacter('8');
+                case OpCode.NINE -> stack.addCharacter('9');
+                case OpCode.DOT -> stack.addCharacter('.');
+                case OpCode.SIGN -> {
+                    if (stack.numberBuffer().isInProgress()) {
+                        stack.addCharacter('-');
+                    } else {
+                        stack.unaryOperation(Mk52Math::negate);
+                    }
+                }
 
-            operation.handle(engine);
+                case OpCode.ENTER_EXPONENT -> stack.enterExponent();
+
+                case OpCode.PUSH -> stack.push();
+                case OpCode.SWAP -> stack.swap();
+                case OpCode.ROTATE -> stack.rotate();
+                case OpCode.RESTORE_X -> stack.restoreX();
+                case OpCode.CLEAR_X -> stack.unaryOperation(_ -> Value.ZERO);
+
+                // Арифметика
+                case OpCode.ADD -> stack.binaryOperation(Mk52Math::add);
+                case OpCode.SUBTRACT -> stack.binaryOperation(Mk52Math::subtract);
+                case OpCode.MULTIPLY -> stack.binaryOperation(Mk52Math::multiply);
+                case OpCode.DIVIDE -> stack.binaryOperation(Mk52Math::divide);
+
+                // Логические операции
+                case OpCode.INVERSION -> stack.unaryOperation(Mk52Math::inversion);
+                case OpCode.AND -> stack.binaryKeepYOperation(Mk52Math::and);
+                case OpCode.OR -> stack.binaryKeepYOperation(Mk52Math::or);
+                case OpCode.XOR -> stack.binaryKeepYOperation(Mk52Math::xor);
+
+                case OpCode.SQRT -> stack.unaryOperation(Mk52Math::sqrt);
+                case OpCode.SQR -> stack.unaryOperation(Mk52Math::sqr);
+                case OpCode.POWER_OF_TEN -> stack.unaryOperation(Mk52Math::pow10);
+                case OpCode.LG -> stack.unaryOperation(Mk52Math::lg);
+                case OpCode.LN -> stack.unaryOperation(Mk52Math::ln);
+                case OpCode.EXP -> stack.unaryOperation(Mk52Math::exp);
+                case OpCode.ONE_BY_X -> stack.unaryOperation(Mk52Math::oneByX);
+                case OpCode.POWER_OF_X -> stack.binaryKeepYOperation(Mk52Math::pow);
+                case OpCode.PI -> {
+                    stack.push();
+                    stack.addCharacters("3.1415926".toCharArray());
+                }
+                case OpCode.RANDOM -> stack.unaryOperation(_ -> Mk52Math.rand());
+
+                case OpCode.ABS -> stack.unaryOperation(Mk52Math::abs);
+                case OpCode.INTEGER -> stack.unaryOperation(Mk52Math::integer);
+                case OpCode.FRACTIONAL -> stack.unaryOperation(Mk52Math::fractional);
+                case OpCode.MAX -> stack.binaryKeepYOperation(Mk52Math::max);
+                case OpCode.SIGNUM -> stack.unaryOperation(Mk52Math::signum);
+
+                // Тригонометрия
+                case OpCode.SIN -> stack.unaryOperation(x -> Mk52Math.sin(x, trigonometricMode.get()));
+                case OpCode.ASIN -> stack.unaryOperation(x -> Mk52Math.asin(x, trigonometricMode.get()));
+                case OpCode.COS -> stack.unaryOperation(x -> Mk52Math.cos(x, trigonometricMode.get()));
+                case OpCode.ACOS -> stack.unaryOperation(x -> Mk52Math.acos(x, trigonometricMode.get()));
+                case OpCode.TAN -> stack.unaryOperation(x -> Mk52Math.tan(x, trigonometricMode.get()));
+                case OpCode.ATAN -> stack.unaryOperation(x -> Mk52Math.atan(x, trigonometricMode.get()));
+            }
         }
         return true;
     }
 
-    public static boolean execute(Instruction instruction, Engine engine) {
-        var opCode = instruction.opCode();
-        if (opCode.size() == 2) {
-            System.out.println("Executing: " + instruction);
+    public void execute(Instruction instruction) {
+        execute(instruction, true);
+    }
 
+    private boolean execute(Instruction instruction, boolean single) {
+        if (async) {
+            sleep(Duration.of(20, ChronoUnit.MILLIS));
+        }
+
+        stepCallback.before();
+
+        var opCode = instruction.opCode();
+        var cont = true;
+        if (opCode.size() == 2) {
             var address = instruction.address() / 16 * 10 + instruction.address() % 16;
             if (opCode == OpCode.GOTO) {
-                engine.goTo(address);
+                goTo(address);
             } else if (opCode == OpCode.GOSUB) {
-                engine.goSub(address);
+                goSub(address);
             } else if (opCode.inRange(OpCode.L0, OpCode.L3)) {
-                engine.loop(address, opCode.getRegisterIndex());
+                loop(address, opCode.ordinal() - OpCode.L0.ordinal());
             } else if (opCode == OpCode.X_LT_0) {
-                engine.conditionalGoto(address, LT_0);
+                conditionalGoto(address, LT_0);
             } else if (opCode == OpCode.X_EQ_0) {
-                engine.conditionalGoto(address, EQ_0);
+                conditionalGoto(address, EQ_0);
             } else if (opCode == OpCode.X_GE_0) {
-                engine.conditionalGoto(address, GE_0);
+                conditionalGoto(address, GE_0);
             } else if (opCode == OpCode.X_NE_0) {
-                engine.conditionalGoto(address, NE_0);
+                conditionalGoto(address, NE_0);
             }
-            return true;
         } else {
-            return execute(opCode, engine);
+            cont =  execute(opCode);
         }
+
+        if (async) {
+            sleep(instruction.opCode().duration());
+        }
+
+        if (single) {
+            running.set(false);
+        }
+        stepCallback.after(new StepExecutionResult(stack.getStringValue()));
+        return cont;
     }
 }

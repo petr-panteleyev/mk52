@@ -7,6 +7,8 @@ package org.panteleyev.mk52.engine;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
+import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;
+
 @SuppressWarnings("SuspiciousNameCombination")
 class Stack {
     private Value x = Value.ZERO;
@@ -146,12 +148,8 @@ class Stack {
     }
 
     public String getStringValue() {
-        var strValue = numberBuffer.isInProgress()? numberBuffer.getBuffer() : x.asString();
-        var padLength = 13 - strValue.length();
+        var strValue = numberBuffer.isInProgress() ? numberBuffer.getBuffer() : x.asString();
+        var padLength = DISPLAY_SIZE - strValue.length();
         return strValue + " ".repeat(padLength);
-    }
-
-    void printStack() {
-        System.out.println("x = " + getStringValue() + "\ny = " + y.asString() + "\nz = " + z.asString());
     }
 }
