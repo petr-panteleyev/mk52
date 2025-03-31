@@ -17,8 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;
-import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
-import static org.panteleyev.mk52.engine.Constants.INITIAL_DISPLAY;
 import static org.panteleyev.mk52.engine.KeyboardButton.BUTTON_TO_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_EXCHANGE;
@@ -55,7 +53,7 @@ public final class Engine {
     private final StepExecutionCallback stepCallback = new StepExecutionCallback() {
         @Override
         public void before() {
-            displayUpdateCallback.updateDisplay(EMPTY_DISPLAY, null, true);
+            displayUpdateCallback.clearDisplay();
         }
 
         @Override
@@ -86,22 +84,30 @@ public final class Engine {
     private Value eepromAddressValue = null;
 
     private final DisplayUpdateCallback displayUpdateCallback;
+    private final MemoryUpdateCallback memoryUpdateCallback;
 
     public Engine(boolean async, DisplayUpdateCallback displayUpdateCallback) {
+        this(async, displayUpdateCallback, MemoryUpdateCallback.NOOP);
+    }
+
+    public Engine(boolean async, DisplayUpdateCallback displayUpdateCallback,
+            MemoryUpdateCallback memoryUpdateCallback) {
         this.async = async;
         this.processor = new Processor(async, stack, registers, running, operationMode, lastExecutedOpCode,
                 stepCallback);
         this.displayUpdateCallback = displayUpdateCallback;
+        this.memoryUpdateCallback = memoryUpdateCallback;
         init();
     }
 
     public void init() {
         operationMode.set(OperationMode.EXECUTION);
         keyboardMode = KeyboardMode.NORMAL;
-
         processor.reset();
+    }
 
-        displayUpdateCallback.updateDisplay(INITIAL_DISPLAY, null, false);
+    public int[] getMemoryBytes() {
+        return processor.getProgramMemory().getMemoryBytes();
     }
 
     public void processButton(KeyboardButton button) {
@@ -283,8 +289,6 @@ public final class Engine {
             powered = true;
         }
         if (!on) {
-            // turn off display
-            displayUpdateCallback.updateDisplay(EMPTY_DISPLAY, null, false);
             powered = false;
         }
     }
@@ -322,11 +326,15 @@ public final class Engine {
 
     public void storeCode(int code) {
         running.set(true);
+        var pc = processor.getProgramCounter();
+
         if (async) {
             processorExecutor.execute(() -> processor.storeCode(code));
         } else {
             processor.storeCode(code);
         }
+
+        memoryUpdateCallback.store(pc, code);
     }
 
     private void handleEepromOperation() {
@@ -359,5 +367,10 @@ public final class Engine {
 
     public void setEepromMode(EepromMode eepromMode) {
         this.eepromMode = eepromMode;
+    }
+
+    public void loadMemoryBytes(int[] bytes) {
+        processor.getProgramMemory().storeCodes(bytes);
+        memoryUpdateCallback.store(bytes);
     }
 }

@@ -92,4 +92,18 @@ public class ProgramMemory {
             memory[pc.getAndIncrement()] = code;
         }
     }
+
+    public void storeCodes(int[] codes) {
+        synchronized (memory) {
+            System.arraycopy(codes, 0, memory, 0, codes.length);
+        }
+    }
+
+    public int[] getMemoryBytes() {
+        synchronized (memory) {
+            var copy = new int[PROGRAM_MEMORY_SIZE];
+            System.arraycopy(memory, 0, copy, 0, PROGRAM_MEMORY_SIZE);
+            return copy;
+        }
+    }
 }

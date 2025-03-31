@@ -75,14 +75,14 @@
 
 .fLabel {
     -fx-text-fill: yellow;
-    -fx-font-weight: bolder;
+    -fx-font-weight: bold;
     -fx-font-size: medium;
     -fx-font-family: 'JetBrains Mono';
 }
 
 .kLabel {
     -fx-text-fill: lightblue;
-    -fx-font-weight: bolder;
+    -fx-font-weight: bold;
     -fx-font-size: medium;
     -fx-font-family: 'JetBrains Mono';
 }
@@ -149,9 +149,23 @@
     -fx-font-size: 20;
 }
 
+.registerContentHighlighted {
+    -fx-font-family: 'JetBrains Mono';
+    -fx-text-fill: red;
+    -fx-font-weight: bold;
+    -fx-font-size: 20;
+}
+
 .registerContent {
     -fx-font-family: 'JetBrains Mono';
     -fx-background-color: #283f37;
     -fx-text-fill: lightgreen;
     -fx-font-size: 20;
+}
+
+.memoryPanel {
+    -fx-background-color: #363942;
+    -fx-background-radius: 10;
+    -fx-background-insets: 0;
+    -fx-padding: 10 10 10 10;
 }

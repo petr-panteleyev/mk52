@@ -30,7 +30,7 @@ public record Value(double value, ValueMode mode, int logicalLength) {
     }
 
     public String asString() {
-        if (Double.isInfinite(value) || Double.isNaN(value)) {
+        if (invalid()) {
             return ERROR_MSG;
         }
 
@@ -86,9 +86,22 @@ public record Value(double value, ValueMode mode, int logicalLength) {
         }
     }
 
+    public Value toNormal() {
+        if (mode == ValueMode.ADDRESS) {
+            return new Value(value, ValueMode.NORMAL, logicalLength);
+        } else {
+            return this;
+        }
+    }
+
     private void removeZeroExponent(StringBuilder sb) {
         if (sb.toString().endsWith("00")) {
             sb.setLength(sb.length() - 3);
         }
+    }
+
+
+    public boolean invalid() {
+        return Double.isNaN(value) || Double.isInfinite(value);
     }
 }

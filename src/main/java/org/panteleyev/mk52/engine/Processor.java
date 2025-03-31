@@ -63,6 +63,14 @@ final class Processor {
         this.stepCallback = stepCallback;
     }
 
+    public int getProgramCounter() {
+        return programCounter.get();
+    }
+
+    public ProgramMemory getProgramMemory() {
+        return programMemory;
+    }
+
     public void setTrigonometricMode(TrigonometricMode trigonometricMode) {
         this.trigonometricMode.set(trigonometricMode);
     }
@@ -89,7 +97,7 @@ final class Processor {
     public void run() {
         var cont = true;
         while (true) {
-            if (!running.get() || !cont) {
+            if (!running.get() || !cont || stack.xOrBuffer().invalid()) {
                 running.set(false);
                 stepCallback.after(newStepExecutionResult(stack.x().asString()));
                 break;
@@ -169,7 +177,9 @@ final class Processor {
 
     private void loop(int pc, int register) {
         var counter = registers.modifyAndGetRegisterValue(register);
-        if (counter != 0) {
+        if (counter == 0) {
+            registers.store(register, new Value(1, Value.ValueMode.ADDRESS, 0));
+        } else {
             programCounter.set(pc);
         }
     }

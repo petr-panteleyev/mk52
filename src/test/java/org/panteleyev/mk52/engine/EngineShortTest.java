@@ -83,7 +83,7 @@ public class EngineShortTest extends BaseTest {
                 argumentSet("18:" + PASS, (Consumer<Engine>) engine -> {
                     engine.setEepromOperation(EepromOperation.READ);
                 }, List.of(), " 3.1415926   "),
-                argumentSet("19:" + PASS, POWEROFF, List.of(), "             "),
+                argumentSet("19:" + PASS, POWEROFF, List.of(), " 3.1415926   "),
                 argumentSet("20:" + PASS, (Consumer<Engine>) engine -> {
                     engine.togglePower(true);
                     engine.setEepromOperation(EepromOperation.READ);

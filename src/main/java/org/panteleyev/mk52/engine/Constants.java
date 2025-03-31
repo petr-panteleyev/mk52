@@ -12,6 +12,8 @@ public final class Constants {
     public static final String EMPTY_DISPLAY = " ".repeat(DISPLAY_SIZE);
     public static final String INITIAL_DISPLAY = " 0." + " ".repeat(DISPLAY_SIZE - 3);
 
+    public static final String EMPTY_STRING = "";
+
     public static final int MANTISSA_SIZE = 8;
 
     public static final int MANTISSA_SIGN_POSITION = 0;

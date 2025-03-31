@@ -66,7 +66,11 @@ final class Mk52Math {
     }
 
     public static Value pow(Value x, Value y) {
-        return new Value(Math.pow(x.value(), y.value()));
+        if (x.value() < 0) {
+            return new Value(Double.NaN);
+        } else {
+            return new Value(Math.pow(x.value(), y.value()));
+        }
     }
 
     public static Value abs(Value x) {
@@ -170,7 +174,7 @@ final class Mk52Math {
     public static Value hoursMinutesSecondsToDegrees(Value x) {
         var hhMmSs = Converter.toHoursMinutesSeconds(x);
         var result = toBigDecimal(hhMmSs.hours())
-                .add(toBigDecimal(hhMmSs.minutes()).divide(SIXTY,  MANTISSA_SIZE, RoundingMode.FLOOR))
+                .add(toBigDecimal(hhMmSs.minutes()).divide(SIXTY, MANTISSA_SIZE, RoundingMode.FLOOR))
                 .add(toBigDecimal(hhMmSs.seconds()).divide(D_3600, MANTISSA_SIZE, RoundingMode.FLOOR));
 
         return new Value(downScale(result).doubleValue());

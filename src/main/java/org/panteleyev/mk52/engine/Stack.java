@@ -44,7 +44,9 @@ class Stack {
             x = numberBuffer.getValue();
         }
 
-        return x;
+        var tmp = x;
+        x = x.toNormal();
+        return tmp;
     }
 
     Value xOrBuffer() {
@@ -76,7 +78,8 @@ class Stack {
 
         t = z;
         z = y;
-        y = x;
+        y = x.toNormal();
+        x = x.toNormal();
     }
 
     void rotate() {
@@ -84,11 +87,12 @@ class Stack {
             x = numberBuffer.getValue();
         }
 
-        var tempX = x;
+        var tempX = x.toNormal();
         x = y;
         y = z;
         z = t;
         t = tempX;
+        x1 = tempX;
     }
 
     void swap() {
@@ -96,9 +100,10 @@ class Stack {
             x = numberBuffer.getValue();
         }
 
-        var tempX = x;
+        var tempX = x.toNormal();
         x = y;
         y = tempX;
+        x1 = tempX;
     }
 
     void restoreX() {
@@ -117,7 +122,7 @@ class Stack {
             x = numberBuffer.getValue();
         }
 
-        x1 = x;
+        x1 = x.toNormal();
         x = operation.apply(x);
     }
 
@@ -126,7 +131,7 @@ class Stack {
             x = numberBuffer.getValue();
         }
 
-        x1 = x;
+        x1 = x.toNormal();
         x = operation.apply(x, y);
         y = z;
         z = t;

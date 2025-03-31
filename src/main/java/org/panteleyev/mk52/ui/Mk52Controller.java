@@ -13,11 +13,10 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.controlsfx.control.SegmentedButton;
@@ -27,9 +26,15 @@ import org.panteleyev.mk52.eeprom.EepromOperation;
 import org.panteleyev.mk52.engine.DisplayUpdateCallback;
 import org.panteleyev.mk52.engine.Engine;
 import org.panteleyev.mk52.engine.KeyboardButton;
+import org.panteleyev.mk52.engine.MemoryUpdateCallback;
 import org.panteleyev.mk52.engine.TrigonometricMode;
 import org.panteleyev.mk52.program.StepExecutionResult;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -40,33 +45,59 @@ import static org.panteleyev.fx.MenuFactory.checkMenuItem;
 import static org.panteleyev.fx.MenuFactory.menu;
 import static org.panteleyev.fx.MenuFactory.menuBar;
 import static org.panteleyev.fx.MenuFactory.menuItem;
+import static org.panteleyev.fx.dialogs.FileChooserBuilder.fileChooser;
 import static org.panteleyev.fx.grid.GridBuilder.gridPane;
 import static org.panteleyev.fx.grid.GridRowBuilder.gridRow;
 import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
+import static org.panteleyev.mk52.engine.Constants.INITIAL_DISPLAY;
+import static org.panteleyev.mk52.ui.Accelerators.SHORTCUT_1;
+import static org.panteleyev.mk52.ui.Accelerators.SHORTCUT_2;
 
 public class Mk52Controller extends Controller {
     public static final String APP_TITLE = "МК-52";
 
+    public static final FileChooser.ExtensionFilter EXTENSION_FILTER =
+            new FileChooser.ExtensionFilter("Дамп памяти", "*.txt");
+
     private final DisplayUpdateCallback displayUpdateCallback = new DisplayUpdateCallback() {
+        @Override
+        public void clearDisplay() {
+            Platform.runLater(() -> display.setText(EMPTY_DISPLAY));
+        }
+
         @Override
         public void updateDisplay(String content, StepExecutionResult snapshot, boolean running) {
             Platform.runLater(() -> {
                 display.setOpacity(running ? 0.3 : 1.0);
                 display.setText(content);
-                if (snapshot != null) {
-                    stackAndRegistersPanel.displaySnapshot(snapshot);
-                }
+                stackAndRegistersPanel.displaySnapshot(snapshot);
+                memoryPanel.showPc(snapshot.programCounter());
             });
         }
     };
 
-    private final Engine engine = new Engine(true, displayUpdateCallback);
+    private final MemoryUpdateCallback memoryUpdateCallback = new MemoryUpdateCallback() {
+        @Override
+        public void store(int address, int code) {
+            Platform.runLater(() -> memoryPanel.store(address, code));
+        }
+
+        @Override
+        public void store(int[] codes) {
+            Platform.runLater(() -> memoryPanel.store(codes));
+        }
+    };
+
+    private final StackAndRegistersPanel stackAndRegistersPanel = new StackAndRegistersPanel();
+    private final MemoryPanel memoryPanel = new MemoryPanel();
+
+    private final Engine engine = new Engine(true, displayUpdateCallback, memoryUpdateCallback);
     private final Consumer<KeyboardButton> keyboardButtonConsumer = engine::processButton;
 
     private final Label display = new Label(EMPTY_DISPLAY);
-    private final StackAndRegistersPanel stackAndRegistersPanel = new StackAndRegistersPanel();
 
     private final BorderPane root = new BorderPane();
+    private final VBox toolBox = new VBox(10);
 
     public Mk52Controller(Stage stage) {
         super(stage, "/main.css");
@@ -88,8 +119,8 @@ public class Mk52Controller extends Controller {
         center.setCenter(centerHorizontal);
 
         root.setCenter(center);
-        root.setBottom(stackAndRegistersPanel);
-        BorderPane.setMargin(stackAndRegistersPanel, new Insets(10, 0, 0, 0));
+        root.setBottom(toolBox);
+        BorderPane.setMargin(toolBox, new Insets(10, 0, 0, 0));
 
         setupWindow(root);
         getStage().sizeToScene();
@@ -103,7 +134,13 @@ public class Mk52Controller extends Controller {
     private MenuBar createMenuBar() {
         return menuBar(
                 menu("Файл",
+                        menuItem("Сохранить...", _ -> onSaveMemoryDump()),
+                        menuItem("Загрузить...", _ -> onLoadMemoryDump()),
                         menuItem("Выход", _ -> onExit())
+                ),
+                menu("Инструменты",
+                        checkMenuItem("Регистры и стек", false, SHORTCUT_1, this::onRegistersAndStackPanel),
+                        checkMenuItem("Память", false, SHORTCUT_2, this::onMemoryPanel)
                 ),
                 menu("Справка",
                         menuItem("О программе", _ -> new AboutDialog(this).showAndWait())
@@ -121,9 +158,9 @@ public class Mk52Controller extends Controller {
 
     private GridPane createSwitches() {
         var offButton = new ToggleButton(" ");
-        offButton.setOnAction(_ -> engine.togglePower(false));
+        offButton.setOnAction(_ -> onPowerOff());
         var onButton = new ToggleButton("Вкл");
-        onButton.setOnAction(_ -> engine.togglePower(true));
+        onButton.setOnAction(_ -> onPowerOf());
         var powerSwitch = new SegmentedButton(offButton, onButton);
         onButton.fire();
 
@@ -254,5 +291,80 @@ public class Mk52Controller extends Controller {
 
     private void onExit() {
         getStage().fireEvent(new WindowEvent(getStage(), WindowEvent.WINDOW_CLOSE_REQUEST));
+    }
+
+    private void onRegistersAndStackPanel(ActionEvent event) {
+        if (event.getSource() instanceof CheckMenuItem menuItem) {
+            if (menuItem.isSelected()) {
+                toolBox.getChildren().addFirst(stackAndRegistersPanel);
+            } else {
+                toolBox.getChildren().remove(stackAndRegistersPanel);
+            }
+            getStage().sizeToScene();
+        }
+    }
+
+    private void onMemoryPanel(ActionEvent event) {
+        if (event.getSource() instanceof CheckMenuItem menuItem) {
+            if (menuItem.isSelected()) {
+                toolBox.getChildren().addLast(memoryPanel);
+            } else {
+                toolBox.getChildren().remove(memoryPanel);
+            }
+            getStage().sizeToScene();
+        }
+    }
+
+    private void onSaveMemoryDump() {
+        var file = fileChooser("Сохранить дамп памяти", List.of(EXTENSION_FILTER)).showSaveDialog(getStage());
+        if (file == null) {
+            return;
+        }
+
+        try (var out = new OutputStreamWriter(new FileOutputStream(file))) {
+            var bytes = engine.getMemoryBytes();
+            for (int i = 0; i < bytes.length; i++) {
+                if (i != 0 && i % 10 == 0) {
+                    out.write("\n");
+                }
+                out.write(String.format("%02X ", bytes[i]));
+            }
+            out.flush();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private void onLoadMemoryDump() {
+        var file = fileChooser("Загрузить дамп памяти", List.of(EXTENSION_FILTER)).showOpenDialog(getStage());
+        if (file == null) {
+            return;
+        }
+
+        try {
+            var content = Files.readString(file.toPath());
+            var byteStrings = content.replace("\n", "").split(" ");
+            var codes = new int[byteStrings.length];
+            for (int i = 0; i < codes.length; i++) {
+                codes[i] = Integer.parseInt(byteStrings[i], 16);
+            }
+            engine.loadMemoryBytes(codes);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private void onPowerOf() {
+        engine.togglePower(true);
+        display.setText(INITIAL_DISPLAY);
+        stackAndRegistersPanel.turnOn();
+        memoryPanel.clear();
+    }
+
+    private void onPowerOff() {
+        engine.togglePower(false);
+        display.setText(EMPTY_DISPLAY);
+        stackAndRegistersPanel.turnOff();
+        memoryPanel.turnOff();
     }
 }
