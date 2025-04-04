@@ -9,6 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.panteleyev.mk52.BaseTest;
 
 import java.util.List;
 
@@ -21,12 +22,14 @@ import static org.panteleyev.mk52.engine.KeyboardButton.D3;
 import static org.panteleyev.mk52.engine.KeyboardButton.D4;
 import static org.panteleyev.mk52.engine.KeyboardButton.D5;
 import static org.panteleyev.mk52.engine.KeyboardButton.D6;
+import static org.panteleyev.mk52.engine.KeyboardButton.D7;
 import static org.panteleyev.mk52.engine.KeyboardButton.D8;
 import static org.panteleyev.mk52.engine.KeyboardButton.D9;
 import static org.panteleyev.mk52.engine.KeyboardButton.DOT;
 import static org.panteleyev.mk52.engine.KeyboardButton.K;
 import static org.panteleyev.mk52.engine.KeyboardButton.PLUS;
 import static org.panteleyev.mk52.engine.KeyboardButton.PUSH;
+import static org.panteleyev.mk52.engine.KeyboardButton.SIGN;
 import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 
 @DisplayName("Операции в режиме K")
@@ -82,6 +85,46 @@ public class KOperationsTest extends BaseTest {
                 argumentSet("K o⃗‴", List.of(D2, D0, DOT, D3, D6, D4, D8, K, SWAP), new StackSnapshot(
                         " 20.613333   ",
                         " 0.", " 0.", " 0.", " 20.3648"
+                )),
+                argumentSet("K [12.345]", List.of(D1, D2, DOT, D3, D4, D5, K, D7), new StackSnapshot(
+                        " 12.         ",
+                        " 0.", " 0.", " 0.", " 12.345"
+                )),
+                argumentSet("K [-12.345]", List.of(D1, D2, DOT, D3, D4, D5, SIGN, K, D7), new StackSnapshot(
+                        "-12.         ",
+                        " 0.", " 0.", " 0.", "-12.345"
+                )),
+                argumentSet("K [0.234]", List.of(D0, DOT, D2, D3, D4, K, D7), new StackSnapshot(
+                        " 0.          ",
+                        " 0.", " 0.", " 0.", " 2.34     -01"
+                )),
+                argumentSet("K [-0.234]", List.of(D0, DOT, D2, D3, D4, SIGN, K, D7), new StackSnapshot(
+                        " 0.          ",
+                        " 0.", " 0.", " 0.", "-2.34     -01"
+                )),
+                argumentSet("K {12.345}", List.of(D1, D2, DOT, D3, D4, D5, K, D8), new StackSnapshot(
+                        " 3.45     -01",
+                        " 0.", " 0.", " 0.", " 12.345"
+                )),
+                argumentSet("K {-12.345}", List.of(D1, D2, DOT, D3, D4, D5, SIGN, K, D8), new StackSnapshot(
+                        "-3.45     -01",
+                        " 0.", " 0.", " 0.", "-12.345"
+                )),
+                argumentSet("K {0.234}", List.of(D0, DOT, D2, D3, D4, K, D8), new StackSnapshot(
+                        " 2.34     -01",
+                        " 0.", " 0.", " 0.", " 2.34     -01"
+                )),
+                argumentSet("K {-0.234}", List.of(D0, DOT, D2, D3, D4, SIGN, K, D8), new StackSnapshot(
+                        "-2.34     -01",
+                        " 0.", " 0.", " 0.", "-2.34     -01"
+                )),
+                argumentSet("K |1.234|", List.of(D1, DOT, D2, D3, D4, K, D4), new StackSnapshot(
+                        " 1.234       ",
+                        " 0.", " 0.", " 0.", " 1.234"
+                )),
+                argumentSet("K |-1.234|", List.of(D1, DOT, D2, D3, D4, SIGN, K, D4), new StackSnapshot(
+                        " 1.234       ",
+                        " 0.", " 0.", " 0.", "-1.234"
                 ))
         );
     }

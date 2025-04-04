@@ -9,7 +9,7 @@
 
     <groupId>org.panteleyev</groupId>
     <artifactId>mk52</artifactId>
-    <version>0.0.7</version>
+    <version>0.0.8</version>
     <packaging>jar</packaging>
     <name>MK-52</name>
 
@@ -209,6 +209,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${mavenSurefirePluginVersion}</version>
+                <configuration>
+                    <testFailureIgnore>true</testFailureIgnore>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

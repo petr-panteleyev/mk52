@@ -2,15 +2,19 @@
  Copyright © 2025 Petr Panteleyev <petr@panteleyev.org>
  SPDX-License-Identifier: BSD-2-Clause
  */
-package org.panteleyev.mk52.engine;
+package org.panteleyev.mk52.manual;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.panteleyev.mk52.BaseTest;
 import org.panteleyev.mk52.eeprom.EepromMode;
 import org.panteleyev.mk52.eeprom.EepromOperation;
+import org.panteleyev.mk52.engine.Engine;
+import org.panteleyev.mk52.engine.KeyboardButton;
+import org.panteleyev.mk52.engine.TrigonometricMode;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -51,7 +55,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.STORE;
 import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 
 @DisplayName("Таблица 1a")
-public class EngineFullTest extends BaseTest {
+public class Table1aTest extends BaseTest {
     private static final Engine engine = new Engine(false, (_, _) -> {});
 
     @BeforeAll
@@ -76,15 +80,15 @@ public class EngineFullTest extends BaseTest {
                 argumentSet("8:" + PASS, NOOP, List.of(EE, D2), " 3.1415926 02"),
                 argumentSet("9:" + PASS, NOOP, List.of(SWAP), " 315.07      "),
                 argumentSet("10:" + PASS, NOOP, List.of(MINUS), "-9.1074   -01"),
-                argumentSet("11:" + DIFF, TR_RADIAN, List.of(F, D8), " 6.1316135-01"),
-                argumentSet("12:" + DIFF, TR_GRADIAN, List.of(F, D4), " 42.020491   "),
-                argumentSet("13:" + DIFF, TR_DEGREE, List.of(SIGN), "-42.020491   "),
+                argumentSet("11:" + DIFF, TR_RADIAN, List.of(F, D8), " 6.131614 -01"),
+                argumentSet("12:" + DIFF, TR_GRADIAN, List.of(F, D4), " 42.020499   "),
+                argumentSet("13:" + DIFF, TR_DEGREE, List.of(SIGN), "-42.020499   "),
                 argumentSet("14:" + PASS, NOOP, List.of(D9), " 9.          "),
-                argumentSet("15:" + DIFF, NOOP, List.of(DIVISION), "-4.6689434   "),
-                argumentSet("16:" + DIFF, NOOP, List.of(K, STORE, D6), "-4.6689434   "),
+                argumentSet("15:" + DIFF, NOOP, List.of(DIVISION), "-4.6689443   "),
+                argumentSet("16:" + DIFF, NOOP, List.of(K, STORE, D6), "-4.6689443   "),
                 argumentSet("17:" + PASS, NOOP, List.of(F, PUSH), " 9.          "),
-                argumentSet("18:" + DIFF, NOOP, List.of(LOAD, D1), "-4.6689434   "),
-                argumentSet("19:" + DIFF, NOOP, List.of(MULTIPLICATION), "-42.020491   "),
+                argumentSet("18:" + DIFF, NOOP, List.of(LOAD, D1), "-4.6689443   "),
+                argumentSet("19:" + DIFF, NOOP, List.of(MULTIPLICATION), "-42.020499   "),
                 argumentSet("20:" + PASS, NOOP, List.of(F, EE), "           00"),
                 argumentSet("21:" + PASS, NOOP, List.of(RETURN), "  52       01"),
                 argumentSet("22:" + PASS, NOOP, List.of(F, DOT), "  25 52    02"),
@@ -168,9 +172,9 @@ public class EngineFullTest extends BaseTest {
                 argumentSet("100:" + PASS, NOOP, List.of(RUN_STOP), "  50 60 55 81"),
                 argumentSet("101:" + PASS, NOOP, List.of(D7), "  07 50 60 82"),
                 argumentSet("102:" + PASS, NOOP, List.of(D2), "  02 07 50 83"),
-                argumentSet("103:" + PASS, NOOP, List.of(F, SIGN), "-42.020491   "),
-                argumentSet("104:" + DIFF, NOOP, List.of(GOTO, D2, D4), "-42.020491   "),
-                argumentSet("105:" + DIFF, NOOP, List.of(STEP_LEFT), "-42.020491   "),
+                argumentSet("103:" + DIFF, NOOP, List.of(F, SIGN), "-42.020499   "),
+                argumentSet("104:" + DIFF, NOOP, List.of(GOTO, D2, D4), "-42.020499   "),
+                argumentSet("105:" + DIFF, NOOP, List.of(STEP_LEFT), "-42.020499   "),
                 argumentSet("106:" + PASS, NOOP, List.of(RUN_STOP), " 1.          "),
                 argumentSet("107:" + PASS, NOOP, List.of(STEP_RIGHT), " 1.          "),
                 argumentSet("108:" + PASS, NOOP, List.of(GOSUB), " 2.          "),

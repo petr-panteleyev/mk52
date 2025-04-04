@@ -61,7 +61,7 @@ final class Mk52Math {
     }
 
     public static Value pow10(Value x) {
-        return new DecimalValue(Math.pow(10, x.toDecimal().value()));
+        return new DecimalValue(Math.pow(10.0, x.toDecimal().value()));
     }
 
     public static Value exp(Value x) {
@@ -81,7 +81,7 @@ final class Mk52Math {
     }
 
     public static Value integer(Value x) {
-        return new DecimalValue(Math.ceil(x.toDecimal().value()));
+        return new DecimalValue((int) (x.toDecimal().value()));
     }
 
     public static Value fractional(Value x) {
@@ -153,7 +153,7 @@ final class Mk52Math {
         var ax = x.toByteArray();
         var ay = y.toByteArray();
         for (var i = 0; i < 7; i++) {
-            ax[i] = (byte)(ax[i] & ay[i]);
+            ax[i] = (byte) (ax[i] & ay[i]);
         }
         return toLogicalValue(ax);
     }
@@ -162,7 +162,7 @@ final class Mk52Math {
         var ax = x.toByteArray();
         var ay = y.toByteArray();
         for (var i = 0; i < 7; i++) {
-            ax[i] = (byte)(ax[i] | ay[i]);
+            ax[i] = (byte) (ax[i] | ay[i]);
         }
         return toLogicalValue(ax);
     }
@@ -171,7 +171,7 @@ final class Mk52Math {
         var ax = x.toByteArray();
         var ay = y.toByteArray();
         for (var i = 0; i < 7; i++) {
-            ax[i] = (byte)(ax[i] ^ ay[i]);
+            ax[i] = (byte) (ax[i] ^ ay[i]);
         }
         return toLogicalValue(ax);
     }

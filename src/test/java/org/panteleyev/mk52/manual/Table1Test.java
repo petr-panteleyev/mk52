@@ -2,15 +2,18 @@
  Copyright © 2025 Petr Panteleyev <petr@panteleyev.org>
  SPDX-License-Identifier: BSD-2-Clause
  */
-package org.panteleyev.mk52.engine;
+package org.panteleyev.mk52.manual;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.panteleyev.mk52.BaseTest;
 import org.panteleyev.mk52.eeprom.EepromMode;
 import org.panteleyev.mk52.eeprom.EepromOperation;
+import org.panteleyev.mk52.engine.Engine;
+import org.panteleyev.mk52.engine.KeyboardButton;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -45,7 +48,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.STORE;
 import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 
 @DisplayName("Таблица 1")
-public class EngineShortTest extends BaseTest {
+public class Table1Test extends BaseTest {
     private static final Engine engine = new Engine(false, (_, _) -> {});
 
     @BeforeAll
@@ -62,18 +65,18 @@ public class EngineShortTest extends BaseTest {
                 argumentSet("4:" + PASS, NOOP, List.of(PUSH), " 1.2345678-02"),
                 argumentSet("5:" + PASS, NOOP, List.of(D0, DOT, D9), " 0.9         "),
                 argumentSet("6:" + PASS, NOOP, List.of(MULTIPLICATION), " 1.111111 -02"),
-                argumentSet("7:" + DIFF, TR_DEGREE, List.of(F, D7), " 1.9392546-04"),
+                argumentSet("7:" + DIFF, TR_DEGREE, List.of(F, D7), " 1.9392545-04"),
                 argumentSet("8:" + PASS, TR_GRADIAN, List.of(F, D8), " 1.          "),
-                argumentSet("9:" + DIFF, TR_RADIAN, List.of(F, D9), " 1.5574077   "),
-                argumentSet("10:" + DIFF, NOOP, List.of(STORE, D1), " 1.5574077   "),
+                argumentSet("9:" + DIFF, TR_RADIAN, List.of(F, D9), " 1.5574078   "),
+                argumentSet("10:" + DIFF, NOOP, List.of(STORE, D1), " 1.5574078   "),
                 argumentSet("11:" + PASS, NOOP, List.of(F, PLUS), " 3.1415926   "),
                 argumentSet("12:" + PASS, (Consumer<Engine>) engine -> {
                     engine.setEepromOperation(EepromOperation.ERASE);
                     engine.setEepromMode(EepromMode.PROGRAM);
                 }, List.of(EEPROM_ADDRESS), " 3.1415926   "),
                 argumentSet("13:" + PASS, NOOP, List.of(EEPROM_EXCHANGE), " 3.1415926   "),
-                argumentSet("14:" + DIFF, NOOP, List.of(F, D2), " 4.9714987-01"),
-                argumentSet("15:" + DIFF, NOOP, List.of(STORE, D2), " 4.9714987-01"),
+                argumentSet("14:" + DIFF, NOOP, List.of(F, D2), " 4.9714983-01"),
+                argumentSet("15:" + DIFF, NOOP, List.of(STORE, D2), " 4.9714983-01"),
                 argumentSet("16:" + PASS, NOOP, List.of(F, PLUS), " 3.1415926   "),
                 argumentSet("17:" + PASS, (Consumer<Engine>) engine -> {
                     engine.setEepromOperation(EepromOperation.WRITE);
@@ -89,8 +92,8 @@ public class EngineShortTest extends BaseTest {
                 }, List.of(F, PLUS), " 3.1415926   "),
                 argumentSet("21:" + PASS, NOOP, List.of(EEPROM_ADDRESS), " 3.1415926   "),
                 argumentSet("22:" + PASS, NOOP, List.of(EEPROM_EXCHANGE), " 3.1415926   "),
-                argumentSet("23:" + DIFF, NOOP, List.of(LOAD, D1), " 1.5574077   "),
-                argumentSet("24:" + DIFF, NOOP, List.of(LOAD, D2), " 4.9714987-01"),
+                argumentSet("23:" + DIFF, NOOP, List.of(LOAD, D1), " 1.5574078   "),
+                argumentSet("24:" + DIFF, NOOP, List.of(LOAD, D2), " 4.9714983-01"),
                 argumentSet("25:" + PASS, NOOP, List.of(F, EE), "           00"),
                 argumentSet("26:" + PASS, NOOP, List.of(K, D9), "  36       01"),
                 argumentSet("27:" + PASS, NOOP, List.of(K, D4), "  31 36    02"),
@@ -100,9 +103,9 @@ public class EngineShortTest extends BaseTest {
                 argumentSet("31:" + PASS, NOOP, List.of(F, GOSUB), "  5A 38 24 06"),
                 argumentSet("32:" + PASS, NOOP, List.of(D0, D4), "  04 5A 38 07"),
                 argumentSet("33:" + PASS, NOOP, List.of(RUN_STOP), "  50 04 5A 08"),
-                argumentSet("34:" + DIFF, NOOP, List.of(F, SIGN), " 4.9714987-01"),
-                argumentSet("35:" + DIFF, NOOP, List.of(RETURN), " 4.9714987-01"),
-                argumentSet("36:" + DIFF, NOOP, List.of(RUN_STOP), " 8.DD764F7   ")
+                argumentSet("34:" + DIFF, NOOP, List.of(F, SIGN), " 4.9714983-01"),
+                argumentSet("35:" + DIFF, NOOP, List.of(RETURN), " 4.9714983-01"),
+                argumentSet("36:" + DIFF, NOOP, List.of(RUN_STOP), " 8.DD76578   ")
         );
     }
 

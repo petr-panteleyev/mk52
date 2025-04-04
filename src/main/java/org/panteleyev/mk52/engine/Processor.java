@@ -20,10 +20,18 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static org.panteleyev.mk52.engine.Constants.CALL_STACK_SIZE;
+import static org.panteleyev.mk52.engine.Constants.ERROR_DISPLAY;
+import static org.panteleyev.mk52.engine.Constants.PROGRAM_MEMORY_SIZE;
 import static org.panteleyev.mk52.engine.Constants.STORE_CODE_DURATION;
 import static org.panteleyev.mk52.engine.Constants.TURN_OFF_DISPLAY_DELAY;
 
 final class Processor {
+    private enum ExecutionStatus {
+        STOP,
+        CONTINUE,
+        ERROR
+    }
+
     private static final Predicate<Value> LT_0 = v -> v.toDecimal().value() < 0;
     private static final Predicate<Value> EQ_0 = v -> v.toDecimal().value() == 0;
     private static final Predicate<Value> GE_0 = v -> v.toDecimal().value() >= 0;
@@ -86,23 +94,27 @@ final class Processor {
         step(true);
     }
 
-    private boolean step(boolean single) {
+    private ExecutionStatus step(boolean single) {
         var instruction = memory.fetchInstruction(programCounter);
         fetchedInstruction.set(true);
-        var result = execute(instruction, single);
+        var status = execute(instruction, single);
         fetchedInstruction.set(false);
-        return result;
+        return status;
     }
 
     public void run() {
-        var cont = true;
+        var status = ExecutionStatus.CONTINUE;
         while (true) {
-            if (!running.get() || !cont || stack.xOrBuffer().invalid()) {
+            if (!running.get() || status != ExecutionStatus.CONTINUE || stack.xOrBuffer().invalid()) {
                 running.set(false);
-                stepCallback.after(newStepExecutionResult(stack.x().asString()));
+                if (status == ExecutionStatus.ERROR) {
+                    stepCallback.after(newStepExecutionResult(ERROR_DISPLAY));
+                } else {
+                    stepCallback.after(newStepExecutionResult(stack.x().asString()));
+                }
                 break;
             }
-            cont = step(false);
+            status = step(false);
         }
     }
 
@@ -115,11 +127,15 @@ final class Processor {
     }
 
     private void stepLeft() {
-        programCounter.decrementAndGet();
+        if (programCounter.get() > 0) {
+            programCounter.decrementAndGet();
+        }
     }
 
     private void stepRight() {
-        programCounter.incrementAndGet();
+        if (programCounter.get() < PROGRAM_MEMORY_SIZE - 1) {
+            programCounter.incrementAndGet();
+        }
     }
 
     private void store(int index) {
@@ -196,7 +212,7 @@ final class Processor {
         goSub(indirect);
     }
 
-    private boolean execute(OpCode opCode) {
+    private ExecutionStatus execute(OpCode opCode) {
         if (opCode.inRange(OpCode.STORE_R0, OpCode.STORE_RE)) {
             store(opCode.getRegisterIndex());
         } else if (opCode.inRange(OpCode.LOAD_R0, OpCode.LOAD_RE)) {
@@ -225,7 +241,7 @@ final class Processor {
             }
         } else if (opCode == OpCode.STOP_RUN) {
             stack.x();
-            return false;
+            return ExecutionStatus.STOP;
         } else {
             switch (opCode) {
                 // Инструкции эмулятора
@@ -308,14 +324,14 @@ final class Processor {
                 case OpCode.DEG_TO_HH_MM_SS -> stack.unaryOperation(Mk52Math::degreesToHoursMinutesSeconds);
             }
         }
-        return true;
+        return ExecutionStatus.CONTINUE;
     }
 
     public void execute(Instruction instruction) {
         execute(instruction, true);
     }
 
-    private boolean execute(Instruction instruction, boolean single) {
+    private ExecutionStatus execute(Instruction instruction, boolean single) {
         if (async) {
             sleep(TURN_OFF_DISPLAY_DELAY);
         }
@@ -323,7 +339,7 @@ final class Processor {
         stepCallback.before();
 
         var opCode = instruction.opCode();
-        var cont = true;
+        var status = ExecutionStatus.CONTINUE;
         if (opCode.hasAddress()) {
             var address = instruction.address() / 16 * 10 + instruction.address() % 16;
             if (opCode == OpCode.GOTO) {
@@ -342,7 +358,11 @@ final class Processor {
                 conditionalGoto(address, NE_0);
             }
         } else {
-            cont = execute(opCode);
+            try {
+                status = execute(opCode);
+            } catch (ArithmeticException ex) {
+                status = ExecutionStatus.ERROR;
+            }
         }
 
         lastExecutedOpCode.set(opCode);
@@ -355,8 +375,12 @@ final class Processor {
             running.set(false);
         }
 
-        stepCallback.after(newStepExecutionResult(getCurrentDisplay()));
-        return cont;
+        if (status == ExecutionStatus.ERROR) {
+            stepCallback.after(newStepExecutionResult(ERROR_DISPLAY));
+        } else {
+            stepCallback.after(newStepExecutionResult(getCurrentDisplay()));
+        }
+        return status;
     }
 
     public String getCurrentDisplay() {

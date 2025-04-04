@@ -126,7 +126,13 @@ class Stack {
         }
 
         x1 = x.toNormal();
-        x = operation.apply(x);
+
+        var result = operation.apply(x);
+        if (result.invalid()) {
+            throw new ArithmeticException("Error");
+        }
+
+        x = result;
     }
 
     void binaryOperation(BinaryOperator<Value> operation) {
@@ -135,7 +141,13 @@ class Stack {
         }
 
         x1 = x.toNormal();
-        x = operation.apply(x, y);
+
+        var result = operation.apply(x, y);
+        if (result.invalid()) {
+            throw new ArithmeticException("Error");
+        }
+
+        x = result;
         y = z;
         z = t;
     }
@@ -146,7 +158,13 @@ class Stack {
         }
 
         x1 = x;
-        x = operation.apply(x, y);
+
+        var result = operation.apply(x, y);
+        if (result.invalid()) {
+            throw new ArithmeticException("Error");
+        }
+
+        x = result;
     }
 
     void addCharacter(char c) {

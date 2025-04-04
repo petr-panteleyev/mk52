@@ -22,8 +22,8 @@ public class ValueTest {
 
     private static List<Arguments> testAsString() {
         return List.of(
-                Arguments.of(new DecimalValue(Double.NaN), "EDDOD"),
-                Arguments.of(new DecimalValue(1.0 / 0.0), "EDDOD"),
+                Arguments.of(new DecimalValue(Double.NaN), " EDDOD"),
+                Arguments.of(new DecimalValue(1.0 / 0.0), " EDDOD"),
                 Arguments.of(DecimalValue.ZERO, " 0."),
                 Arguments.of(new DecimalValue(0), " 0."),
                 Arguments.of(DecimalValue.PI, " 3.1415926"),

@@ -13,6 +13,10 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.input.KeyCharacterCombination;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
@@ -121,6 +125,8 @@ public class Mk52Controller extends Controller {
         setupWindow(root);
         getStage().sizeToScene();
 
+        setupAccelerators();
+
         files().read(ApplicationFiles.AppFile.EEPROM, engine::importEeprom);
     }
 
@@ -157,33 +163,43 @@ public class Mk52Controller extends Controller {
     private GridPane createSwitches() {
         var offButton = new ToggleButton(" ");
         offButton.setOnAction(_ -> onPowerOff());
+        offButton.setFocusTraversable(false);
         var onButton = new ToggleButton("Вкл");
         onButton.setOnAction(_ -> onPowerOn());
+        onButton.setFocusTraversable(false);
         var powerSwitch = new SegmentedButton(offButton, onButton);
         onButton.fire();
 
         var eraseButton = new ToggleButton("С");
         eraseButton.setOnAction(_ -> engine.setEepromOperation(EepromOperation.ERASE));
+        eraseButton.setFocusTraversable(false);
         var writeButton = new ToggleButton("З");
         writeButton.setOnAction(_ -> engine.setEepromOperation(EepromOperation.WRITE));
+        writeButton.setFocusTraversable(false);
         var readButton = new ToggleButton("СЧ");
         readButton.setOnAction(_ -> engine.setEepromOperation(EepromOperation.READ));
+        readButton.setFocusTraversable(false);
         var eepromModeSwitch = new SegmentedButton(eraseButton, writeButton, readButton);
         readButton.fire();
 
         var radianButton = new ToggleButton("Р");
         radianButton.setOnAction(_ -> engine.setTrigonometricMode(TrigonometricMode.RADIAN));
+        radianButton.setFocusTraversable(false);
         var gRadianButton = new ToggleButton("ГРД");
         gRadianButton.setOnAction(_ -> engine.setTrigonometricMode(TrigonometricMode.GRADIAN));
+        gRadianButton.setFocusTraversable(false);
         var degreeButton = new ToggleButton("Г");
         degreeButton.setOnAction(_ -> engine.setTrigonometricMode(TrigonometricMode.DEGREE));
+        degreeButton.setFocusTraversable(false);
         var trigonometricSwitch = new SegmentedButton(radianButton, gRadianButton, degreeButton);
         radianButton.fire();
 
         var dataButton = new ToggleButton("Д");
         dataButton.setOnAction(_ -> engine.setEepromMode(EepromMode.DATA));
+        dataButton.setFocusTraversable(false);
         var programButton = new ToggleButton("П");
         programButton.setOnAction(_ -> engine.setEepromMode(EepromMode.PROGRAM));
+        programButton.setFocusTraversable(false);
         var eepromTypeSwitch = new SegmentedButton(dataButton, programButton);
         dataButton.fire();
 
@@ -368,5 +384,59 @@ public class Mk52Controller extends Controller {
     protected void onWindowHiding() {
         files().write(ApplicationFiles.AppFile.EEPROM, engine::exportEeprom);
         super.onWindowHiding();
+    }
+
+    private void setupAccelerators() {
+        // Цифры
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT0), () -> engine.processButton(KeyboardButton.D0));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT1), () -> engine.processButton(KeyboardButton.D1));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT2), () -> engine.processButton(KeyboardButton.D2));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT3), () -> engine.processButton(KeyboardButton.D3));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT4), () -> engine.processButton(KeyboardButton.D4));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT5), () -> engine.processButton(KeyboardButton.D5));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT6), () -> engine.processButton(KeyboardButton.D6));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT7), () -> engine.processButton(KeyboardButton.D7));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT8), () -> engine.processButton(KeyboardButton.D8));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT9), () -> engine.processButton(KeyboardButton.D9));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.COMMA), () -> engine.processButton(KeyboardButton.DOT));
+
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.UP), () -> engine.processButton(KeyboardButton.PUSH));
+
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.F), () -> engine.processButton(KeyboardButton.F));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.K), () -> engine.processButton(KeyboardButton.K));
+
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.EQUALS, KeyCombination.SHIFT_DOWN),
+                () -> engine.processButton(KeyboardButton.PLUS));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.MINUS),
+                () -> engine.processButton(KeyboardButton.MINUS));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT8, KeyCombination.SHIFT_DOWN),
+                () -> engine.processButton(KeyboardButton.MULTIPLICATION));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.SLASH),
+                () -> engine.processButton(KeyboardButton.DIVISION));
+
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.LEFT),
+                () -> engine.processButton(KeyboardButton.STEP_LEFT));
+        getStage().getScene().getAccelerators().put(
+                new KeyCodeCombination(KeyCode.RIGHT),
+                () -> engine.processButton(KeyboardButton.STEP_RIGHT));
     }
 }

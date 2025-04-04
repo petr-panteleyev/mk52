@@ -47,6 +47,7 @@ public class ButtonNode {
         button.getStyleClass().add(buttonClass);
         button.setUserData(keyboardButton);
         button.setOnAction(_ -> handler.accept(keyboardButton));
+        button.setFocusTraversable(false);
 
         layout.getChildren().add(button);
         layout.setAlignment(Pos.BOTTOM_CENTER);

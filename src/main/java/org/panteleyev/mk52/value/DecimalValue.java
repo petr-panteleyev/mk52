@@ -6,6 +6,7 @@ package org.panteleyev.mk52.value;
 
 import java.util.Arrays;
 
+import static org.panteleyev.mk52.engine.Constants.ERROR_DISPLAY;
 import static org.panteleyev.mk52.engine.Constants.TETRADS_PER_REGISTER;
 import static org.panteleyev.mk52.engine.Constants.ZERO_BYTE;
 import static org.panteleyev.mk52.util.StringUtil.stripTrailingZeroes;
@@ -21,7 +22,6 @@ public record DecimalValue(double value, ValueMode mode) implements Value {
 
     private static final double MAX_NATURAL = 99999999;
     private static final int MANTISSA_LIMIT = 8;
-    private static final String ERROR_MSG = "EDDOD";
 
     private static final double MIN_VALUE = Double.parseDouble("1e-99");
     private static final double MAX_VALUE = Double.parseDouble("9.9999999e99");
@@ -36,13 +36,10 @@ public record DecimalValue(double value, ValueMode mode) implements Value {
 
     public String asString() {
         if (invalid()) {
-            return ERROR_MSG;
+            return ERROR_DISPLAY;
         }
 
         var absValue = Math.abs(value);
-        if (absValue > MAX_VALUE) {
-            return ERROR_MSG;
-        }
 
         if (mode == ValueMode.ADDRESS) {
             return String.format("% 09d.", (int) value);
@@ -128,6 +125,6 @@ public record DecimalValue(double value, ValueMode mode) implements Value {
 
 
     public boolean invalid() {
-        return Double.isNaN(value) || Double.isInfinite(value);
+        return Double.isNaN(value) || Double.isInfinite(value) || Math.abs(value) > MAX_VALUE;
     }
 }
