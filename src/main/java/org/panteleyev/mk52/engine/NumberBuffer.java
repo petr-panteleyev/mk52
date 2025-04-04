@@ -4,6 +4,8 @@
  */
 package org.panteleyev.mk52.engine;
 
+import org.panteleyev.mk52.value.DecimalValue;
+
 import java.util.Arrays;
 
 import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;
@@ -104,13 +106,13 @@ class NumberBuffer {
         buffer[EXPONENT_INDEX + 1] = '0';
     }
 
-    Value getValue() {
+    DecimalValue getValue() {
         enteringMantissa = false;
         enteringExponent = false;
         return getCurrentValue();
     }
 
-    Value getCurrentValue() {
+    DecimalValue getCurrentValue() {
         var valueString = new StringBuilder(getMantissaDigits().trim());
         var exponent = getExponentDigits();
         if (!exponent.isBlank()) {
@@ -119,6 +121,6 @@ class NumberBuffer {
 
         var value = Double.parseDouble(valueString.toString());
 
-        return new Value(value);
+        return new DecimalValue(value);
     }
 }

@@ -4,19 +4,27 @@
  */
 package org.panteleyev.mk52.engine;
 
+import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import org.panteleyev.mk52.eeprom.Eeprom;
 import org.panteleyev.mk52.eeprom.EepromMode;
 import org.panteleyev.mk52.eeprom.EepromOperation;
 import org.panteleyev.mk52.program.Instruction;
+import org.panteleyev.mk52.program.ProgramMemory;
 import org.panteleyev.mk52.program.StepExecutionCallback;
 import org.panteleyev.mk52.program.StepExecutionResult;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;
+import static org.panteleyev.mk52.eeprom.Eeprom.RW_DURATION;
+import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
+import static org.panteleyev.mk52.engine.Constants.INITIAL_DISPLAY;
 import static org.panteleyev.mk52.engine.KeyboardButton.BUTTON_TO_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_EXCHANGE;
@@ -24,6 +32,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.GOSUB;
 import static org.panteleyev.mk52.engine.KeyboardButton.RETURN;
 import static org.panteleyev.mk52.engine.KeyboardButton.RUN_STOP;
 import static org.panteleyev.mk52.engine.OpCode.EMPTY;
+import static org.panteleyev.mk52.util.StringUtil.padToDisplay;
 
 public final class Engine {
     public enum OperationMode {
@@ -39,6 +48,14 @@ public final class Engine {
         }
     }
 
+    private static class EepromThread extends Thread {
+        EepromThread(Runnable runnable) {
+            super(runnable);
+            setDaemon(true);
+            setName("EEPROM");
+        }
+    }
+
     private final boolean async;
 
     private boolean powered = false;
@@ -49,18 +66,22 @@ public final class Engine {
     private final Stack stack = new Stack(lastExecutedOpCode);
     // Регистры
     private final Registers registers = new Registers();
+    // Память программ
+    private final ProgramMemory programMemory = new ProgramMemory();
+    // ППЗУ
+    private final Eeprom eeprom = new Eeprom(programMemory, registers);
+    private final Executor eepromExecutor = Executors.newSingleThreadExecutor(EepromThread::new);
 
     private final StepExecutionCallback stepCallback = new StepExecutionCallback() {
         @Override
         public void before() {
-            displayUpdateCallback.clearDisplay();
+            setDisplay(EMPTY_DISPLAY);
         }
 
         @Override
         public void after(StepExecutionResult stepExecutionResult) {
-            var content = stepExecutionResult.display() + " ".repeat(
-                    DISPLAY_SIZE - stepExecutionResult.display().length());
-            displayUpdateCallback.updateDisplay(content, stepExecutionResult, running.get());
+            setDisplay(stepExecutionResult.display());
+            registersUpdateCallback.update(stepExecutionResult, running.get());
         }
     };
     private final Processor processor;
@@ -81,23 +102,45 @@ public final class Engine {
     // Сюда сохраняем начало адресной команды
     private OpCode addressOpCode = OpCode.EMPTY;
 
-    private Value eepromAddressValue = null;
-
-    private final DisplayUpdateCallback displayUpdateCallback;
+    private final RegistersUpdateCallback registersUpdateCallback;
     private final MemoryUpdateCallback memoryUpdateCallback;
 
-    public Engine(boolean async, DisplayUpdateCallback displayUpdateCallback) {
-        this(async, displayUpdateCallback, MemoryUpdateCallback.NOOP);
+    private final StringProperty displayProperty = new SimpleStringProperty(EMPTY_DISPLAY);
+
+    public Engine(boolean async, RegistersUpdateCallback registersUpdateCallback) {
+        this(async, registersUpdateCallback, MemoryUpdateCallback.NOOP);
     }
 
-    public Engine(boolean async, DisplayUpdateCallback displayUpdateCallback,
+    public Engine(boolean async, RegistersUpdateCallback registersUpdateCallback,
             MemoryUpdateCallback memoryUpdateCallback) {
         this.async = async;
-        this.processor = new Processor(async, stack, registers, running, operationMode, lastExecutedOpCode,
-                stepCallback);
-        this.displayUpdateCallback = displayUpdateCallback;
+        this.processor = new Processor(
+                async,
+                stack,
+                registers,
+                programMemory,
+                running,
+                operationMode,
+                lastExecutedOpCode,
+                stepCallback
+        );
+
+        this.registersUpdateCallback = registersUpdateCallback;
         this.memoryUpdateCallback = memoryUpdateCallback;
         init();
+    }
+
+    public StringProperty displayProperty() {
+        return displayProperty;
+    }
+
+    private void setDisplay(String display) {
+        var text = padToDisplay(display);
+        if (!async || Platform.isFxApplicationThread()) {
+            displayProperty.set(text);
+        } else {
+            Platform.runLater(() -> displayProperty.set(text));
+        }
     }
 
     public void init() {
@@ -107,7 +150,7 @@ public final class Engine {
     }
 
     public int[] getMemoryBytes() {
-        return processor.getProgramMemory().getMemoryBytes();
+        return programMemory.getMemoryBytes();
     }
 
     public void processButton(KeyboardButton button) {
@@ -130,12 +173,12 @@ public final class Engine {
 
     private void processButtonExecutionMode(KeyboardButton button) {
         if (button == EEPROM_ADDRESS) {
-            eepromAddressValue = stack.xOrBuffer();
+            setEepromAddress();
             return;
         }
 
         if (button == EEPROM_EXCHANGE) {
-            handleEepromOperation();
+            handleEepromOperation(async);
             return;
         }
 
@@ -287,9 +330,11 @@ public final class Engine {
         if (!powered && on) {
             init();
             powered = true;
+            setDisplay(INITIAL_DISPLAY);
         }
         if (!on) {
             powered = false;
+            setDisplay(EMPTY_DISPLAY);
         }
     }
 
@@ -337,27 +382,36 @@ public final class Engine {
         memoryUpdateCallback.store(pc, code);
     }
 
-    private void handleEepromOperation() {
-        switch (eepromOperation) {
-            case ERASE -> Eeprom.erase(eepromAddressValue, eepromMode);
-
-            case READ -> {
-                if (eepromMode == EepromMode.DATA) {
-                    registers.copyFrom(Eeprom.readRegisters(eepromAddressValue));
-                }
-            }
-
-            case WRITE -> {
-                if (eepromMode == EepromMode.DATA) {
-                    Eeprom.write(eepromAddressValue, registers);
-                } else {
-                    //
-                }
-            }
+    private void setEepromAddress() {
+        if (async) {
+            running.set(true);
+            var eepromDisplay = Eeprom.convertDisplay(processor.getCurrentDisplay());
+            setDisplay(eepromDisplay);
+            eepromExecutor.execute(() -> {
+                eeprom.setAddress(stack.xOrBuffer());
+                processor.sleep(Eeprom.SET_ADDRESS_DURATION);
+                setDisplay(processor.getCurrentDisplay());
+                running.set(false);
+            });
+        } else {
+            eeprom.setAddress(stack.xOrBuffer());
         }
+    }
 
-        if (eepromOperation == EepromOperation.ERASE) {
-            Eeprom.erase(eepromAddressValue, eepromMode);
+    private void handleEepromOperation(boolean async) {
+        if (async) {
+            running.set(true);
+            var eepromDisplay = Eeprom.convertDisplay(processor.getCurrentDisplay());
+            setDisplay(eepromDisplay);
+            eepromExecutor.execute(() -> {
+                eeprom.exchange(eepromOperation, eepromMode);
+                processor.sleep(RW_DURATION);
+                memoryUpdateCallback.store(getMemoryBytes());
+                setDisplay(processor.getCurrentDisplay());
+                running.set(false);
+            });
+        } else {
+            eeprom.exchange(eepromOperation, eepromMode);
         }
     }
 
@@ -370,7 +424,15 @@ public final class Engine {
     }
 
     public void loadMemoryBytes(int[] bytes) {
-        processor.getProgramMemory().storeCodes(bytes);
+        programMemory.storeCodes(bytes);
         memoryUpdateCallback.store(bytes);
+    }
+
+    public void exportEeprom(OutputStream out) {
+        eeprom.exportDump(out);
+    }
+
+    public void importEeprom(InputStream in) {
+        eeprom.importDump(in);
     }
 }

@@ -2,17 +2,22 @@
  Copyright © 2025 Petr Panteleyev <petr@panteleyev.org>
  SPDX-License-Identifier: BSD-2-Clause
  */
-package org.panteleyev.mk52.engine;
+package org.panteleyev.mk52.value;
 
-public record Value(double value, ValueMode mode, int logicalLength) {
+import java.util.Arrays;
+
+import static org.panteleyev.mk52.engine.Constants.TETRADS_PER_REGISTER;
+import static org.panteleyev.mk52.engine.Constants.ZERO_BYTE;
+import static org.panteleyev.mk52.util.StringUtil.stripTrailingZeroes;
+
+public record DecimalValue(double value, ValueMode mode) implements Value {
     public enum ValueMode {
         NORMAL,
-        ADDRESS,
-        LOGICAL
+        ADDRESS
     }
 
-    public static final Value ZERO = new Value();
-    public static final Value PI = new Value(3.1415926);
+    public static final DecimalValue ZERO = new DecimalValue();
+    public static final DecimalValue PI = new DecimalValue(3.1415926);
 
     private static final double MAX_NATURAL = 99999999;
     private static final int MANTISSA_LIMIT = 8;
@@ -21,12 +26,12 @@ public record Value(double value, ValueMode mode, int logicalLength) {
     private static final double MIN_VALUE = Double.parseDouble("1e-99");
     private static final double MAX_VALUE = Double.parseDouble("9.9999999e99");
 
-    public Value() {
-        this(0.0, ValueMode.NORMAL, 0);
+    public DecimalValue() {
+        this(0.0, ValueMode.NORMAL);
     }
 
-    public Value(double value) {
-        this(value, ValueMode.NORMAL, 0);
+    public DecimalValue(double value) {
+        this(value, ValueMode.NORMAL);
     }
 
     public String asString() {
@@ -41,11 +46,7 @@ public record Value(double value, ValueMode mode, int logicalLength) {
 
         if (mode == ValueMode.ADDRESS) {
             return String.format("% 09d.", (int) value);
-        } else if (mode == ValueMode.LOGICAL) {
-            var strValue = Integer.toString((int)value, 16).toUpperCase();
-            var prefix = "0".repeat(logicalLength - strValue.length());
-            return " 8." + prefix + strValue;
-        }else {
+        } else {
             if (this == ZERO || value == 0) {
                 return " 0.";
             }
@@ -69,6 +70,36 @@ public record Value(double value, ValueMode mode, int logicalLength) {
         }
     }
 
+    @Override
+    public byte[] toByteArray() {
+        var line = new byte[TETRADS_PER_REGISTER];
+        Arrays.fill(line, ZERO_BYTE);
+
+        var normalized = String.format("% .7e", value())
+                .replace("e", "")
+                .replace(".", "")
+                .replace(",", "");
+
+        var mantissaSign = (byte) (normalized.charAt(0) == '-' ? 9 : 0);
+        var expSign = (byte) (normalized.charAt(9) == '-' ? 9 : 0);
+
+        var expValue = Integer.parseInt(normalized.substring(10, 12));
+        if (expSign == 9) {
+            expValue = 100 - expValue;
+        }
+        var expStr = String.format("%02d", expValue);
+
+        line[11] = expSign;
+        line[10] = (byte) (expStr.charAt(0) - '0');
+        line[9] = (byte) (expStr.charAt(1) - '0');
+        line[8] = mantissaSign;
+
+        for (int i = 7; i >= 0; i--) {
+            line[i] = (byte) (normalized.charAt(8 - i) - '0');
+        }
+        return line;
+    }
+
     private StringBuilder format(double value, String formatString) {
         return new StringBuilder(String.format(formatString, value)
                 .replace(",", ".")
@@ -76,22 +107,17 @@ public record Value(double value, ValueMode mode, int logicalLength) {
                 .replace("+", " "));
     }
 
-    private void stripTrailingZeroes(StringBuilder sb, int delta) {
-        for (int index = sb.length() - delta; index > 0; index--) {
-            if (sb.charAt(index) == '0') {
-                sb.setCharAt(index, ' ');
-            } else {
-                break;
-            }
-        }
-    }
-
     public Value toNormal() {
         if (mode == ValueMode.ADDRESS) {
-            return new Value(value, ValueMode.NORMAL, logicalLength);
+            return new DecimalValue(value, ValueMode.NORMAL);
         } else {
             return this;
         }
+    }
+
+    @Override
+    public DecimalValue toDecimal() {
+        return this;
     }
 
     private void removeZeroExponent(StringBuilder sb) {

@@ -17,7 +17,6 @@ import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
-import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.D0;
 import static org.panteleyev.mk52.engine.KeyboardButton.D1;
 import static org.panteleyev.mk52.engine.KeyboardButton.D2;
@@ -30,6 +29,8 @@ import static org.panteleyev.mk52.engine.KeyboardButton.D8;
 import static org.panteleyev.mk52.engine.KeyboardButton.D9;
 import static org.panteleyev.mk52.engine.KeyboardButton.DOT;
 import static org.panteleyev.mk52.engine.KeyboardButton.EE;
+import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_ADDRESS;
+import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_EXCHANGE;
 import static org.panteleyev.mk52.engine.KeyboardButton.F;
 import static org.panteleyev.mk52.engine.KeyboardButton.GOSUB;
 import static org.panteleyev.mk52.engine.KeyboardButton.K;
@@ -42,12 +43,10 @@ import static org.panteleyev.mk52.engine.KeyboardButton.RUN_STOP;
 import static org.panteleyev.mk52.engine.KeyboardButton.SIGN;
 import static org.panteleyev.mk52.engine.KeyboardButton.STORE;
 import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
-import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_EXCHANGE;
 
 @DisplayName("Таблица 1")
 public class EngineShortTest extends BaseTest {
-    private static String displayContent = "";
-    private static final Engine engine = new Engine(false, (content, _, _) -> displayContent = content);
+    private static final Engine engine = new Engine(false, (_, _) -> {});
 
     @BeforeAll
     public static void beforeAll() {
@@ -80,10 +79,9 @@ public class EngineShortTest extends BaseTest {
                     engine.setEepromOperation(EepromOperation.WRITE);
                     engine.setEepromMode(EepromMode.DATA);
                 }, List.of(EEPROM_EXCHANGE), " 3.1415926   "),
-                argumentSet("18:" + PASS, (Consumer<Engine>) engine -> {
-                    engine.setEepromOperation(EepromOperation.READ);
-                }, List.of(), " 3.1415926   "),
-                argumentSet("19:" + PASS, POWEROFF, List.of(), " 3.1415926   "),
+                argumentSet("18:" + PASS, (Consumer<Engine>) engine -> engine.setEepromOperation(EepromOperation.READ),
+                        List.of(), " 3.1415926   "),
+                argumentSet("19:" + PASS, POWEROFF, List.of(), "             "),
                 argumentSet("20:" + PASS, (Consumer<Engine>) engine -> {
                     engine.togglePower(true);
                     engine.setEepromOperation(EepromOperation.READ);
@@ -103,8 +101,8 @@ public class EngineShortTest extends BaseTest {
                 argumentSet("32:" + PASS, NOOP, List.of(D0, D4), "  04 5A 38 07"),
                 argumentSet("33:" + PASS, NOOP, List.of(RUN_STOP), "  50 04 5A 08"),
                 argumentSet("34:" + DIFF, NOOP, List.of(F, SIGN), " 4.9714987-01"),
-                argumentSet("34:" + DIFF, NOOP, List.of(RETURN), " 4.9714987-01"),
-                argumentSet("34:" + DIFF, NOOP, List.of(RUN_STOP), " 8.DD764FF   ")
+                argumentSet("35:" + DIFF, NOOP, List.of(RETURN), " 4.9714987-01"),
+                argumentSet("36:" + DIFF, NOOP, List.of(RUN_STOP), " 8.DD764F7   ")
         );
     }
 
@@ -113,6 +111,6 @@ public class EngineShortTest extends BaseTest {
     public void test(Consumer<Engine> preOperation, List<KeyboardButton> buttons, String expected) {
         preOperation.accept(engine);
         buttons.forEach(engine::processButton);
-        assertEquals(expected, displayContent);
+        assertEquals(expected, engine.displayProperty().get());
     }
 }

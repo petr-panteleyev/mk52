@@ -23,6 +23,7 @@ import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
 import static org.panteleyev.mk52.engine.Constants.EMPTY_STRING;
 import static org.panteleyev.mk52.engine.Constants.INITIAL_DISPLAY;
 import static org.panteleyev.mk52.engine.Constants.REGISTERS_SIZE;
+import static org.panteleyev.mk52.util.StringUtil.padToDisplay;
 import static org.panteleyev.mk52.util.StringUtil.pcToString;
 
 class StackAndRegistersPanel extends BorderPane {
@@ -151,15 +152,15 @@ class StackAndRegistersPanel extends BorderPane {
     public void displaySnapshot(StepExecutionResult snapshot) {
         if (snapshot.registers().size() == REGISTERS_SIZE) {
             for (int i = 0; i < REGISTERS_SIZE; i++) {
-                registers.get(i).setText(padRight(snapshot.registers().get(i)));
+                registers.get(i).setText(padToDisplay(snapshot.registers().get(i)));
             }
         }
 
-        xLabel.setText(padRight(snapshot.stack().x()));
-        yLabel.setText(padRight(snapshot.stack().y()));
-        zLabel.setText(padRight(snapshot.stack().z()));
-        tLabel.setText(padRight(snapshot.stack().t()));
-        x1Label.setText(padRight(snapshot.stack().x1()));
+        xLabel.setText(padToDisplay(snapshot.stack().x()));
+        yLabel.setText(padToDisplay(snapshot.stack().y()));
+        zLabel.setText(padToDisplay(snapshot.stack().z()));
+        tLabel.setText(padToDisplay(snapshot.stack().t()));
+        x1Label.setText(padToDisplay(snapshot.stack().x1()));
 
         pcLabel.setText(pcToString(snapshot.programCounter()));
 
@@ -174,9 +175,5 @@ class StackAndRegistersPanel extends BorderPane {
         for (; i > 0; i--) {
             callStack.get(i).setText(pcToString(0));
         }
-    }
-
-    private static String padRight(String s) {
-        return s + " ".repeat(DISPLAY_SIZE - s.length());
     }
 }

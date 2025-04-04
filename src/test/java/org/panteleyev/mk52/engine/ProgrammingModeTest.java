@@ -48,8 +48,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 
 @DisplayName("Ввод в режиме Программирование")
 public class ProgrammingModeTest extends BaseTest {
-    private static String displayContent = "";
-    private static final Engine engine = new Engine(false, (content, _, _) -> displayContent = content);
+    private static final Engine engine = new Engine(false, (_, _) -> {});
 
     @BeforeAll
     public static void beforeAll() {
@@ -246,6 +245,6 @@ public class ProgrammingModeTest extends BaseTest {
     public void test(Consumer<Engine> preOperation, List<KeyboardButton> buttons, String expected) {
         preOperation.accept(engine);
         buttons.forEach(engine::processButton);
-        assertEquals(expected, displayContent);
+        assertEquals(expected, engine.displayProperty().get());
     }
 }

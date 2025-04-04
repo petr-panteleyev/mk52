@@ -14,7 +14,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.panteleyev.mk52.engine.Constants.INITIAL_DISPLAY;
 import static org.panteleyev.mk52.engine.KeyboardButton.D1;
 import static org.panteleyev.mk52.engine.KeyboardButton.D2;
 import static org.panteleyev.mk52.engine.KeyboardButton.DOT;
@@ -29,7 +28,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.RUN_STOP;
 public class StackTest extends BaseTest {
     private static StackSnapshot stack = null;
     private static final Engine engine = new Engine(false,
-            (_, result, _) -> stack = result == null ? null : result.stack());
+            (result, _) -> stack = result == null ? null : result.stack());
 
     @BeforeAll
     public static void beforeAll() {

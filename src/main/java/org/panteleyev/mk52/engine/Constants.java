@@ -12,6 +12,8 @@ public final class Constants {
     public static final String EMPTY_DISPLAY = " ".repeat(DISPLAY_SIZE);
     public static final String INITIAL_DISPLAY = " 0." + " ".repeat(DISPLAY_SIZE - 3);
 
+    public static final byte ZERO_BYTE = (byte) 0;
+
     public static final String EMPTY_STRING = "";
 
     public static final int MANTISSA_SIZE = 8;
@@ -24,6 +26,11 @@ public final class Constants {
     public static final int PROGRAM_MEMORY_SIZE = 105;
     public static final int CALL_STACK_SIZE = 5;
     public static final int REGISTERS_SIZE = 15;
+    // Количество тетрад на представление регистра: 12 + 2
+    public static final int TETRADS_PER_REGISTER = 14;
+
+    // Размер в ячейках, одна ячейка - 4 бита
+    public static final int EEPROM_SIZE = 1024;
 
     // Время исполнения команд
     public static final Duration DUR_023 = Duration.of(230, ChronoUnit.MILLIS);

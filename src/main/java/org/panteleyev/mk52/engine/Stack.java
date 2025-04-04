@@ -4,6 +4,9 @@
  */
 package org.panteleyev.mk52.engine;
 
+import org.panteleyev.mk52.value.DecimalValue;
+import org.panteleyev.mk52.value.Value;
+
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
@@ -12,11 +15,11 @@ import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;
 
 @SuppressWarnings("SuspiciousNameCombination")
 class Stack {
-    private Value x = Value.ZERO;
-    private Value y = Value.ZERO;
-    private Value z = Value.ZERO;
-    private Value t = Value.ZERO;
-    private Value x1 = Value.ZERO;
+    private Value x = DecimalValue.ZERO;
+    private Value y = DecimalValue.ZERO;
+    private Value z = DecimalValue.ZERO;
+    private Value t = DecimalValue.ZERO;
+    private Value x1 = DecimalValue.ZERO;
 
     private final NumberBuffer numberBuffer = new NumberBuffer();
 
@@ -31,11 +34,11 @@ class Stack {
     }
 
     void reset() {
-        x = Value.ZERO;
-        x1 = Value.ZERO;
-        y = Value.ZERO;
-        z = Value.ZERO;
-        t = Value.ZERO;
+        x = DecimalValue.ZERO;
+        x1 = DecimalValue.ZERO;
+        y = DecimalValue.ZERO;
+        z = DecimalValue.ZERO;
+        t = DecimalValue.ZERO;
         numberBuffer.reset();
     }
 

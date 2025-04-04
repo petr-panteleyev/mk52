@@ -4,6 +4,9 @@
  */
 package org.panteleyev.mk52.engine;
 
+import org.panteleyev.mk52.value.DecimalValue;
+import org.panteleyev.mk52.value.Value;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,7 +38,7 @@ public class Registers {
 
     public int modifyAndGetRegisterValue(int index) {
         synchronized (registers) {
-            var indirectIndex = (int) registers[index].value();
+            var indirectIndex = (int) registers[index].toDecimal().value();
             var sign = indirectIndex < 0 ? -1 : 1;
             if (index <= 3) {
                 indirectIndex = sign * (Math.abs(indirectIndex) - 1);
@@ -49,14 +52,14 @@ public class Registers {
                 indirectIndex = -99999999;
             }
 
-            registers[index] = new Value(indirectIndex, Value.ValueMode.ADDRESS, 0);
+            registers[index] = new DecimalValue(indirectIndex, DecimalValue.ValueMode.ADDRESS);
             return indirectIndex;
         }
     }
 
     public void reset() {
         synchronized (registers) {
-            Arrays.fill(registers, Value.ZERO);
+            Arrays.fill(registers, DecimalValue.ZERO);
         }
     }
 
@@ -79,6 +82,12 @@ public class Registers {
                 snapshot.add(register.asString());
             }
             return snapshot;
+        }
+    }
+
+    public void erase(int count) {
+        synchronized (registers) {
+            Arrays.fill(registers, 0, count, DecimalValue.ZERO);
         }
     }
 }

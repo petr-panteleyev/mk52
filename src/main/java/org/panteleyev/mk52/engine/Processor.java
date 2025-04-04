@@ -8,6 +8,8 @@ import org.panteleyev.mk52.program.Instruction;
 import org.panteleyev.mk52.program.ProgramMemory;
 import org.panteleyev.mk52.program.StepExecutionCallback;
 import org.panteleyev.mk52.program.StepExecutionResult;
+import org.panteleyev.mk52.value.DecimalValue;
+import org.panteleyev.mk52.value.Value;
 
 import java.time.Duration;
 import java.util.ArrayDeque;
@@ -22,15 +24,15 @@ import static org.panteleyev.mk52.engine.Constants.STORE_CODE_DURATION;
 import static org.panteleyev.mk52.engine.Constants.TURN_OFF_DISPLAY_DELAY;
 
 final class Processor {
-    private static final Predicate<Value> LT_0 = v -> v.value() < 0;
-    private static final Predicate<Value> EQ_0 = v -> v.value() == 0;
-    private static final Predicate<Value> GE_0 = v -> v.value() >= 0;
-    private static final Predicate<Value> NE_0 = v -> v.value() != 0;
+    private static final Predicate<Value> LT_0 = v -> v.toDecimal().value() < 0;
+    private static final Predicate<Value> EQ_0 = v -> v.toDecimal().value() == 0;
+    private static final Predicate<Value> GE_0 = v -> v.toDecimal().value() >= 0;
+    private static final Predicate<Value> NE_0 = v -> v.toDecimal().value() != 0;
 
     private final AtomicInteger programCounter = new AtomicInteger(0);
     private final Stack stack;
     private final Registers registers;
-    private final ProgramMemory programMemory = new ProgramMemory();
+    private final ProgramMemory memory;
     private final Deque<Integer> callStack = new ArrayDeque<>(CALL_STACK_SIZE);
 
     private final boolean async;
@@ -49,6 +51,7 @@ final class Processor {
             boolean async,
             Stack stack,
             Registers registers,
+            ProgramMemory memory,
             AtomicBoolean running,
             AtomicReference<Engine.OperationMode> operationMode,
             AtomicReference<OpCode> lastExecutedOpCode,
@@ -56,6 +59,7 @@ final class Processor {
     ) {
         this.async = async;
         this.stack = stack;
+        this.memory = memory;
         this.registers = registers;
         this.running = running;
         this.operationMode = operationMode;
@@ -65,10 +69,6 @@ final class Processor {
 
     public int getProgramCounter() {
         return programCounter.get();
-    }
-
-    public ProgramMemory getProgramMemory() {
-        return programMemory;
     }
 
     public void setTrigonometricMode(TrigonometricMode trigonometricMode) {
@@ -87,7 +87,7 @@ final class Processor {
     }
 
     private boolean step(boolean single) {
-        var instruction = programMemory.fetchInstruction(programCounter);
+        var instruction = memory.fetchInstruction(programCounter);
         fetchedInstruction.set(true);
         var result = execute(instruction, single);
         fetchedInstruction.set(false);
@@ -106,7 +106,7 @@ final class Processor {
         }
     }
 
-    private void sleep(Duration duration) {
+    void sleep(Duration duration) {
         try {
             Thread.sleep(duration);
         } catch (Exception ex) {
@@ -178,7 +178,7 @@ final class Processor {
     private void loop(int pc, int register) {
         var counter = registers.modifyAndGetRegisterValue(register);
         if (counter == 0) {
-            registers.store(register, new Value(1, Value.ValueMode.ADDRESS, 0));
+            registers.store(register, new DecimalValue(1, DecimalValue.ValueMode.ADDRESS));
         } else {
             programCounter.set(pc);
         }
@@ -259,7 +259,7 @@ final class Processor {
                 case OpCode.SWAP -> stack.swap();
                 case OpCode.ROTATE -> stack.rotate();
                 case OpCode.RESTORE_X -> stack.restoreX();
-                case OpCode.CLEAR_X -> stack.unaryOperation(_ -> Value.ZERO);
+                case OpCode.CLEAR_X -> stack.unaryOperation(_ -> DecimalValue.ZERO);
 
                 // Арифметика
                 case OpCode.ADD -> stack.binaryOperation(Mk52Math::add);
@@ -355,12 +355,15 @@ final class Processor {
             running.set(false);
         }
 
-        var display = switch (operationMode.get()) {
-            case EXECUTION -> stack.getStringValue();
-            case PROGRAMMING -> programMemory.getStringValue(programCounter.get());
-        };
-        stepCallback.after(newStepExecutionResult(display));
+        stepCallback.after(newStepExecutionResult(getCurrentDisplay()));
         return cont;
+    }
+
+    public String getCurrentDisplay() {
+        return switch (operationMode.get()) {
+            case EXECUTION -> stack.getStringValue();
+            case PROGRAMMING -> memory.getStringValue(programCounter.get());
+        };
     }
 
     public void storeCode(int code) {
@@ -369,7 +372,7 @@ final class Processor {
         }
 
         stepCallback.before();
-        programMemory.storeCode(programCounter, code);
+        memory.storeCode(programCounter, code);
 
         if (async) {
             sleep(STORE_CODE_DURATION);
@@ -377,7 +380,7 @@ final class Processor {
 
         running.set(false);
         var pc = programCounter.get();
-        stepCallback.after(newStepExecutionResult(programMemory.getStringValue(pc)));
+        stepCallback.after(newStepExecutionResult(memory.getStringValue(pc)));
     }
 
     private StepExecutionResult newStepExecutionResult(String display) {

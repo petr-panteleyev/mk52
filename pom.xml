@@ -9,7 +9,7 @@
 
     <groupId>org.panteleyev</groupId>
     <artifactId>mk52</artifactId>
-    <version>0.0.6</version>
+    <version>0.0.7</version>
     <packaging>jar</packaging>
     <name>MK-52</name>
 
@@ -106,6 +106,7 @@
         <controlsFxVersion>11.2.2</controlsFxVersion>
         <javaCommonsVersion>1.6.0</javaCommonsVersion>
         <javaFxHelpersVersion>1.20.0</javaFxHelpersVersion>
+        <javaFreeDesktopVersion>0.5.1</javaFreeDesktopVersion>
         <jUnitVersion>5.12.1</jUnitVersion>
     </properties>
 
@@ -135,6 +136,11 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.panteleyev</groupId>
+            <artifactId>freedesktop</artifactId>
+            <version>${javaFreeDesktopVersion}</version>
         </dependency>
         <dependency>
             <groupId>org.panteleyev</groupId>

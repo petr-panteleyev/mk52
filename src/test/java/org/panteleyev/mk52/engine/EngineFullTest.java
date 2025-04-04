@@ -52,28 +52,13 @@ import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 
 @DisplayName("Таблица 1a")
 public class EngineFullTest extends BaseTest {
-    private static String displayContent = "";
-    private static final Engine engine = new Engine(false, (content, _, _) -> displayContent = content);
+    private static final Engine engine = new Engine(false, (_, _) -> {});
 
     @BeforeAll
     public static void beforeAll() {
         engine.init();
         engine.togglePower(true);
     }
-
-    /*
-    52 25 60 58 06 02 04 10 B1 5D
-01 11 23 59 70 6C 10 1B 21 18
-15 5C 77 01 03 40 41 25 04 42
-51 01 17 22 1C 1A 1E 6D 06 01
-11 57 45 14 50 38 2A 35 11 31
-26 65 32 10 30 16 0E 33 36 34
-12 39 3A 37 54 50 00 00 00 00
-AA 14 25 55 56 24 E7 56 55 60
-50 07 02 00 00 00 00 00 00 00
-00 00 00 00 00 00 00 00 00 00
-00 00 00 00 00
-     */
 
     private static List<Arguments> testArguments() {
         return List.of(
@@ -190,34 +175,77 @@ AA 14 25 55 56 24 E7 56 55 60
                 argumentSet("107:" + PASS, NOOP, List.of(STEP_RIGHT), " 1.          "),
                 argumentSet("108:" + PASS, NOOP, List.of(GOSUB), " 2.          "),
                 argumentSet("109:" + PASS, NOOP, List.of(RETURN), " 2.          "),
-                argumentSet("110:" + NOT_IMPLEMENTED, NOOP, List.of(RUN_STOP), " 8.60005     "),
-                argumentSet("111:" + NOT_IMPLEMENTED, (Consumer<Engine>) engine -> {
+                argumentSet("110:" + DIFF, NOOP, List.of(RUN_STOP), " 8.60005     "),
+                argumentSet("111:" + PASS, (Consumer<Engine>) engine -> {
                     engine.setEepromOperation(EepromOperation.WRITE);
                     engine.setEepromMode(EepromMode.PROGRAM);
                 }, List.of(F, PLUS), " 3.1415926   "),
-                argumentSet("112:" + NOT_IMPLEMENTED, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 3.1415926   "),
-                argumentSet("113:" + NOT_IMPLEMENTED, (Consumer<Engine>) engine -> {
+                argumentSet("112:" + PASS, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 3.1415926   "),
+                argumentSet("113:" + PASS, (Consumer<Engine>) engine -> {
                     engine.setEepromOperation(EepromOperation.READ);
                     engine.setEepromMode(EepromMode.DATA);
                 }, List.of(EEPROM_EXCHANGE), " 3.1415926   "),
-                argumentSet("114:" + NOT_IMPLEMENTED, NOOP, List.of(LOAD, D9), " 0.0005054   "),
+                argumentSet("114:" + DIFF, NOOP, List.of(LOAD, D0), "-0.6586025 40"),
                 argumentSet("115:" + PASS, POWEROFF, List.of(), "             "),
-                argumentSet("116:" + NOT_IMPLEMENTED, (Consumer<Engine>) engine -> {
+                argumentSet("116:" + PASS, (Consumer<Engine>) engine -> {
                     engine.togglePower(true);
                     engine.setEepromOperation(EepromOperation.READ);
-                    engine.setEepromMode(EepromMode.DATA);
+                    engine.setEepromMode(EepromMode.PROGRAM);
+                    engine.setTrigonometricMode(TrigonometricMode.GRADIAN);
                 }, List.of(), " 0.          "),
-                argumentSet("117:" + NOT_IMPLEMENTED, (Consumer<Engine>) engine -> {
+                argumentSet("117:" + PASS, (Consumer<Engine>) engine -> {
                     engine.setEepromOperation(EepromOperation.ERASE);
                 }, List.of(D1, D0, D0, D0, D0, D9, D8), " 1000098.    "),
-                argumentSet("118:" + NOT_IMPLEMENTED, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1000098.    "),
+                argumentSet("118:" + PASS, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1000098.    "),
                 argumentSet("119:" + PASS, NOOP, List.of(CLEAR_X, D1, D0, D2, D1, D0, D8, D4), " 1021084.    "),
-                argumentSet("120:" + NOT_IMPLEMENTED, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1021084.    "),
+                argumentSet("120:" + PASS, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1021084.    "),
                 argumentSet("121:" + PASS, NOOP, List.of(CLEAR_X, D1, D0, D6, D3, D0, D9, D8), " 1063098.    "),
-                argumentSet("122:" + NOT_IMPLEMENTED, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1063098.    "),
+                argumentSet("122:" + PASS, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1063098.    "),
                 argumentSet("123:" + PASS, NOOP, List.of(CLEAR_X, D1, D0, D8, D4, D0, D9, D8), " 1084098.    "),
-                argumentSet("124:" + NOT_IMPLEMENTED, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1084098.    "),
-                argumentSet("125:" + PASS, NOOP, List.of(F, PLUS), " 3.1415926   ")
+                argumentSet("124:" + PASS, NOOP, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1084098.    "),
+                argumentSet("125:" + PASS, NOOP, List.of(F, PLUS), " 3.1415926   "),
+                argumentSet("126:" + PASS, (Consumer<Engine>) engine -> {
+                    engine.setEepromOperation(EepromOperation.READ);
+                }, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 3.1415926   "),
+                argumentSet("127:" + PASS, NOOP, List.of(CLEAR_X, D1, D0, D0, D0, D0, D8, D4), " 1000084.    "),
+                argumentSet("128:" + PASS, (Consumer<Engine>) engine -> {
+                    engine.setEepromOperation(EepromOperation.WRITE);
+                }, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1000084.    "),
+                argumentSet("129:" + PASS, (Consumer<Engine>) engine -> {
+                    engine.setEepromOperation(EepromOperation.READ);
+                }, List.of(EEPROM_EXCHANGE), " 1000084.    "),
+                argumentSet("130:" + PASS, NOOP, List.of(CLEAR_X, D1, D0, D1, D9, D2, D8, D4), " 1019284.    "),
+                argumentSet("131:" + PASS, (Consumer<Engine>) engine -> {
+                    engine.setEepromOperation(EepromOperation.WRITE);
+                }, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1019284.    "),
+                argumentSet("132:" + PASS, (Consumer<Engine>) engine -> {
+                    engine.setEepromOperation(EepromOperation.READ);
+                }, List.of(EEPROM_EXCHANGE), " 1019284.    "),
+                argumentSet("133:" + PASS, NOOP, List.of(CLEAR_X, D1, D0, D5, D9, D2, D9, D8), " 1059298.    "),
+                argumentSet("134:" + PASS, (Consumer<Engine>) engine -> {
+                    engine.setEepromOperation(EepromOperation.WRITE);
+                }, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1059298.    "),
+                argumentSet("135:" + PASS, (Consumer<Engine>) engine -> {
+                    engine.setEepromOperation(EepromOperation.READ);
+                }, List.of(EEPROM_EXCHANGE), " 1059298.    "),
+                argumentSet("136:" + PASS, NOOP, List.of(CLEAR_X, D1, D0, D8, D0, D0, D9, D8), " 1080098.    "),
+                argumentSet("137:" + PASS, (Consumer<Engine>) engine -> {
+                    engine.setEepromOperation(EepromOperation.WRITE);
+                }, List.of(EEPROM_ADDRESS, EEPROM_EXCHANGE), " 1080098.    "),
+                argumentSet("138:" + PASS, (Consumer<Engine>) engine -> {
+                    engine.setEepromOperation(EepromOperation.READ);
+                }, List.of(EEPROM_EXCHANGE), " 1080098.    "),
+                argumentSet("139:" + PASS, NOOP, List.of(CLEAR_X, D6, D1), " 61.         "),
+                argumentSet("140:" + PASS, NOOP, List.of(STORE, CLEAR_X), " 61.         "),
+                argumentSet("141:" + PASS, NOOP, List.of(PUSH), " 61.         "),
+                argumentSet("142:" + PASS, NOOP, List.of(D5, SIGN), "-5.          "),
+                argumentSet("143:" + PASS, NOOP, List.of(MULTIPLICATION), "-305.        "),
+                argumentSet("144:" + PASS, NOOP, List.of(F, PUSH), "-5.          "),
+                argumentSet("145:" + PASS, NOOP, List.of(GOTO, D2, D3), "-5.          "),
+                argumentSet("146:" + PASS, NOOP, List.of(RUN_STOP), " 1.          "),
+                argumentSet("147:" + PASS, NOOP, List.of(D2), " 2.          "),
+                argumentSet("148:" + PASS, NOOP, List.of(RETURN), " 2.          "),
+                argumentSet("149:" + DIFF, NOOP, List.of(RUN_STOP), " 8.00001     ")
         );
     }
 
@@ -226,6 +254,6 @@ AA 14 25 55 56 24 E7 56 55 60
     public void test(Consumer<Engine> preOperation, List<KeyboardButton> buttons, String expected) {
         preOperation.accept(engine);
         buttons.forEach(engine::processButton);
-        assertEquals(expected, displayContent);
+        assertEquals(expected, engine.displayProperty().get());
     }
 }

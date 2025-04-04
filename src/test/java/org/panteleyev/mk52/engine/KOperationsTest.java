@@ -33,7 +33,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 public class KOperationsTest extends BaseTest {
     private static StackSnapshot stack = null;
     private static final Engine engine = new Engine(false,
-            (_, result, _) -> stack = result == null ? null : result.stack());
+            (result, _) -> stack = result == null ? null : result.stack());
 
     @BeforeEach
     public void beforeEach() {

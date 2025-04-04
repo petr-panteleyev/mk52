@@ -21,9 +21,10 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.controlsfx.control.SegmentedButton;
 import org.panteleyev.fx.Controller;
+import org.panteleyev.mk52.ApplicationFiles;
 import org.panteleyev.mk52.eeprom.EepromMode;
 import org.panteleyev.mk52.eeprom.EepromOperation;
-import org.panteleyev.mk52.engine.DisplayUpdateCallback;
+import org.panteleyev.mk52.engine.RegistersUpdateCallback;
 import org.panteleyev.mk52.engine.Engine;
 import org.panteleyev.mk52.engine.KeyboardButton;
 import org.panteleyev.mk52.engine.MemoryUpdateCallback;
@@ -48,8 +49,7 @@ import static org.panteleyev.fx.MenuFactory.menuItem;
 import static org.panteleyev.fx.dialogs.FileChooserBuilder.fileChooser;
 import static org.panteleyev.fx.grid.GridBuilder.gridPane;
 import static org.panteleyev.fx.grid.GridRowBuilder.gridRow;
-import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
-import static org.panteleyev.mk52.engine.Constants.INITIAL_DISPLAY;
+import static org.panteleyev.mk52.ApplicationFiles.files;
 import static org.panteleyev.mk52.ui.Accelerators.SHORTCUT_1;
 import static org.panteleyev.mk52.ui.Accelerators.SHORTCUT_2;
 
@@ -59,17 +59,11 @@ public class Mk52Controller extends Controller {
     public static final FileChooser.ExtensionFilter EXTENSION_FILTER =
             new FileChooser.ExtensionFilter("Дамп памяти", "*.txt");
 
-    private final DisplayUpdateCallback displayUpdateCallback = new DisplayUpdateCallback() {
+    private final RegistersUpdateCallback registersUpdateCallback = new RegistersUpdateCallback() {
         @Override
-        public void clearDisplay() {
-            Platform.runLater(() -> display.setText(EMPTY_DISPLAY));
-        }
-
-        @Override
-        public void updateDisplay(String content, StepExecutionResult snapshot, boolean running) {
+        public void update(StepExecutionResult snapshot, boolean running) {
             Platform.runLater(() -> {
                 display.setOpacity(running ? 0.3 : 1.0);
-                display.setText(content);
                 stackAndRegistersPanel.displaySnapshot(snapshot);
                 memoryPanel.showPc(snapshot.programCounter());
             });
@@ -91,10 +85,10 @@ public class Mk52Controller extends Controller {
     private final StackAndRegistersPanel stackAndRegistersPanel = new StackAndRegistersPanel();
     private final MemoryPanel memoryPanel = new MemoryPanel();
 
-    private final Engine engine = new Engine(true, displayUpdateCallback, memoryUpdateCallback);
+    private final Engine engine = new Engine(true, registersUpdateCallback, memoryUpdateCallback);
     private final Consumer<KeyboardButton> keyboardButtonConsumer = engine::processButton;
 
-    private final Label display = new Label(EMPTY_DISPLAY);
+    private final Label display = new Label();
 
     private final BorderPane root = new BorderPane();
     private final VBox toolBox = new VBox(10);
@@ -122,8 +116,12 @@ public class Mk52Controller extends Controller {
         root.setBottom(toolBox);
         BorderPane.setMargin(toolBox, new Insets(10, 0, 0, 0));
 
+        display.textProperty().bind(engine.displayProperty());
+
         setupWindow(root);
         getStage().sizeToScene();
+
+        files().read(ApplicationFiles.AppFile.EEPROM, engine::importEeprom);
     }
 
     @Override
@@ -160,7 +158,7 @@ public class Mk52Controller extends Controller {
         var offButton = new ToggleButton(" ");
         offButton.setOnAction(_ -> onPowerOff());
         var onButton = new ToggleButton("Вкл");
-        onButton.setOnAction(_ -> onPowerOf());
+        onButton.setOnAction(_ -> onPowerOn());
         var powerSwitch = new SegmentedButton(offButton, onButton);
         onButton.fire();
 
@@ -343,7 +341,7 @@ public class Mk52Controller extends Controller {
 
         try {
             var content = Files.readString(file.toPath());
-            var byteStrings = content.replace("\n", "").split(" ");
+            var byteStrings = content.replace("\n", " ").split(" ");
             var codes = new int[byteStrings.length];
             for (int i = 0; i < codes.length; i++) {
                 codes[i] = Integer.parseInt(byteStrings[i], 16);
@@ -354,17 +352,21 @@ public class Mk52Controller extends Controller {
         }
     }
 
-    private void onPowerOf() {
+    private void onPowerOn() {
         engine.togglePower(true);
-        display.setText(INITIAL_DISPLAY);
         stackAndRegistersPanel.turnOn();
         memoryPanel.clear();
     }
 
     private void onPowerOff() {
         engine.togglePower(false);
-        display.setText(EMPTY_DISPLAY);
         stackAndRegistersPanel.turnOff();
         memoryPanel.turnOff();
+    }
+
+    @Override
+    protected void onWindowHiding() {
+        files().write(ApplicationFiles.AppFile.EEPROM, engine::exportEeprom);
+        super.onWindowHiding();
     }
 }

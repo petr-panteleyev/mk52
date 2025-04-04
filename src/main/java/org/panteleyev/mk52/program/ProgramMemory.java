@@ -99,11 +99,23 @@ public class ProgramMemory {
         }
     }
 
+    public void erase(int size) {
+        synchronized (memory) {
+            Arrays.fill(memory, 0, size, 0);
+        }
+    }
+
     public int[] getMemoryBytes() {
         synchronized (memory) {
             var copy = new int[PROGRAM_MEMORY_SIZE];
             System.arraycopy(memory, 0, copy, 0, PROGRAM_MEMORY_SIZE);
             return copy;
+        }
+    }
+
+    public int getByte(int address) {
+        synchronized (memory) {
+            return memory[address];
         }
     }
 }
