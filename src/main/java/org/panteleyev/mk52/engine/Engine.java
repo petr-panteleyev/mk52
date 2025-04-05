@@ -68,6 +68,8 @@ public final class Engine {
     private final Registers registers = new Registers();
     // Память программ
     private final ProgramMemory programMemory = new ProgramMemory();
+    // Стек вызовов
+    private final CallStack callStack = new CallStack();
     // ППЗУ
     private final Eeprom eeprom = new Eeprom(programMemory, registers);
     private final Executor eepromExecutor = Executors.newSingleThreadExecutor(EepromThread::new);
@@ -119,6 +121,7 @@ public final class Engine {
                 stack,
                 registers,
                 programMemory,
+                callStack,
                 running,
                 operationMode,
                 lastExecutedOpCode,
@@ -151,6 +154,10 @@ public final class Engine {
 
     public int[] getMemoryBytes() {
         return programMemory.getMemoryBytes();
+    }
+
+    public int getProgramCounter() {
+        return processor.getProgramCounter();
     }
 
     public void processButton(KeyboardButton button) {

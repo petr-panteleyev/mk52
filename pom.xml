@@ -9,7 +9,7 @@
 
     <groupId>org.panteleyev</groupId>
     <artifactId>mk52</artifactId>
-    <version>0.0.8</version>
+    <version>0.0.9</version>
     <packaging>jar</packaging>
     <name>MK-52</name>
 
@@ -96,7 +96,8 @@
         <mavenResourcePluginVersion>3.3.1</mavenResourcePluginVersion>
         <mavenCompilerPluginVersion>3.14.0</mavenCompilerPluginVersion>
         <mavenJarPluginVersion>3.4.2</mavenJarPluginVersion>
-        <mavenSurefirePluginVersion>3.5.2</mavenSurefirePluginVersion>
+        <mavenSurefirePluginVersion>3.5.3</mavenSurefirePluginVersion>
+        <mavenSurefireReportPluginVersion>3.5.3</mavenSurefireReportPluginVersion>
         <mavenDependencyPluginVersion>3.8.1</mavenDependencyPluginVersion>
         <mavenExecPluginVersion>3.5.0</mavenExecPluginVersion>
         <jlinkMavenPluginVersion>1.1.0</jlinkMavenPluginVersion>
@@ -354,4 +355,17 @@
             </plugin>
         </plugins>
     </build>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>${mavenSurefireReportPluginVersion}</version>
+                <configuration>
+                    <outputName>MK-52</outputName>
+                    <showSuccess>false</showSuccess>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>

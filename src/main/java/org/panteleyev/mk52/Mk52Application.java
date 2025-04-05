@@ -66,6 +66,10 @@ public class Mk52Application extends Application {
         runLater(() -> new Alert(Alert.AlertType.ERROR, e.toString()).showAndWait());
     }
 
+    public static Logger logger() {
+        return LOGGER;
+    }
+
     public static void main(String[] args) {
         launch(args);
     }

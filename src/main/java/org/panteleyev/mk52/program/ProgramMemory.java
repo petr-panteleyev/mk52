@@ -95,7 +95,7 @@ public class ProgramMemory {
 
     public void storeCodes(int[] codes) {
         synchronized (memory) {
-            System.arraycopy(codes, 0, memory, 0, codes.length);
+            System.arraycopy(codes, 0, memory, 0, Math.min(codes.length, memory.length));
         }
     }
 

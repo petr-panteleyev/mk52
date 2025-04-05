@@ -12,14 +12,12 @@ import org.panteleyev.mk52.value.DecimalValue;
 import org.panteleyev.mk52.value.Value;
 
 import java.time.Duration;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-import static org.panteleyev.mk52.engine.Constants.CALL_STACK_SIZE;
+import static org.panteleyev.mk52.Mk52Application.logger;
 import static org.panteleyev.mk52.engine.Constants.ERROR_DISPLAY;
 import static org.panteleyev.mk52.engine.Constants.PROGRAM_MEMORY_SIZE;
 import static org.panteleyev.mk52.engine.Constants.STORE_CODE_DURATION;
@@ -41,7 +39,7 @@ final class Processor {
     private final Stack stack;
     private final Registers registers;
     private final ProgramMemory memory;
-    private final Deque<Integer> callStack = new ArrayDeque<>(CALL_STACK_SIZE);
+    private final CallStack callStack;
 
     private final boolean async;
     private final AtomicBoolean running;
@@ -60,6 +58,7 @@ final class Processor {
             Stack stack,
             Registers registers,
             ProgramMemory memory,
+            CallStack callStack,
             AtomicBoolean running,
             AtomicReference<Engine.OperationMode> operationMode,
             AtomicReference<OpCode> lastExecutedOpCode,
@@ -69,6 +68,7 @@ final class Processor {
         this.stack = stack;
         this.memory = memory;
         this.registers = registers;
+        this.callStack = callStack;
         this.running = running;
         this.operationMode = operationMode;
         this.lastExecutedOpCode = lastExecutedOpCode;
@@ -87,7 +87,7 @@ final class Processor {
         programCounter.set(0);
         stack.reset();
         registers.reset();
-        callStack.clear();
+        callStack.reset();
     }
 
     public void step() {
@@ -167,16 +167,14 @@ final class Processor {
     }
 
     private void goSub(int pc) {
-        callStack.push(programCounter.get());
+        callStack.push(programCounter.get() - 1);
         goTo(pc);
     }
 
     public void returnFromSubroutine() {
         stack.x();
-        var newPc = callStack.poll();
-        if (newPc != null) {
-            goTo(newPc);
-        }
+        var newPc = callStack.pop() + 1;
+        goTo(newPc);
     }
 
     private void conditionalGoto(int pc, Predicate<Value> predicate) {
@@ -322,6 +320,15 @@ final class Processor {
                 case OpCode.HH_MM_SS_TO_DEG -> stack.unaryOperation(Mk52Math::hoursMinutesSecondsToDegrees);
                 case OpCode.DEG_TO_HH_MM -> stack.unaryOperation(Mk52Math::degreesToHoursMinutes);
                 case OpCode.DEG_TO_HH_MM_SS -> stack.unaryOperation(Mk52Math::degreesToHoursMinutesSeconds);
+
+                // NOP
+                case OpCode.NOOP, OpCode.K_1, OpCode.K_2 -> {
+                }
+
+                default -> {
+                    logger().severe("Неизвестный код операции: " + Integer.toString(opCode.code(), 16));
+                    throw new ArithmeticException();
+                }
             }
         }
         return ExecutionStatus.CONTINUE;
@@ -413,7 +420,7 @@ final class Processor {
                 programCounter.get(),
                 stack.getSnapshot(),
                 registers.getSnapshot(),
-                new ArrayDeque<>(callStack)
+                callStack.getSnapshot()
         );
     }
 }

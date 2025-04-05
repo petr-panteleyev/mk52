@@ -62,13 +62,29 @@ public class KOperationsTest extends BaseTest {
                         " 60.6        ",
                         " 0.", " 0.", " 0.", " 60.36"
                 )),
+                argumentSet("K o⃗'", List.of(D6, D0, DOT, D3, D6, SIGN, K, PLUS), new StackSnapshot(
+                        "-60.6        ",
+                        " 0.", " 0.", " 0.", "-60.36"
+                )),
+                argumentSet("K o⃗'", List.of(D6, D0, K, PLUS), new StackSnapshot(
+                        " 60.         ",
+                        " 0.", " 0.", " 0.", " 60."
+                )),
                 argumentSet("K o⃗'", List.of(D6, D0, DOT, D4, K, PLUS), new StackSnapshot(
                         " 60.666666   ",
                         " 0.", " 0.", " 0.", " 60.4"
                 )),
+                argumentSet("K o⃗'", List.of(D0, DOT, D4, K, PLUS), new StackSnapshot(
+                        " 6.6666666-01",
+                        " 0.", " 0.", " 0.", " 4.       -01"
+                )),
                 argumentSet("K o⃗'", List.of(D1, D4, D2, DOT, D2, D4, D3, D1, D4, K, PLUS), new StackSnapshot(
                         " 142.40523   ",
                         " 0.", " 0.", " 0.", " 142.24314"
+                )),
+                argumentSet("K o⃗'", List.of(D0, DOT, D2, D4, D3, D1, D4, K, PLUS), new StackSnapshot(
+                        " 4.0523332-01",
+                        " 0.", " 0.", " 0.", " 2.4314   -01"
                 )),
                 argumentSet("K o⃖′", List.of(D6, D0, DOT, D8, K, D6), new StackSnapshot(
                         " 60.48       ",

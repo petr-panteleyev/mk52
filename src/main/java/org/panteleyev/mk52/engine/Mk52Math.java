@@ -180,10 +180,15 @@ final class Mk52Math {
 
     public static Value hoursMinutesToDegrees(Value x) {
         var hhMM = Converter.toHoursMinutes(x);
+        var signum = Math.signum(hhMM.hours());
 
         var result = toBigDecimal(hhMM.minutes())
                 .divide(SIXTY, MANTISSA_SIZE, RoundingMode.FLOOR)
-                .add(toBigDecimal(hhMM.hours()));
+                .add(toBigDecimal(Math.abs(hhMM.hours())));
+
+        if (signum < 0) {
+            result = result.negate();
+        }
 
         return new DecimalValue(downScale(result).doubleValue());
     }

@@ -18,9 +18,7 @@ import static org.panteleyev.fx.BoxFactory.vBox;
 import static org.panteleyev.fx.grid.GridBuilder.gridPane;
 import static org.panteleyev.fx.grid.GridRowBuilder.gridRow;
 import static org.panteleyev.mk52.engine.Constants.CALL_STACK_SIZE;
-import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;
 import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
-import static org.panteleyev.mk52.engine.Constants.EMPTY_STRING;
 import static org.panteleyev.mk52.engine.Constants.INITIAL_DISPLAY;
 import static org.panteleyev.mk52.engine.Constants.REGISTERS_SIZE;
 import static org.panteleyev.mk52.util.StringUtil.padToDisplay;
@@ -113,11 +111,11 @@ class StackAndRegistersPanel extends BorderPane {
 
     private Node buildCallStackPanel() {
         var grid = gridPane(List.of(
-                gridRow(callStack.get(0)),
-                gridRow(callStack.get(1)),
-                gridRow(callStack.get(2)),
+                gridRow(callStack.get(4)),
                 gridRow(callStack.get(3)),
-                gridRow(callStack.get(4))
+                gridRow(callStack.get(2)),
+                gridRow(callStack.get(1)),
+                gridRow(callStack.get(0))
         ));
         return vBox(5.0,
                 new RegisterNameLabel("В/О:"),
@@ -164,16 +162,9 @@ class StackAndRegistersPanel extends BorderPane {
 
         pcLabel.setText(pcToString(snapshot.programCounter()));
 
-        var i = CALL_STACK_SIZE - 1;
-        for (; i > 0; i--) {
-            var addr = snapshot.callStack().pollFirst();
-            if (addr == null) {
-                break;
-            }
-            callStack.get(i).setText(pcToString(addr));
-        }
-        for (; i > 0; i--) {
-            callStack.get(i).setText(pcToString(0));
+        var callStackAddr = snapshot.callStack().stack();
+        for (int i = 0; i < callStackAddr.length; i++) {
+            callStack.get(i).setText(pcToString(callStackAddr[i]));
         }
     }
 }

@@ -283,7 +283,7 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("0", "10ˣ", "НОП", "grayButton", KeyboardButton.D0,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode(".", "↻", "∧", "grayButton", KeyboardButton.DOT, keyboardButtonConsumer).node(),
+                        new ButtonNode(".", "⟳", "∧", "grayButton", KeyboardButton.DOT, keyboardButtonConsumer).node(),
                         new ButtonNode("/-/", "АВТ", "∨", "grayButton", KeyboardButton.SIGN,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("ВП", "ПРГ", "⨁", "grayButton", KeyboardButton.EE,
