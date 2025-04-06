@@ -4,8 +4,6 @@
  */
 package org.panteleyev.mk52.program;
 
-import org.panteleyev.mk52.engine.OpCode;
-
 import java.util.Arrays;
 
 import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;

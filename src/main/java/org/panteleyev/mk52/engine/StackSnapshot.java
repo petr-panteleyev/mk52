@@ -4,5 +4,5 @@
  */
 package org.panteleyev.mk52.engine;
 
-public record StackSnapshot(String x, String y, String z, String t, String x1) {
+public record StackSnapshot(String x, String y, String z, String t, String x1, String display) {
 }

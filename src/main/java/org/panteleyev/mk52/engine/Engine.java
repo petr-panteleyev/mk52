@@ -12,6 +12,7 @@ import org.panteleyev.mk52.eeprom.EepromMode;
 import org.panteleyev.mk52.eeprom.EepromOperation;
 import org.panteleyev.mk52.program.Address;
 import org.panteleyev.mk52.program.Instruction;
+import org.panteleyev.mk52.program.OpCode;
 import org.panteleyev.mk52.program.ProgramMemory;
 import org.panteleyev.mk52.program.StepExecutionCallback;
 import org.panteleyev.mk52.program.StepExecutionResult;
@@ -32,7 +33,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_EXCHANGE;
 import static org.panteleyev.mk52.engine.KeyboardButton.GOSUB;
 import static org.panteleyev.mk52.engine.KeyboardButton.RETURN;
 import static org.panteleyev.mk52.engine.KeyboardButton.RUN_STOP;
-import static org.panteleyev.mk52.engine.OpCode.EMPTY;
+import static org.panteleyev.mk52.program.OpCode.EMPTY;
 import static org.panteleyev.mk52.util.StringUtil.padToDisplay;
 
 public final class Engine {

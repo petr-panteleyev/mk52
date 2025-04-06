@@ -1,7 +1,7 @@
 # Эмулятор микрокалькулятора МК-52
 
-![JDK](docs/java-24.svg)
-[![License](docs/license.svg)](LICENSE)
+![JDK](docs/java-24.png)
+[![License](docs/license.png)](LICENSE)
 
 ![МК-52](docs/main-window.png)
 

@@ -6,6 +6,7 @@ package org.panteleyev.mk52.engine;
 
 import org.panteleyev.mk52.program.Address;
 import org.panteleyev.mk52.program.Instruction;
+import org.panteleyev.mk52.program.OpCode;
 import org.panteleyev.mk52.program.ProgramCounter;
 import org.panteleyev.mk52.program.ProgramMemory;
 import org.panteleyev.mk52.program.StepExecutionCallback;
@@ -138,8 +139,7 @@ final class Processor {
     }
 
     private void indirectStore(Address address) {
-        var indirectIndex = registers.modifyAndGetAddressValue(address);
-        registers.store(indirectIndex, stack.x());
+        registers.store(registers.modifyAndGetAddressValue(address), stack.x());
     }
 
     private void load(Address address) {
@@ -148,9 +148,8 @@ final class Processor {
     }
 
     private void indirectLoad(Address address) {
-        var indirectIndex = registers.modifyAndGetAddressValue(address);
         stack.push();
-        stack.setX(registers.load(indirectIndex));
+        stack.setX(registers.load(registers.modifyAndGetAddressValue(address)));
     }
 
     public void returnTo0() {
@@ -173,34 +172,29 @@ final class Processor {
     }
 
     private void conditionalGoto(Address pc, Predicate<Value> predicate) {
-        var condition = predicate.test(stack.x());
-        if (!condition) {
+        if (!predicate.test(stack.x())) {
             goTo(pc);
         }
     }
 
     private void indirectGoto(Address address) {
-        var indirect = registers.modifyAndGetAddressValue(address);
-        programCounter.set(indirect);
+        programCounter.set(registers.modifyAndGetAddressValue(address));
     }
 
     private void loop(Address pc, int register) {
-        var counter = registers.modifyAndGetLoopValue(register);
-        if (counter > 0) {
+        if (registers.modifyAndGetLoopValue(register) > 0) {
             programCounter.set(pc);
         }
     }
 
     private void conditionalIndirectGoto(Address address, Predicate<Value> predicate) {
-        var condition = predicate.test(stack.x());
-        if (!condition) {
+        if (!predicate.test(stack.x())) {
             indirectGoto(address);
         }
     }
 
     private void indirectGoSub(Address address) {
-        var indirect = registers.modifyAndGetAddressValue(address);
-        goSub(indirect);
+        goSub(registers.modifyAndGetAddressValue(address));
     }
 
     private ExecutionStatus execute(OpCode opCode) {
@@ -253,7 +247,7 @@ final class Processor {
                 case OpCode.NINE -> stack.addCharacter('9');
                 case OpCode.DOT -> stack.addCharacter('.');
                 case OpCode.SIGN -> {
-                    if (stack.numberBuffer().isInProgress()) {
+                    if (stack.isEnteringExponent()) {
                         stack.addCharacter('-');
                     } else {
                         stack.setX(stack.x().negate());
@@ -266,7 +260,7 @@ final class Processor {
                 case OpCode.SWAP -> stack.swap();
                 case OpCode.ROTATE -> stack.rotate();
                 case OpCode.RESTORE_X -> stack.restoreX();
-                case OpCode.CLEAR_X -> stack.unaryOperation(_ -> Value.ZERO);
+                case OpCode.CLEAR_X -> stack.clearX();
 
                 // Арифметика
                 case OpCode.ADD -> stack.binaryOperation(Mk52Math::add);
@@ -288,10 +282,7 @@ final class Processor {
                 case OpCode.EXP -> stack.unaryOperation(Mk52Math::exp);
                 case OpCode.ONE_BY_X -> stack.unaryOperation(Mk52Math::oneByX);
                 case OpCode.POWER_OF_X -> stack.binaryKeepYOperation(Mk52Math::pow);
-                case OpCode.PI -> {
-                    stack.push();
-                    stack.addCharacters("3.1415926".toCharArray());
-                }
+                case OpCode.PI -> stack.pi();
                 case OpCode.RANDOM -> stack.unaryOperation(_ -> Mk52Math.rand());
 
                 case OpCode.ABS -> stack.unaryOperation(Mk52Math::abs);
@@ -385,7 +376,7 @@ final class Processor {
 
     public String getCurrentDisplay() {
         return switch (operationMode.get()) {
-            case EXECUTION -> stack.getStringValue();
+            case EXECUTION -> stack.display();
             case PROGRAMMING -> memory.getStringValue(programCounter.get());
         };
     }

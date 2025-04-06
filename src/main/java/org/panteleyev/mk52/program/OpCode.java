@@ -2,9 +2,7 @@
  Copyright © 2025 Petr Panteleyev <petr@panteleyev.org>
  SPDX-License-Identifier: BSD-2-Clause
  */
-package org.panteleyev.mk52.engine;
-
-import org.panteleyev.mk52.program.Address;
+package org.panteleyev.mk52.program;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -201,5 +199,9 @@ public enum OpCode {
                 .filter(e -> e.code == code)
                 .findAny()
                 .orElse(OpCode.EMPTY);
+    }
+
+    public static boolean isDigit(OpCode opCode) {
+        return opCode != null && opCode.inRange(OpCode.ZERO, OpCode.NINE);
     }
 }

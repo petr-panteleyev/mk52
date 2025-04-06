@@ -13,7 +13,6 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.input.KeyCharacterCombination;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -28,15 +27,18 @@ import org.panteleyev.fx.Controller;
 import org.panteleyev.mk52.ApplicationFiles;
 import org.panteleyev.mk52.eeprom.EepromMode;
 import org.panteleyev.mk52.eeprom.EepromOperation;
-import org.panteleyev.mk52.engine.RegistersUpdateCallback;
 import org.panteleyev.mk52.engine.Engine;
 import org.panteleyev.mk52.engine.KeyboardButton;
 import org.panteleyev.mk52.engine.MemoryUpdateCallback;
+import org.panteleyev.mk52.engine.RegistersUpdateCallback;
 import org.panteleyev.mk52.engine.TrigonometricMode;
 import org.panteleyev.mk52.program.StepExecutionResult;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -54,6 +56,7 @@ import static org.panteleyev.fx.dialogs.FileChooserBuilder.fileChooser;
 import static org.panteleyev.fx.grid.GridBuilder.gridPane;
 import static org.panteleyev.fx.grid.GridRowBuilder.gridRow;
 import static org.panteleyev.mk52.ApplicationFiles.files;
+import static org.panteleyev.mk52.engine.Constants.PROGRAM_MEMORY_SIZE;
 import static org.panteleyev.mk52.ui.Accelerators.SHORTCUT_1;
 import static org.panteleyev.mk52.ui.Accelerators.SHORTCUT_2;
 
@@ -355,15 +358,20 @@ public class Mk52Controller extends Controller {
             return;
         }
 
-        try {
-            var content = Files.readString(file.toPath());
-            var byteStrings = content.replace("\n", " ").split(" ");
-            var codes = new int[byteStrings.length];
-            for (int i = 0; i < codes.length; i++) {
-                if (byteStrings[i].isBlank()) {
-                    continue;
+        try (var reader = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
+            var codes = new int[PROGRAM_MEMORY_SIZE];
+            var index = 0;
+
+            var lines = reader.lines().toList();
+            outerLoop:
+            for (var line : lines) {
+                var strings = line.trim().split(" ");
+                for (var str : strings) {
+                    if (index >= codes.length) {
+                        break outerLoop;
+                    }
+                    codes[index++] = Integer.parseInt(str, 16);
                 }
-                codes[i] = Integer.parseInt(byteStrings[i], 16);
             }
             engine.loadMemoryBytes(codes);
         } catch (IOException ex) {

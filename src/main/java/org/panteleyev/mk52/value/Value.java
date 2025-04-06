@@ -7,9 +7,9 @@ package org.panteleyev.mk52.value;
 import java.util.Arrays;
 
 import static org.panteleyev.mk52.Mk52Application.logger;
+import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 import static org.panteleyev.mk52.engine.Constants.MAX_VALUE;
 import static org.panteleyev.mk52.engine.Constants.TETRADS_PER_REGISTER;
-import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 import static org.panteleyev.mk52.value.ValueUtil.checkLength;
 import static org.panteleyev.mk52.value.ValueUtil.getExponent;
 import static org.panteleyev.mk52.value.ValueUtil.isExpNegative;
@@ -19,10 +19,14 @@ public final class Value {
     public static final Value ZERO = new Value(
             new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
     );
+    public static final Value PI = new Value(
+            new byte[]{6, 2, 9, 5, 1, 4, 1, 3, 0, 0, 0, 0, 0, 0}
+    );
 
     private final byte[] bytes;
     private final double doubleValue;
     private final String stringValue;
+    private final int precision;
 
     public Value(byte[] bytes) {
         checkLength(bytes);
@@ -30,9 +34,34 @@ public final class Value {
         System.arraycopy(bytes, 0, this.bytes, 0, TETRADS_PER_REGISTER);
         doubleValue = doubleFromInternal(bytes);
         stringValue = stringFromBytes(bytes);
+        precision = -1;
+    }
+
+    /**
+     * Специальный случай, когда нужно показать концевые нули при вводе числа.
+     *
+     * @param bytes     байты числа
+     * @param precision точность
+     */
+    public Value(byte[] bytes, int precision) {
+        checkLength(bytes);
+        this.bytes = new byte[TETRADS_PER_REGISTER];
+        this.precision = precision;
+        System.arraycopy(bytes, 0, this.bytes, 0, TETRADS_PER_REGISTER);
+        doubleValue = doubleFromInternal(bytes);
+
+        var strValue = stringFromBytes(bytes);
+        if (precision > 0) {
+            var padding = precision + 2 - strValue.length();
+            if (padding > 0) {
+                strValue += "0".repeat(padding);
+            }
+        }
+        stringValue = strValue;
     }
 
     public Value(double doubleValue) {
+        this.precision = -1;
         if (!invalid(doubleValue)) {
             bytes = bytesFromDouble(doubleValue);
             stringValue = stringFromBytes(bytes);
@@ -52,6 +81,10 @@ public final class Value {
         return stringValue;
     }
 
+    public int precision() {
+        return precision;
+    }
+
     public boolean invalid() {
         return Double.isNaN(doubleValue) || Double.isInfinite(doubleValue) || doubleValue > MAX_VALUE;
     }
@@ -66,7 +99,6 @@ public final class Value {
         return copy;
     }
 
-    // TODO
     public Value normalize() {
         if (bytes[7] == 0) {
             return new Value(doubleValue);

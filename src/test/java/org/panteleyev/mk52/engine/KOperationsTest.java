@@ -46,101 +46,101 @@ public class KOperationsTest extends BaseTest {
 
     private static List<Arguments> testArguments() {
         return List.of(
-                argumentSet("K max", List.of(D4, D5, D6, PUSH, D1, D2, D3, K, D9), new StackSnapshot(
-                        " 456.        ",
-                        " 456.", " 0.", " 0.", " 123."
+                argumentSet("[1] K max", List.of(D4, D5, D6, PUSH, D1, D2, D3, K, D9), new StackSnapshot(
+                        " 456.",
+                        " 456.", " 0.", " 0.", " 123.", " 456."
                 )),
-                argumentSet("K max", List.of(D1, D2, D3, PUSH, D4, D5, D6, K, D9), new StackSnapshot(
-                        " 456.        ",
-                        " 123.", " 0.", " 0.", " 456."
+                argumentSet("[2] K max", List.of(D1, D2, D3, PUSH, D4, D5, D6, K, D9), new StackSnapshot(
+                        " 456.",
+                        " 123.", " 0.", " 0.", " 456.", " 456."
                 )),
-                argumentSet("K max (дефект)", List.of(D1, D2, D3, K, D9), new StackSnapshot(
-                        " 0.          ",
-                        " 0.", " 0.", " 0.", " 123."
+                argumentSet("[3] K max (дефект)", List.of(D1, D2, D3, K, D9), new StackSnapshot(
+                        " 0.",
+                        " 0.", " 0.", " 0.", " 123.", " 0."
                 )),
-                argumentSet("K o⃗'", List.of(D6, D0, DOT, D3, D6, K, PLUS), new StackSnapshot(
-                        " 60.6        ",
-                        " 0.", " 0.", " 0.", " 60.36"
+                argumentSet("[4] K o⃗'", List.of(D6, D0, DOT, D3, D6, K, PLUS), new StackSnapshot(
+                        " 60.6",
+                        " 0.", " 0.", " 0.", " 60.36", " 60.6"
                 )),
-                argumentSet("K o⃗'", List.of(D6, D0, DOT, D3, D6, SIGN, K, PLUS), new StackSnapshot(
-                        "-60.6        ",
-                        " 0.", " 0.", " 0.", "-60.36"
+                argumentSet("[5] K o⃗'", List.of(D6, D0, DOT, D3, D6, SIGN, K, PLUS), new StackSnapshot(
+                        "-60.6",
+                        " 0.", " 0.", " 0.", "-60.36", "-60.6"
                 )),
-                argumentSet("K o⃗'", List.of(D6, D0, K, PLUS), new StackSnapshot(
-                        " 60.         ",
-                        " 0.", " 0.", " 0.", " 60."
+                argumentSet("[6] K o⃗'", List.of(D6, D0, K, PLUS), new StackSnapshot(
+                        " 60.",
+                        " 0.", " 0.", " 0.", " 60.", " 60."
                 )),
-                argumentSet("K o⃗'", List.of(D6, D0, DOT, D4, K, PLUS), new StackSnapshot(
-                        " 60.666666   ",
-                        " 0.", " 0.", " 0.", " 60.4"
+                argumentSet("[7] K o⃗'", List.of(D6, D0, DOT, D4, K, PLUS), new StackSnapshot(
+                        " 60.666666",
+                        " 0.", " 0.", " 0.", " 60.4", " 60.666666"
                 )),
-                argumentSet("K o⃗'", List.of(D0, DOT, D4, K, PLUS), new StackSnapshot(
+                argumentSet("[8] K o⃗'", List.of(D0, DOT, D4, K, PLUS), new StackSnapshot(
                         " 6.6666666-01",
-                        " 0.", " 0.", " 0.", " 4.       -01"
+                        " 0.", " 0.", " 0.", " 4.       -01", " 6.6666666-01"
                 )),
-                argumentSet("K o⃗'", List.of(D1, D4, D2, DOT, D2, D4, D3, D1, D4, K, PLUS), new StackSnapshot(
-                        " 142.40523   ",
-                        " 0.", " 0.", " 0.", " 142.24314"
+                argumentSet("[9] K o⃗'", List.of(D1, D4, D2, DOT, D2, D4, D3, D1, D4, K, PLUS), new StackSnapshot(
+                        " 142.40523",
+                        " 0.", " 0.", " 0.", " 142.24314", " 142.40523"
                 )),
-                argumentSet("K o⃗'", List.of(D0, DOT, D2, D4, D3, D1, D4, K, PLUS), new StackSnapshot(
+                argumentSet("[10] K o⃗'", List.of(D0, DOT, D2, D4, D3, D1, D4, K, PLUS), new StackSnapshot(
                         " 4.0523332-01",
-                        " 0.", " 0.", " 0.", " 2.4314   -01"
+                        " 0.", " 0.", " 0.", " 2.4314   -01", " 4.0523332-01"
                 )),
-                argumentSet("K o⃖′", List.of(D6, D0, DOT, D8, K, D6), new StackSnapshot(
-                        " 60.48       ",
-                        " 0.", " 0.", " 0.", " 60.8"
+                argumentSet("[11] K o⃖′", List.of(D6, D0, DOT, D8, K, D6), new StackSnapshot(
+                        " 60.48",
+                        " 0.", " 0.", " 0.", " 60.8", " 60.48"
                 )),
-                argumentSet("K o⃖′", List.of(D6, D0, DOT, D6, D1, K, D6), new StackSnapshot(
-                        " 60.366      ",
-                        " 0.", " 0.", " 0.", " 60.61"
+                argumentSet("[12] K o⃖′", List.of(D6, D0, DOT, D6, D1, K, D6), new StackSnapshot(
+                        " 60.366",
+                        " 0.", " 0.", " 0.", " 60.61", " 60.366"
                 )),
-                argumentSet("K o⃖‴", List.of(D2, D0, DOT, D6, D1, D3, D3, D3, D2, K, D3), new StackSnapshot(
-                        " 20.364799   ",
-                        " 0.", " 0.", " 0.", " 20.613332"
+                argumentSet("[13] K o⃖‴", List.of(D2, D0, DOT, D6, D1, D3, D3, D3, D2, K, D3), new StackSnapshot(
+                        " 20.364799",
+                        " 0.", " 0.", " 0.", " 20.613332", " 20.364799"
                 )),
-                argumentSet("K o⃗‴", List.of(D2, D0, DOT, D3, D6, D4, D8, K, SWAP), new StackSnapshot(
-                        " 20.613333   ",
-                        " 0.", " 0.", " 0.", " 20.3648"
+                argumentSet("[14] K o⃗‴", List.of(D2, D0, DOT, D3, D6, D4, D8, K, SWAP), new StackSnapshot(
+                        " 20.613333",
+                        " 0.", " 0.", " 0.", " 20.3648", " 20.613333"
                 )),
-                argumentSet("K [12.345]", List.of(D1, D2, DOT, D3, D4, D5, K, D7), new StackSnapshot(
-                        " 12.         ",
-                        " 0.", " 0.", " 0.", " 12.345"
+                argumentSet("[15] K [12.345]", List.of(D1, D2, DOT, D3, D4, D5, K, D7), new StackSnapshot(
+                        " 12.",
+                        " 0.", " 0.", " 0.", " 12.345", " 12."
                 )),
-                argumentSet("K [-12.345]", List.of(D1, D2, DOT, D3, D4, D5, SIGN, K, D7), new StackSnapshot(
-                        "-12.         ",
-                        " 0.", " 0.", " 0.", "-12.345"
+                argumentSet("[16] K [-12.345]", List.of(D1, D2, DOT, D3, D4, D5, SIGN, K, D7), new StackSnapshot(
+                        "-12.",
+                        " 0.", " 0.", " 0.", "-12.345", "-12."
                 )),
-                argumentSet("K [0.234]", List.of(D0, DOT, D2, D3, D4, K, D7), new StackSnapshot(
-                        " 0.          ",
-                        " 0.", " 0.", " 0.", " 2.34     -01"
+                argumentSet("[17] K [0.234]", List.of(D0, DOT, D2, D3, D4, K, D7), new StackSnapshot(
+                        " 0.",
+                        " 0.", " 0.", " 0.", " 2.34     -01", " 0."
                 )),
-                argumentSet("K [-0.234]", List.of(D0, DOT, D2, D3, D4, SIGN, K, D7), new StackSnapshot(
-                        " 0.          ",
-                        " 0.", " 0.", " 0.", "-2.34     -01"
+                argumentSet("[18] K [-0.234]", List.of(D0, DOT, D2, D3, D4, SIGN, K, D7), new StackSnapshot(
+                        " 0.",
+                        " 0.", " 0.", " 0.", "-2.34     -01", " 0."
                 )),
-                argumentSet("K {12.345}", List.of(D1, D2, DOT, D3, D4, D5, K, D8), new StackSnapshot(
+                argumentSet("[19] K {12.345}", List.of(D1, D2, DOT, D3, D4, D5, K, D8), new StackSnapshot(
                         " 3.45     -01",
-                        " 0.", " 0.", " 0.", " 12.345"
+                        " 0.", " 0.", " 0.", " 12.345", " 3.45     -01"
                 )),
-                argumentSet("K {-12.345}", List.of(D1, D2, DOT, D3, D4, D5, SIGN, K, D8), new StackSnapshot(
+                argumentSet("[20] K {-12.345}", List.of(D1, D2, DOT, D3, D4, D5, SIGN, K, D8), new StackSnapshot(
                         "-3.45     -01",
-                        " 0.", " 0.", " 0.", "-12.345"
+                        " 0.", " 0.", " 0.", "-12.345", "-3.45     -01"
                 )),
-                argumentSet("K {0.234}", List.of(D0, DOT, D2, D3, D4, K, D8), new StackSnapshot(
+                argumentSet("[21] K {0.234}", List.of(D0, DOT, D2, D3, D4, K, D8), new StackSnapshot(
                         " 2.34     -01",
-                        " 0.", " 0.", " 0.", " 2.34     -01"
+                        " 0.", " 0.", " 0.", " 2.34     -01", " 2.34     -01"
                 )),
-                argumentSet("K {-0.234}", List.of(D0, DOT, D2, D3, D4, SIGN, K, D8), new StackSnapshot(
+                argumentSet("[22] K {-0.234}", List.of(D0, DOT, D2, D3, D4, SIGN, K, D8), new StackSnapshot(
                         "-2.34     -01",
-                        " 0.", " 0.", " 0.", "-2.34     -01"
+                        " 0.", " 0.", " 0.", "-2.34     -01", "-2.34     -01"
                 )),
-                argumentSet("K |1.234|", List.of(D1, DOT, D2, D3, D4, K, D4), new StackSnapshot(
-                        " 1.234       ",
-                        " 0.", " 0.", " 0.", " 1.234"
+                argumentSet("[23] K |1.234|", List.of(D1, DOT, D2, D3, D4, K, D4), new StackSnapshot(
+                        " 1.234",
+                        " 0.", " 0.", " 0.", " 1.234", " 1.234"
                 )),
-                argumentSet("K |-1.234|", List.of(D1, DOT, D2, D3, D4, SIGN, K, D4), new StackSnapshot(
-                        " 1.234       ",
-                        " 0.", " 0.", " 0.", "-1.234"
+                argumentSet("[24] K |-1.234|", List.of(D1, DOT, D2, D3, D4, SIGN, K, D4), new StackSnapshot(
+                        " 1.234",
+                        " 0.", " 0.", " 0.", "-1.234", " 1.234"
                 ))
         );
     }

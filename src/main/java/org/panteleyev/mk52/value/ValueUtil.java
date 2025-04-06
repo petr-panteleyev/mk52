@@ -6,9 +6,9 @@ package org.panteleyev.mk52.value;
 
 import java.util.Arrays;
 
+import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 import static org.panteleyev.mk52.engine.Constants.BYTE_9;
 import static org.panteleyev.mk52.engine.Constants.TETRADS_PER_REGISTER;
-import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 
 public final class ValueUtil {
     public static final byte[] MANTISSA_ONE = new byte[]{1, 0, 0, 0, 0, 0, 0, 0};

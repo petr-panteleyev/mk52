@@ -4,8 +4,6 @@
  */
 package org.panteleyev.mk52.program;
 
-import org.panteleyev.mk52.engine.OpCode;
-
 import static java.util.Objects.requireNonNull;
 
 public record Instruction(OpCode opCode, Address address) {

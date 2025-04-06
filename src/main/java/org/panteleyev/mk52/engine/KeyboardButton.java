@@ -4,6 +4,8 @@
  */
 package org.panteleyev.mk52.engine;
 
+import org.panteleyev.mk52.program.OpCode;
+
 import java.util.Map;
 
 public enum KeyboardButton {
