@@ -69,7 +69,7 @@ public class Mk52Controller extends Controller {
             Platform.runLater(() -> {
                 display.setOpacity(running ? 0.3 : 1.0);
                 stackAndRegistersPanel.displaySnapshot(snapshot);
-                memoryPanel.showPc(snapshot.programCounter());
+                memoryPanel.showPc(snapshot.programCounter().getEffectiveAddress());
             });
         }
     };
@@ -360,6 +360,9 @@ public class Mk52Controller extends Controller {
             var byteStrings = content.replace("\n", " ").split(" ");
             var codes = new int[byteStrings.length];
             for (int i = 0; i < codes.length; i++) {
+                if (byteStrings[i].isBlank()) {
+                    continue;
+                }
                 codes[i] = Integer.parseInt(byteStrings[i], 16);
             }
             engine.loadMemoryBytes(codes);

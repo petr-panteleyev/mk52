@@ -8,7 +8,7 @@ import org.panteleyev.mk52.engine.OpCode;
 
 import static java.util.Objects.requireNonNull;
 
-public record Instruction(OpCode opCode, Integer address) {
+public record Instruction(OpCode opCode, Address address) {
     public Instruction {
         requireNonNull(opCode);
     }

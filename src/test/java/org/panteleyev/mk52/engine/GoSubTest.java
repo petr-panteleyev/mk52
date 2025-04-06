@@ -44,12 +44,12 @@ public class GoSubTest {
         // Первый запуск
         engine.processButton(KeyboardButton.RUN_STOP);
         assertEquals(" 1.          ", engine.displayProperty().get());
-        assertEquals(5, engine.getProgramCounter());
+        assertEquals(5, engine.getProgramCounter().getEffectiveAddress());
 
         // Второй запуск
         engine.processButton(KeyboardButton.RETURN);
         engine.processButton(KeyboardButton.RUN_STOP);
         assertEquals(" 3.1415926   ", engine.displayProperty().get());
-        assertEquals(25, engine.getProgramCounter());
+        assertEquals(25, engine.getProgramCounter().getEffectiveAddress());
     }
 }

@@ -4,8 +4,9 @@
  */
 package org.panteleyev.mk52.engine;
 
-import org.panteleyev.mk52.value.DecimalValue;
+import org.panteleyev.mk52.program.Address;
 import org.panteleyev.mk52.value.Value;
+import org.panteleyev.mk52.value.ValueUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,58 +21,57 @@ public class Registers {
         reset();
     }
 
-    private Registers(Value[] registers) {
-        System.arraycopy(registers, 0, this.registers, 0, REGISTERS_SIZE);
-    }
-
-    public void store(int index, Value value) {
+    public void store(Address address, Value value) {
         synchronized (registers) {
-            registers[Math.abs(index) % REGISTERS_SIZE] = value;
+            registers[address.getEffectiveRegister()] = value;
         }
     }
 
-    public Value load(int index) {
+    public Value load(Address address) {
         synchronized (registers) {
-            return registers[Math.abs(index) % REGISTERS_SIZE];
+            return registers[address.getEffectiveRegister()];
         }
     }
 
-    public int modifyAndGetRegisterValue(int index) {
+    public Address modifyAndGetAddressValue(Address address) {
         synchronized (registers) {
-            var indirectIndex = (int) registers[index].toDecimal().value();
-            var sign = indirectIndex < 0 ? -1 : 1;
+            var index = address.getEffectiveRegister();
+            var bytes = registers[index].getBytes();
+            ValueUtil.convertForIndirect(bytes);
+
             if (index <= 3) {
-                indirectIndex = sign * (Math.abs(indirectIndex) - 1);
+                ValueUtil.decrementMantissa(bytes);
             } else if (index <= 6) {
-                indirectIndex++;
+                ValueUtil.incrementMantissa(bytes);
             }
 
-            if (indirectIndex > 99999999) {
-                indirectIndex = 0;
-            } else if (indirectIndex == -1) {
-                indirectIndex = -99999999;
+            registers[index] = new Value(bytes);
+            return Address.of(new byte[]{bytes[0], bytes[1]});
+        }
+    }
+
+    public int modifyAndGetLoopValue(int index) {
+        synchronized (registers) {
+            var bytes = registers[index].getBytes();
+            ValueUtil.convertForIndirect(bytes);
+            if (ValueUtil.getIndirectValue(bytes) == 1) {
+                return 0;
             }
 
-            registers[index] = new DecimalValue(indirectIndex, DecimalValue.ValueMode.ADDRESS);
-            return indirectIndex;
+            if (index <= 3) {
+                ValueUtil.decrementMantissa(bytes);
+            } else if (index <= 6) {
+                ValueUtil.incrementMantissa(bytes);
+            }
+
+            registers[index] = new Value(bytes);
+            return ValueUtil.getIndirectValue(bytes);
         }
     }
 
     public void reset() {
         synchronized (registers) {
-            Arrays.fill(registers, DecimalValue.ZERO);
-        }
-    }
-
-    public Registers copy() {
-        synchronized (registers) {
-            return new Registers(this.registers);
-        }
-    }
-
-    public void copyFrom(Registers registers) {
-        synchronized (this.registers) {
-            System.arraycopy(registers.registers, 0, this.registers, 0, REGISTERS_SIZE);
+            Arrays.fill(registers, Value.ZERO);
         }
     }
 
@@ -79,7 +79,7 @@ public class Registers {
         synchronized (registers) {
             var snapshot = new ArrayList<String>(REGISTERS_SIZE);
             for (var register : registers) {
-                snapshot.add(register.asString());
+                snapshot.add(register.stringValue());
             }
             return snapshot;
         }
@@ -87,7 +87,7 @@ public class Registers {
 
     public void erase(int count) {
         synchronized (registers) {
-            Arrays.fill(registers, 0, count, DecimalValue.ZERO);
+            Arrays.fill(registers, 0, count, Value.ZERO);
         }
     }
 }

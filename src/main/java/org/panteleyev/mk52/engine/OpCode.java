@@ -4,9 +4,12 @@
  */
 package org.panteleyev.mk52.engine;
 
+import org.panteleyev.mk52.program.Address;
+
 import java.time.Duration;
 import java.util.Arrays;
 
+import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 import static org.panteleyev.mk52.engine.Constants.DUR_023;
 import static org.panteleyev.mk52.engine.Constants.DUR_028;
 import static org.panteleyev.mk52.engine.Constants.DUR_036;
@@ -185,8 +188,8 @@ public enum OpCode {
         return size == 2;
     }
 
-    public int getRegisterIndex() {
-        return code & 0xF;
+    public Address getRegisterAddress() {
+        return new Address((byte) (code & 0xF), BYTE_0);
     }
 
     public boolean inRange(OpCode first, OpCode last) {

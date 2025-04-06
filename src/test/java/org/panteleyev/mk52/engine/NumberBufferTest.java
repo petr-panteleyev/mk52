@@ -40,7 +40,7 @@ public class NumberBufferTest {
         }
 
         var actual = buffer.getValue();
-        assertEquals(expected, actual.value());
+        assertEquals(expected, actual.doubleValue());
     }
 
     public static List<Arguments> testGetBufferArguments() {

@@ -4,5 +4,7 @@
  */
 package org.panteleyev.mk52.engine;
 
-public record CallStackSnapshot(int[] stack) {
+import org.panteleyev.mk52.program.Address;
+
+public record CallStackSnapshot(Address[] stack) {
 }

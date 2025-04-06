@@ -5,15 +5,15 @@
 package org.panteleyev.mk52.engine;
 
 import org.panteleyev.mk52.math.Converter;
-import org.panteleyev.mk52.value.DecimalValue;
-import org.panteleyev.mk52.value.LogicalValue;
 import org.panteleyev.mk52.value.Value;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Arrays;
 import java.util.Random;
 
 import static org.panteleyev.mk52.engine.Constants.MANTISSA_SIZE;
+import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 
 final class Mk52Math {
     private static final Random RANDOM = new Random(System.currentTimeMillis());
@@ -21,137 +21,131 @@ final class Mk52Math {
     private static final BigDecimal D_3600 = BigDecimal.valueOf(3600);
 
     public static Value add(Value x, Value y) {
-        return new DecimalValue(x.toDecimal().value() + y.toDecimal().value());
+        return new Value(x.doubleValue() + y.doubleValue());
     }
 
     public static Value subtract(Value x, Value y) {
-        return new DecimalValue(y.toDecimal().value() - x.toDecimal().value());
+        return new Value(y.doubleValue() - x.doubleValue());
     }
 
     public static Value multiply(Value x, Value y) {
-        return new DecimalValue(x.toDecimal().value() * y.toDecimal().value());
+        return new Value(x.doubleValue() * y.doubleValue());
     }
 
     public static Value divide(Value x, Value y) {
-        return new DecimalValue(y.toDecimal().value() / x.toDecimal().value());
-    }
-
-    public static Value negate(Value x) {
-        return new DecimalValue(-x.toDecimal().value());
+        return new Value(y.doubleValue() / x.doubleValue());
     }
 
     public static Value sqrt(Value x) {
-        return new DecimalValue(Math.sqrt(x.toDecimal().value()));
+        return new Value(Math.sqrt(x.doubleValue()));
     }
 
     public static Value sqr(Value x) {
-        return new DecimalValue(x.toDecimal().value() * x.toDecimal().value());
+        return new Value(x.doubleValue() * x.doubleValue());
     }
 
     public static Value oneByX(Value x) {
-        return new DecimalValue(1.0 / x.toDecimal().value());
+        return new Value(1.0 / x.doubleValue());
     }
 
     public static Value lg(Value x) {
-        return new DecimalValue(Math.log10(x.toDecimal().value()));
+        return new Value(Math.log10(x.doubleValue()));
     }
 
     public static Value ln(Value x) {
-        return new DecimalValue(Math.log(x.toDecimal().value()));
+        return new Value(Math.log(x.doubleValue()));
     }
 
     public static Value pow10(Value x) {
-        return new DecimalValue(Math.pow(10.0, x.toDecimal().value()));
+        return new Value(Math.pow(10.0, x.doubleValue()));
     }
 
     public static Value exp(Value x) {
-        return new DecimalValue(Math.exp(x.toDecimal().value()));
+        return new Value(Math.exp(x.doubleValue()));
     }
 
     public static Value pow(Value x, Value y) {
-        if (x.toDecimal().value() < 0) {
-            return new DecimalValue(Double.NaN);
+        if (x.doubleValue() < 0) {
+            return new Value(Double.NaN);
         } else {
-            return new DecimalValue(Math.pow(x.toDecimal().value(), y.toDecimal().value()));
+            return new Value(Math.pow(x.doubleValue(), y.doubleValue()));
         }
     }
 
     public static Value abs(Value x) {
-        return new DecimalValue(Math.abs(x.toDecimal().value()));
+        return new Value(Math.abs(x.doubleValue()));
     }
 
     public static Value integer(Value x) {
-        return new DecimalValue((int) (x.toDecimal().value()));
+        return new Value((int) (x.doubleValue()));
     }
 
     public static Value fractional(Value x) {
-        return new DecimalValue(x.toDecimal().value() - (int) x.toDecimal().value());
+        return new Value(x.doubleValue() - (int) x.doubleValue());
     }
 
     public static Value max(Value x, Value y) {
-        if (x.toDecimal().value() == 0 || y.toDecimal().value() == 0) {
+        if (x.doubleValue() == 0 || y.doubleValue() == 0) {
             // Известный дефект
-            return DecimalValue.ZERO;
+            return Value.ZERO;
         } else {
-            return new DecimalValue(Math.max(x.toDecimal().value(), y.toDecimal().value()));
+            return new Value(Math.max(x.doubleValue(), y.doubleValue()));
         }
     }
 
     public static Value signum(Value x) {
-        return new DecimalValue(Math.signum(x.toDecimal().value()));
+        return new Value(Math.signum(x.doubleValue()));
     }
 
     public static Value rand() {
-        return new DecimalValue(RANDOM.nextDouble());
+        return new Value(RANDOM.nextDouble());
     }
 
     // Тригонометрия
 
     public static Value sin(Value x, TrigonometricMode mode) {
-        return new DecimalValue(Math.sin(toRadian(x.toDecimal().value(), mode)));
+        return new Value(Math.sin(toRadian(x.doubleValue(), mode)));
     }
 
     public static Value asin(Value x, TrigonometricMode mode) {
-        return new DecimalValue(fromRadian(Math.asin(x.toDecimal().value()), mode));
+        return new Value(fromRadian(Math.asin(x.doubleValue()), mode));
     }
 
     public static Value cos(Value x, TrigonometricMode mode) {
-        return new DecimalValue(Math.cos(toRadian(x.toDecimal().value(), mode)));
+        return new Value(Math.cos(toRadian(x.doubleValue(), mode)));
     }
 
     public static Value acos(Value x, TrigonometricMode mode) {
-        return new DecimalValue(fromRadian(Math.acos(x.toDecimal().value()), mode));
+        return new Value(fromRadian(Math.acos(x.doubleValue()), mode));
     }
 
     public static Value tan(Value x, TrigonometricMode mode) {
-        return new DecimalValue(Math.tan(toRadian(x.toDecimal().value(), mode)));
+        return new Value(Math.tan(toRadian(x.doubleValue(), mode)));
     }
 
     public static Value atan(Value x, TrigonometricMode mode) {
-        return new DecimalValue(fromRadian(Math.atan(x.toDecimal().value()), mode));
+        return new Value(fromRadian(Math.atan(x.doubleValue()), mode));
     }
 
     // Логические операции
 
     private static Value toLogicalValue(byte[] bytes) {
-        var value = 0;
-        for (var i = 6; i >= 0; i--) {
-            value = (value << 4) + (bytes[i] & 0xF);
-        }
-        return new LogicalValue(value);
+        bytes[7] = 8;
+        Arrays.fill(bytes, 8, bytes.length, BYTE_0);
+        return new Value(bytes);
     }
 
     public static Value inversion(Value x) {
-        var arr = x.toByteArray();
+        var bytes = x.getBytes();
         for (var i = 0; i < 7; i++) {
-            arr[i] = (byte) (~arr[i] & 0xF);
+            bytes[i] = (byte) (~bytes[i] & 0xF);
         }
-        return toLogicalValue(arr);
+        return toLogicalValue(bytes);
     }
 
     public static Value and(Value x, Value y) {
-        var ax = x.toByteArray();
-        var ay = y.toByteArray();
+        var ax = x.getBytes();
+        var ay = y.getBytes();
         for (var i = 0; i < 7; i++) {
             ax[i] = (byte) (ax[i] & ay[i]);
         }
@@ -159,8 +153,8 @@ final class Mk52Math {
     }
 
     public static Value or(Value x, Value y) {
-        var ax = x.toByteArray();
-        var ay = y.toByteArray();
+        var ax = x.getBytes();
+        var ay = y.getBytes();
         for (var i = 0; i < 7; i++) {
             ax[i] = (byte) (ax[i] | ay[i]);
         }
@@ -168,8 +162,8 @@ final class Mk52Math {
     }
 
     public static Value xor(Value x, Value y) {
-        var ax = x.toByteArray();
-        var ay = y.toByteArray();
+        var ax = x.getBytes();
+        var ay = y.getBytes();
         for (var i = 0; i < 7; i++) {
             ax[i] = (byte) (ax[i] ^ ay[i]);
         }
@@ -190,7 +184,7 @@ final class Mk52Math {
             result = result.negate();
         }
 
-        return new DecimalValue(downScale(result).doubleValue());
+        return new Value(downScale(result).doubleValue());
     }
 
     public static Value hoursMinutesSecondsToDegrees(Value x) {
@@ -199,11 +193,11 @@ final class Mk52Math {
                 .add(toBigDecimal(hhMmSs.minutes()).divide(SIXTY, MANTISSA_SIZE, RoundingMode.FLOOR))
                 .add(toBigDecimal(hhMmSs.seconds()).divide(D_3600, MANTISSA_SIZE, RoundingMode.FLOOR));
 
-        return new DecimalValue(downScale(result).doubleValue());
+        return new Value(downScale(result).doubleValue());
     }
 
     public static Value degreesToHoursMinutes(Value x) {
-        var hours = BigDecimal.valueOf(x.toDecimal().value());
+        var hours = BigDecimal.valueOf(x.doubleValue());
         var fraction = hours.remainder(BigDecimal.ONE);
 
         var result = fraction.multiply(SIXTY)
@@ -211,11 +205,11 @@ final class Mk52Math {
                 .movePointLeft(2)
                 .add(BigDecimal.valueOf(hours.intValue()));
 
-        return new DecimalValue(downScale(result).doubleValue());
+        return new Value(downScale(result).doubleValue());
     }
 
     public static Value degreesToHoursMinutesSeconds(Value x) {
-        var hours = BigDecimal.valueOf(x.toDecimal().value());
+        var hours = BigDecimal.valueOf(x.doubleValue());
         var fraction = hours.remainder(BigDecimal.ONE);
 
         var minutes = fraction.multiply(SIXTY);
@@ -228,7 +222,7 @@ final class Mk52Math {
                 .add(BigDecimal.valueOf(minutes.intValue()).movePointLeft(2))
                 .add(BigDecimal.valueOf(seconds.intValue()).movePointLeft(4))
                 .add(secondsFraction.movePointLeft(4));
-        return new DecimalValue(downScale(result).doubleValue());
+        return new Value(downScale(result).doubleValue());
     }
 
     private static double toRadian(double x, TrigonometricMode mode) {

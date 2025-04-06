@@ -10,6 +10,7 @@ import javafx.beans.property.StringProperty;
 import org.panteleyev.mk52.eeprom.Eeprom;
 import org.panteleyev.mk52.eeprom.EepromMode;
 import org.panteleyev.mk52.eeprom.EepromOperation;
+import org.panteleyev.mk52.program.Address;
 import org.panteleyev.mk52.program.Instruction;
 import org.panteleyev.mk52.program.ProgramMemory;
 import org.panteleyev.mk52.program.StepExecutionCallback;
@@ -156,7 +157,7 @@ public final class Engine {
         return programMemory.getMemoryBytes();
     }
 
-    public int getProgramCounter() {
+    public Address getProgramCounter() {
         return processor.getProgramCounter();
     }
 
@@ -227,8 +228,9 @@ public final class Engine {
                         if (val != null) {
                             addressBuffer[1] = val;
                         }
-                        var code = addressBuffer[0] * 16 + addressBuffer[1];
-                        execute(new Instruction(addressOpCode, code));
+                        execute(new Instruction(addressOpCode, Address.of(
+                                new byte[] {(byte)addressBuffer[1], (byte)addressBuffer[0]}
+                        )));
                         keyboardMode = KeyboardMode.NORMAL;
                         yield OpCode.EMPTY;
                     }
@@ -386,7 +388,7 @@ public final class Engine {
             processor.storeCode(code);
         }
 
-        memoryUpdateCallback.store(pc, code);
+        memoryUpdateCallback.store(pc.getEffectiveAddress(), code);
     }
 
     private void setEepromAddress() {

@@ -12,7 +12,7 @@ import java.util.List;
 
 public record StepExecutionResult(
         String display,
-        int programCounter,
+        Address programCounter,
         StackSnapshot stack,
         List<String> registers,
         CallStackSnapshot callStack

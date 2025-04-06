@@ -12,7 +12,7 @@ public final class Converter {
     private static final DecimalFormat FORMAT = new DecimalFormat("#0.00000000");
 
     public static HoursMinutes toHoursMinutes(Value x) {
-        var str = FORMAT.format(x.toDecimal().value()).replace(",", ".");
+        var str = FORMAT.format(x.doubleValue()).replace(",", ".");
 
         var dot = str.indexOf(".");
         var hours = Integer.parseInt(str.substring(0, dot));
@@ -24,7 +24,7 @@ public final class Converter {
     }
 
     public static HoursMinutesSeconds toHoursMinutesSeconds(Value x) {
-        var str = FORMAT.format(x.toDecimal().value()).replace(",", ".");
+        var str = FORMAT.format(x.doubleValue()).replace(",", ".");
 
         var dot = str.indexOf(".");
         var hours = Integer.parseInt(str.substring(0, dot));

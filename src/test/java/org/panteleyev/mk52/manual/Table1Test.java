@@ -65,7 +65,7 @@ public class Table1Test extends BaseTest {
                 argumentSet("4:" + PASS, NOOP, List.of(PUSH), " 1.2345678-02"),
                 argumentSet("5:" + PASS, NOOP, List.of(D0, DOT, D9), " 0.9         "),
                 argumentSet("6:" + PASS, NOOP, List.of(MULTIPLICATION), " 1.111111 -02"),
-                argumentSet("7:" + DIFF, TR_DEGREE, List.of(F, D7), " 1.9392545-04"),
+                argumentSet("7:" + PASS, TR_DEGREE, List.of(F, D7), " 1.9392545-04"),
                 argumentSet("8:" + PASS, TR_GRADIAN, List.of(F, D8), " 1.          "),
                 argumentSet("9:" + DIFF, TR_RADIAN, List.of(F, D9), " 1.5574078   "),
                 argumentSet("10:" + DIFF, NOOP, List.of(STORE, D1), " 1.5574078   "),

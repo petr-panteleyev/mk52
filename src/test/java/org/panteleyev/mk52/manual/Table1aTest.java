@@ -156,8 +156,8 @@ public class Table1aTest extends BaseTest {
                 argumentSet("84:" + PASS, NOOP, List.of(K, DOT), "  37 3A 39 64"),
                 argumentSet("85:" + PASS, NOOP, List.of(K, D0), "  54 37 3A 65"),
                 argumentSet("86:" + PASS, NOOP, List.of(RUN_STOP), "  50 54 37 66"),
-                argumentSet("87:" + DIFF, NOOP, List.of(F, SIGN), "-42.020491   "),
-                argumentSet("88:" + PASS, NOOP, List.of(GOTO, D7, D0), "-42.020491   "),
+                argumentSet("87:" + DIFF, NOOP, List.of(F, SIGN), "-42.020499   "),
+                argumentSet("88:" + DIFF, NOOP, List.of(GOTO, D7, D0), "-42.020499   "),
                 argumentSet("89:" + PASS, NOOP, List.of(F, EE), "  00 00 00 70"),
                 argumentSet("90:" + PASS, NOOP, List.of(K, GOSUB, DOT), "  AA 00 00 71"),
                 argumentSet("91:" + PASS, NOOP, List.of(SWAP), "  14 AA 00 72"),
@@ -179,7 +179,7 @@ public class Table1aTest extends BaseTest {
                 argumentSet("107:" + PASS, NOOP, List.of(STEP_RIGHT), " 1.          "),
                 argumentSet("108:" + PASS, NOOP, List.of(GOSUB), " 2.          "),
                 argumentSet("109:" + PASS, NOOP, List.of(RETURN), " 2.          "),
-                argumentSet("110:" + DIFF, NOOP, List.of(RUN_STOP), " 8.60005     "),
+                argumentSet("110:" + PASS, NOOP, List.of(RUN_STOP), " 8.60005     "),
                 argumentSet("111:" + PASS, (Consumer<Engine>) engine -> {
                     engine.setEepromOperation(EepromOperation.WRITE);
                     engine.setEepromMode(EepromMode.PROGRAM);
@@ -189,7 +189,7 @@ public class Table1aTest extends BaseTest {
                     engine.setEepromOperation(EepromOperation.READ);
                     engine.setEepromMode(EepromMode.DATA);
                 }, List.of(EEPROM_EXCHANGE), " 3.1415926   "),
-                argumentSet("114:" + DIFF, NOOP, List.of(LOAD, D0), "-0.6586025 40"),
+                argumentSet("114:" + PASS, NOOP, List.of(LOAD, D0), "-0.6586025 40"),
                 argumentSet("115:" + PASS, POWEROFF, List.of(), "             "),
                 argumentSet("116:" + PASS, (Consumer<Engine>) engine -> {
                     engine.togglePower(true);

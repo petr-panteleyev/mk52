@@ -4,7 +4,6 @@
  */
 package org.panteleyev.mk52.engine;
 
-import org.panteleyev.mk52.value.DecimalValue;
 import org.panteleyev.mk52.value.Value;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -15,11 +14,11 @@ import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;
 
 @SuppressWarnings("SuspiciousNameCombination")
 class Stack {
-    private Value x = DecimalValue.ZERO;
-    private Value y = DecimalValue.ZERO;
-    private Value z = DecimalValue.ZERO;
-    private Value t = DecimalValue.ZERO;
-    private Value x1 = DecimalValue.ZERO;
+    private Value x = Value.ZERO;
+    private Value y = Value.ZERO;
+    private Value z = Value.ZERO;
+    private Value t = Value.ZERO;
+    private Value x1 = Value.ZERO;
 
     private final NumberBuffer numberBuffer = new NumberBuffer();
 
@@ -34,11 +33,11 @@ class Stack {
     }
 
     void reset() {
-        x = DecimalValue.ZERO;
-        x1 = DecimalValue.ZERO;
-        y = DecimalValue.ZERO;
-        z = DecimalValue.ZERO;
-        t = DecimalValue.ZERO;
+        x = Value.ZERO;
+        x1 = Value.ZERO;
+        y = Value.ZERO;
+        z = Value.ZERO;
+        t = Value.ZERO;
         numberBuffer.reset();
     }
 
@@ -48,7 +47,7 @@ class Stack {
         }
 
         var tmp = x;
-        x = x.toNormal();
+        x = x.normalize();
         return tmp;
     }
 
@@ -63,10 +62,10 @@ class Stack {
     public StackSnapshot getSnapshot() {
         return new StackSnapshot(
                 getStringValue(),
-                y.asString(),
-                z.asString(),
-                t.asString(),
-                x1.asString()
+                y.stringValue(),
+                z.stringValue(),
+                t.stringValue(),
+                x1.stringValue()
         );
     }
 
@@ -81,8 +80,8 @@ class Stack {
 
         t = z;
         z = y;
-        y = x.toNormal();
-        x = x.toNormal();
+        y = x.normalize();
+        x = x.normalize();
     }
 
     void rotate() {
@@ -90,7 +89,7 @@ class Stack {
             x = numberBuffer.getValue();
         }
 
-        var tempX = x.toNormal();
+        var tempX = x.normalize();
         x = y;
         y = z;
         z = t;
@@ -103,7 +102,7 @@ class Stack {
             x = numberBuffer.getValue();
         }
 
-        var tempX = x.toNormal();
+        var tempX = x.normalize();
         x = y;
         y = tempX;
         x1 = tempX;
@@ -125,7 +124,7 @@ class Stack {
             x = numberBuffer.getValue();
         }
 
-        x1 = x.toNormal();
+        x1 = x.normalize();
 
         var result = operation.apply(x);
         if (result.invalid()) {
@@ -140,7 +139,7 @@ class Stack {
             x = numberBuffer.getValue();
         }
 
-        x1 = x.toNormal();
+        x1 = x.normalize();
 
         var result = operation.apply(x, y);
         if (result.invalid()) {
@@ -188,7 +187,7 @@ class Stack {
     }
 
     public String getStringValue() {
-        var strValue = numberBuffer.isInProgress() ? numberBuffer.getBuffer() : x.asString();
+        var strValue = numberBuffer.isInProgress() ? numberBuffer.getBuffer() : x.stringValue();
         var padLength = DISPLAY_SIZE - strValue.length();
         return strValue + " ".repeat(padLength);
     }

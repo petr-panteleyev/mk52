@@ -5,8 +5,8 @@
 package org.panteleyev.mk52.eeprom;
 
 import org.panteleyev.mk52.engine.Registers;
+import org.panteleyev.mk52.program.Address;
 import org.panteleyev.mk52.program.ProgramMemory;
-import org.panteleyev.mk52.value.DecimalValue;
 import org.panteleyev.mk52.value.Value;
 
 import java.io.BufferedReader;
@@ -23,10 +23,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.panteleyev.mk52.eeprom.EepromUtils.normalizeEepromIndex;
+import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 import static org.panteleyev.mk52.engine.Constants.DUR_023;
 import static org.panteleyev.mk52.engine.Constants.EEPROM_SIZE;
 import static org.panteleyev.mk52.engine.Constants.TETRADS_PER_REGISTER;
-import static org.panteleyev.mk52.engine.Constants.ZERO_BYTE;
 import static org.panteleyev.mk52.util.StringUtil.padToDisplay;
 
 public final class Eeprom {
@@ -44,7 +44,7 @@ public final class Eeprom {
     private final Registers registers;
 
     private final AtomicReference<EepromAddress> address = new AtomicReference<>(
-            valueToEepromAddress(DecimalValue.ZERO));
+            valueToEepromAddress(Value.ZERO));
 
     public Eeprom(ProgramMemory memory, Registers registers) {
         this.memory = memory;
@@ -74,7 +74,7 @@ public final class Eeprom {
             return new EepromAddress(0, 0);
         }
 
-        var str = value.asString().replace(".", "");
+        var str = value.stringValue().replace(".", "");
         if (str.length() >= EEPROM_ADDRESS_STRING_SIZE) {
             str = str.substring(0, EEPROM_ADDRESS_STRING_SIZE).stripTrailing();
         }
@@ -92,14 +92,14 @@ public final class Eeprom {
     }
 
     void clear() {
-        Arrays.fill(eeprom, ZERO_BYTE);
+        Arrays.fill(eeprom, BYTE_0);
     }
 
     public void erase(EepromMode mode) {
         var addr = address.get();
         synchronized (eeprom) {
             for (var index = addr.start(); index < 2 * addr.steps(); index++) {
-                eeprom[normalizeEepromIndex(index)] = ZERO_BYTE;
+                eeprom[normalizeEepromIndex(index)] = BYTE_0;
             }
 
             switch (mode) {
@@ -124,8 +124,8 @@ public final class Eeprom {
                 case DATA -> {
                     var regCount = addr.steps() / EEPROM_LINE_SIZE;
                     for (int i = 0; i < regCount; i++) {
-                        var registerValue = registers.load(i);
-                        var line = registerValue.toByteArray();
+                        var registerValue = registers.load(new Address((byte) i, BYTE_0));
+                        var line = registerValue.getBytes();
                         EepromUtils.writeEepromLine(eeprom, addr.start() + i * TETRADS_PER_REGISTER, line, mode);
                     }
                     registers.erase(regCount);
@@ -149,8 +149,8 @@ public final class Eeprom {
                 case DATA -> {
                     for (int i = 0; i < addr.steps() / EEPROM_LINE_SIZE; i++) {
                         var line = EepromUtils.readEepromLine(eeprom, addr.start() + i * TETRADS_PER_REGISTER, mode);
-                        var value = EepromUtils.valueFromEepromLine(line);
-                        registers.store(i, value);
+                        var value = new Value(line);
+                        registers.store(new Address((byte) i, BYTE_0), value);
                     }
                 }
             }
@@ -176,7 +176,7 @@ public final class Eeprom {
     public void importDump(InputStream in) {
         synchronized (eeprom) {
             var newBytes = new byte[EEPROM_SIZE];
-            Arrays.fill(newBytes, ZERO_BYTE);
+            Arrays.fill(newBytes, BYTE_0);
 
             var byteIndex = new AtomicInteger(0);
             try (var reader = new BufferedReader(new InputStreamReader(in))) {

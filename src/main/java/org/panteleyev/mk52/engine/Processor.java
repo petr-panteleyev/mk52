@@ -4,22 +4,21 @@
  */
 package org.panteleyev.mk52.engine;
 
+import org.panteleyev.mk52.program.Address;
 import org.panteleyev.mk52.program.Instruction;
+import org.panteleyev.mk52.program.ProgramCounter;
 import org.panteleyev.mk52.program.ProgramMemory;
 import org.panteleyev.mk52.program.StepExecutionCallback;
 import org.panteleyev.mk52.program.StepExecutionResult;
-import org.panteleyev.mk52.value.DecimalValue;
 import org.panteleyev.mk52.value.Value;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static org.panteleyev.mk52.Mk52Application.logger;
 import static org.panteleyev.mk52.engine.Constants.ERROR_DISPLAY;
-import static org.panteleyev.mk52.engine.Constants.PROGRAM_MEMORY_SIZE;
 import static org.panteleyev.mk52.engine.Constants.STORE_CODE_DURATION;
 import static org.panteleyev.mk52.engine.Constants.TURN_OFF_DISPLAY_DELAY;
 
@@ -30,12 +29,12 @@ final class Processor {
         ERROR
     }
 
-    private static final Predicate<Value> LT_0 = v -> v.toDecimal().value() < 0;
-    private static final Predicate<Value> EQ_0 = v -> v.toDecimal().value() == 0;
-    private static final Predicate<Value> GE_0 = v -> v.toDecimal().value() >= 0;
-    private static final Predicate<Value> NE_0 = v -> v.toDecimal().value() != 0;
+    private static final Predicate<Value> LT_0 = v -> v.doubleValue() < 0;
+    private static final Predicate<Value> EQ_0 = v -> v.doubleValue() == 0;
+    private static final Predicate<Value> GE_0 = v -> v.doubleValue() >= 0;
+    private static final Predicate<Value> NE_0 = v -> v.doubleValue() != 0;
 
-    private final AtomicInteger programCounter = new AtomicInteger(0);
+    private final ProgramCounter programCounter = new ProgramCounter();
     private final Stack stack;
     private final Registers registers;
     private final ProgramMemory memory;
@@ -75,7 +74,7 @@ final class Processor {
         this.stepCallback = stepCallback;
     }
 
-    public int getProgramCounter() {
+    public Address getProgramCounter() {
         return programCounter.get();
     }
 
@@ -84,7 +83,7 @@ final class Processor {
     }
 
     public void reset() {
-        programCounter.set(0);
+        programCounter.set(Address.ZERO);
         stack.reset();
         registers.reset();
         callStack.reset();
@@ -110,7 +109,7 @@ final class Processor {
                 if (status == ExecutionStatus.ERROR) {
                     stepCallback.after(newStepExecutionResult(ERROR_DISPLAY));
                 } else {
-                    stepCallback.after(newStepExecutionResult(stack.x().asString()));
+                    stepCallback.after(newStepExecutionResult(stack.x().stringValue()));
                 }
                 break;
             }
@@ -127,110 +126,104 @@ final class Processor {
     }
 
     private void stepLeft() {
-        if (programCounter.get() > 0) {
-            programCounter.decrementAndGet();
-        }
+        programCounter.decrement();
     }
 
     private void stepRight() {
-        if (programCounter.get() < PROGRAM_MEMORY_SIZE - 1) {
-            programCounter.incrementAndGet();
-        }
+        programCounter.increment();
     }
 
-    private void store(int index) {
-        registers.store(index, stack.x());
+    private void store(Address address) {
+        registers.store(address, stack.x());
     }
 
-    private void indirectStore(int index) {
-        var indirectIndex = registers.modifyAndGetRegisterValue(index);
+    private void indirectStore(Address address) {
+        var indirectIndex = registers.modifyAndGetAddressValue(address);
         registers.store(indirectIndex, stack.x());
     }
 
-    private void load(int index) {
+    private void load(Address address) {
         stack.push();
-        stack.setX(registers.load(index));
+        stack.setX(registers.load(address));
     }
 
-    private void indirectLoad(int index) {
-        var indirectIndex = registers.modifyAndGetRegisterValue(index);
+    private void indirectLoad(Address address) {
+        var indirectIndex = registers.modifyAndGetAddressValue(address);
         stack.push();
         stack.setX(registers.load(indirectIndex));
     }
 
     public void returnTo0() {
-        programCounter.set(0);
+        programCounter.set(Address.ZERO);
     }
 
-    private void goTo(int pc) {
+    private void goTo(Address pc) {
         programCounter.set(pc);
     }
 
-    private void goSub(int pc) {
-        callStack.push(programCounter.get() - 1);
+    private void goSub(Address pc) {
+        callStack.push(programCounter.get().decrement());
         goTo(pc);
     }
 
     public void returnFromSubroutine() {
         stack.x();
-        var newPc = callStack.pop() + 1;
+        var newPc = callStack.pop().increment();
         goTo(newPc);
     }
 
-    private void conditionalGoto(int pc, Predicate<Value> predicate) {
+    private void conditionalGoto(Address pc, Predicate<Value> predicate) {
         var condition = predicate.test(stack.x());
         if (!condition) {
             goTo(pc);
         }
     }
 
-    private void indirectGoto(int register) {
-        var indirect = registers.modifyAndGetRegisterValue(register);
+    private void indirectGoto(Address address) {
+        var indirect = registers.modifyAndGetAddressValue(address);
         programCounter.set(indirect);
     }
 
-    private void loop(int pc, int register) {
-        var counter = registers.modifyAndGetRegisterValue(register);
-        if (counter == 0) {
-            registers.store(register, new DecimalValue(1, DecimalValue.ValueMode.ADDRESS));
-        } else {
+    private void loop(Address pc, int register) {
+        var counter = registers.modifyAndGetLoopValue(register);
+        if (counter > 0) {
             programCounter.set(pc);
         }
     }
 
-    private void conditionalIndirectGoto(int register, Predicate<Value> predicate) {
+    private void conditionalIndirectGoto(Address address, Predicate<Value> predicate) {
         var condition = predicate.test(stack.x());
         if (!condition) {
-            indirectGoto(register);
+            indirectGoto(address);
         }
     }
 
-    private void indirectGoSub(int register) {
-        var indirect = registers.modifyAndGetRegisterValue(register);
+    private void indirectGoSub(Address address) {
+        var indirect = registers.modifyAndGetAddressValue(address);
         goSub(indirect);
     }
 
     private ExecutionStatus execute(OpCode opCode) {
         if (opCode.inRange(OpCode.STORE_R0, OpCode.STORE_RE)) {
-            store(opCode.getRegisterIndex());
+            store(opCode.getRegisterAddress());
         } else if (opCode.inRange(OpCode.LOAD_R0, OpCode.LOAD_RE)) {
-            load(opCode.getRegisterIndex());
+            load(opCode.getRegisterAddress());
         } else if (opCode.inRange(OpCode.IND_STORE_R0, OpCode.IND_STORE_RE)) {
-            indirectStore(opCode.getRegisterIndex());
+            indirectStore(opCode.getRegisterAddress());
         } else if (opCode.inRange(OpCode.IND_LOAD_R0, OpCode.IND_LOAD_RE)) {
-            indirectLoad(opCode.getRegisterIndex());
+            indirectLoad(opCode.getRegisterAddress());
         } else if (opCode.inRange(OpCode.GOTO_R0, OpCode.GOTO_RE)) {
-            indirectGoto(opCode.getRegisterIndex());
+            indirectGoto(opCode.getRegisterAddress());
         } else if (opCode.inRange(OpCode.GOTO_LT_0_R0, OpCode.GOTO_LT_0_RE)) {
-            conditionalIndirectGoto(opCode.getRegisterIndex(), LT_0);
+            conditionalIndirectGoto(opCode.getRegisterAddress(), LT_0);
         } else if (opCode.inRange(OpCode.GOTO_EQ_0_R0, OpCode.GOTO_EQ_0_RE)) {
-            conditionalIndirectGoto(opCode.getRegisterIndex(), EQ_0);
+            conditionalIndirectGoto(opCode.getRegisterAddress(), EQ_0);
         } else if (opCode.inRange(OpCode.GOTO_GE_0_R0, OpCode.GOTO_GE_0_RE)) {
-            conditionalIndirectGoto(opCode.getRegisterIndex(), GE_0);
+            conditionalIndirectGoto(opCode.getRegisterAddress(), GE_0);
         } else if (opCode.inRange(OpCode.GOTO_NE_0_R0, OpCode.GOTO_NE_0_RE)) {
-            conditionalIndirectGoto(opCode.getRegisterIndex(), NE_0);
+            conditionalIndirectGoto(opCode.getRegisterAddress(), NE_0);
         } else if (opCode.inRange(OpCode.GOSUB_R0, OpCode.GOSUB_RE)) {
-            indirectGoSub(opCode.getRegisterIndex());
+            indirectGoSub(opCode.getRegisterAddress());
         } else if (opCode == OpCode.RETURN) {
             if (fetchedInstruction.get()) {
                 returnFromSubroutine();
@@ -263,7 +256,7 @@ final class Processor {
                     if (stack.numberBuffer().isInProgress()) {
                         stack.addCharacter('-');
                     } else {
-                        stack.unaryOperation(Mk52Math::negate);
+                        stack.setX(stack.x().negate());
                     }
                 }
 
@@ -273,7 +266,7 @@ final class Processor {
                 case OpCode.SWAP -> stack.swap();
                 case OpCode.ROTATE -> stack.rotate();
                 case OpCode.RESTORE_X -> stack.restoreX();
-                case OpCode.CLEAR_X -> stack.unaryOperation(_ -> DecimalValue.ZERO);
+                case OpCode.CLEAR_X -> stack.unaryOperation(_ -> Value.ZERO);
 
                 // Арифметика
                 case OpCode.ADD -> stack.binaryOperation(Mk52Math::add);
@@ -348,7 +341,7 @@ final class Processor {
         var opCode = instruction.opCode();
         var status = ExecutionStatus.CONTINUE;
         if (opCode.hasAddress()) {
-            var address = instruction.address() / 16 * 10 + instruction.address() % 16;
+            var address = instruction.address();
             if (opCode == OpCode.GOTO) {
                 goTo(address);
             } else if (opCode == OpCode.GOSUB) {
