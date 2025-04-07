@@ -26,7 +26,6 @@ public final class Value {
     private final byte[] bytes;
     private final double doubleValue;
     private final String stringValue;
-    private final int precision;
 
     public Value(byte[] bytes) {
         checkLength(bytes);
@@ -34,34 +33,9 @@ public final class Value {
         System.arraycopy(bytes, 0, this.bytes, 0, TETRADS_PER_REGISTER);
         doubleValue = doubleFromInternal(bytes);
         stringValue = stringFromBytes(bytes);
-        precision = -1;
-    }
-
-    /**
-     * Специальный случай, когда нужно показать концевые нули при вводе числа.
-     *
-     * @param bytes     байты числа
-     * @param precision точность
-     */
-    public Value(byte[] bytes, int precision) {
-        checkLength(bytes);
-        this.bytes = new byte[TETRADS_PER_REGISTER];
-        this.precision = precision;
-        System.arraycopy(bytes, 0, this.bytes, 0, TETRADS_PER_REGISTER);
-        doubleValue = doubleFromInternal(bytes);
-
-        var strValue = stringFromBytes(bytes);
-        if (precision > 0) {
-            var padding = precision + 2 - strValue.length();
-            if (padding > 0) {
-                strValue += "0".repeat(padding);
-            }
-        }
-        stringValue = strValue;
     }
 
     public Value(double doubleValue) {
-        this.precision = -1;
         if (!invalid(doubleValue)) {
             bytes = bytesFromDouble(doubleValue);
             stringValue = stringFromBytes(bytes);
@@ -79,10 +53,6 @@ public final class Value {
 
     public String stringValue() {
         return stringValue;
-    }
-
-    public int precision() {
-        return precision;
     }
 
     public boolean invalid() {

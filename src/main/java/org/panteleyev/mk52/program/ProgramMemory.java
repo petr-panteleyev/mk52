@@ -24,7 +24,7 @@ public class ProgramMemory {
             var code = memory[pc.getEffectiveAddress()];
             var opCode = OpCode.findByCode(code);
             if (opCode == OpCode.EMPTY) {
-                throw new IllegalStateException("Failed to fetch opcode");
+                throw new ArithmeticException("Failed to fetch opcode");
             }
 
             Address address = null;

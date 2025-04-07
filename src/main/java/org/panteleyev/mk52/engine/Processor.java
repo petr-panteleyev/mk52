@@ -85,6 +85,7 @@ final class Processor {
 
     public void reset() {
         programCounter.set(Address.ZERO);
+        lastExecutedOpCode.set(null);
         stack.reset();
         registers.reset();
         callStack.reset();
@@ -246,14 +247,7 @@ final class Processor {
                 case OpCode.EIGHT -> stack.addCharacter('8');
                 case OpCode.NINE -> stack.addCharacter('9');
                 case OpCode.DOT -> stack.addCharacter('.');
-                case OpCode.SIGN -> {
-                    if (stack.isEnteringExponent()) {
-                        stack.addCharacter('-');
-                    } else {
-                        stack.setX(stack.x().negate());
-                    }
-                }
-
+                case OpCode.SIGN -> stack.negate();
                 case OpCode.ENTER_EXPONENT -> stack.enterExponent();
 
                 case OpCode.PUSH -> stack.push();

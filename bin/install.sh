@@ -34,7 +34,7 @@ echo "[Desktop Entry]
 Type=Application
 Version=1.5
 Name=МК-52
-Comment=Эмулятор микрокалькулятора МК-52
+Comment=Симулятор микрокалькулятора МК-52
 Icon=$INSTALL_DIR/icon.png
 Exec=/bin/sh $INSTALL_DIR/mk52.sh
 Categories=Game;Java;

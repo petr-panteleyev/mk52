@@ -4,15 +4,13 @@
  */
 package org.panteleyev.mk52.eeprom;
 
-import org.panteleyev.mk52.engine.UndefinedBehaviourException;
-
 import java.util.Arrays;
 
 import static org.panteleyev.mk52.eeprom.Eeprom.EEPROM_LINE_SIZE;
+import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 import static org.panteleyev.mk52.engine.Constants.EEPROM_SIZE;
 import static org.panteleyev.mk52.engine.Constants.PROGRAM_MEMORY_SIZE;
 import static org.panteleyev.mk52.engine.Constants.TETRADS_PER_REGISTER;
-import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 
 final class EepromUtils {
     public static int normalizeEepromIndex(int index) {
@@ -38,7 +36,7 @@ final class EepromUtils {
 
     public static void writeEepromLine(byte[] eeprom, int start, byte[] line, EepromMode mode) {
         if (line.length != TETRADS_PER_REGISTER) {
-            throw new UndefinedBehaviourException("EEPROM line must be of size " + TETRADS_PER_REGISTER);
+            throw new IllegalArgumentException("EEPROM line must be of size " + TETRADS_PER_REGISTER);
         }
 
         if (mode == EepromMode.PROGRAM) {

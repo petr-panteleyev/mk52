@@ -16,6 +16,7 @@ import java.util.function.UnaryOperator;
 import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 import static org.panteleyev.mk52.engine.Constants.EXPONENT_POSITION;
 import static org.panteleyev.mk52.engine.Constants.EXPONENT_SIGN_POSITION;
+import static org.panteleyev.mk52.engine.Constants.MANTISSA_POSITION;
 import static org.panteleyev.mk52.engine.Constants.MANTISSA_SIZE;
 import static org.panteleyev.mk52.engine.Constants.TETRADS_PER_REGISTER;
 import static org.panteleyev.mk52.util.StringUtil.padToDisplay;
@@ -32,14 +33,15 @@ class Stack {
     private final AtomicReference<OpCode> lastExecutedOpCode;
 
     private final byte[] xBuffer = new byte[TETRADS_PER_REGISTER];
+    private final char[] mantissaBuffer = new char[MANTISSA_SIZE + 1];
+    private int mantissaIndex = 0;
+    private char[] exponentDisplayBuffer = null;
     private int xBufferPosition = 7;
     private int xBufferExponent = 0;
     private boolean hasDot = false;
-    private int dotPosition = 8;
     private boolean enteringExponent = false;
     private int enteredExponent = 0;
     private int exponentSign = 1;
-    private Value tempValueToEnterExponent = null;
 
     Stack(AtomicReference<OpCode> lastExecutedOpCode) {
         this.lastExecutedOpCode = lastExecutedOpCode;
@@ -53,19 +55,7 @@ class Stack {
         t = Value.ZERO;
         display = x.stringValue();
         //
-        Arrays.fill(xBuffer, BYTE_0);
-        xBufferPosition = 7;
-        xBufferExponent = 0;
-        hasDot = false;
         enteringExponent = false;
-        enteredExponent = 0;
-        exponentSign = 1;
-        tempValueToEnterExponent = null;
-        dotPosition = 8;
-    }
-
-    synchronized boolean isEnteringExponent() {
-        return enteringExponent;
     }
 
     synchronized Value x() {
@@ -83,8 +73,7 @@ class Stack {
         return x;
     }
 
-    synchronized
-    public StackSnapshot getSnapshot() {
+    synchronized public StackSnapshot getSnapshot() {
         return new StackSnapshot(
                 x.stringValue(),
                 y.stringValue(),
@@ -102,16 +91,14 @@ class Stack {
         display = x.stringValue();
     }
 
-    synchronized
-    public void clearX() {
+    synchronized public void clearX() {
         enteringExponent = false;
 
         x = Value.ZERO;
         display = x.stringValue();
     }
 
-    synchronized
-    public void pi() {
+    synchronized public void pi() {
         enteringExponent = false;
 
         push();
@@ -206,26 +193,27 @@ class Stack {
         display = x.stringValue();
     }
 
+    synchronized void negate() {
+        if (!enteringExponent) {
+            x = x.negate().normalize();
+            display = x.stringValue();
+        } else {
+            addCharacter('-');
+        }
+    }
+
     synchronized void addCharacter(char c) {
         var lastOpCode = lastExecutedOpCode.get();
-        if (!OpCode.isDigit(lastOpCode) && lastOpCode != OpCode.DOT) {
-            if (!enteringExponent) {
-                if (lastOpCode != OpCode.PUSH && lastOpCode != OpCode.CLEAR_X) {
-                    push();
-                }
-                Arrays.fill(xBuffer, BYTE_0);
-                xBufferPosition = 7;
-                xBufferExponent = 0;
-                hasDot = false;
-            } else {
-                if (!OpCode.isDigit(lastOpCode) && lastOpCode != OpCode.SIGN && lastOpCode != OpCode.ENTER_EXPONENT) {
-                    enteringExponent = false;
-                    Arrays.fill(xBuffer, BYTE_0);
-                    xBufferPosition = 7;
-                    xBufferExponent = 0;
-                    hasDot = false;
-                }
+        if (!OpCode.isDigit(lastOpCode) && lastOpCode != OpCode.DOT && !enteringExponent) {
+            if (lastOpCode != OpCode.PUSH && lastOpCode != OpCode.CLEAR_X) {
+                push();
             }
+            Arrays.fill(xBuffer, BYTE_0);
+            xBufferPosition = 7;
+            xBufferExponent = 0;
+            hasDot = false;
+            mantissaIndex = 0;
+            Arrays.fill(mantissaBuffer, ' ');
         }
 
         if (enteringExponent) {
@@ -236,17 +224,19 @@ class Stack {
                 exponentSign = -exponentSign;
             } else {
                 enteredExponent = (enteredExponent * 10 + c - '0') % 100;
-                if (Math.abs(enteredExponent + xBufferExponent) > 99) {
+                if (Math.abs(exponentSign * enteredExponent + xBufferExponent) > 99) {
                     throw new ArithmeticException();
                 }
             }
             ValueUtil.setExponent(xBuffer, exponentSign * enteredExponent + xBufferExponent);
+            updateExponentDisplay();
         } else {
             if (c == '.') {
                 if (xBufferPosition == 7 || hasDot) {
                     return;
                 }
                 hasDot = true;
+                mantissaBuffer[mantissaIndex++] = c;
                 return;
             }
 
@@ -254,57 +244,65 @@ class Stack {
                 return;
             }
             xBuffer[xBufferPosition] = (byte) (c - '0');
+            mantissaBuffer[mantissaIndex++] = c;
             if (!hasDot) {
                 xBufferExponent = 7 - xBufferPosition;
                 ValueUtil.setExponent(xBuffer, xBufferExponent);
-                dotPosition--;
+                mantissaBuffer[mantissaIndex] = '.';
             }
             xBufferPosition--;
         }
         if (enteringExponent) {
-            x = new Value(xBuffer, tempValueToEnterExponent.precision());
-            display = enteringExponentDisplay();
+            x = new Value(xBuffer).normalize();
+            display = new String(exponentDisplayBuffer).stripTrailing();
         } else {
-            x = new Value(xBuffer, MANTISSA_SIZE - 1 -xBufferPosition);
-            display = x.stringValue();
+            x = new Value(xBuffer).normalize();
+            display = " " + new String(mantissaBuffer).stripTrailing();
         }
     }
 
-    private String enteringExponentDisplay() {
-        var strValue = padToDisplay(tempValueToEnterExponent.stringValue());
-        var builder = new StringBuilder(strValue);
+    private void updateExponentDisplay() {
         if (exponentSign == -1) {
-            builder.setCharAt(EXPONENT_SIGN_POSITION, '-');
+            exponentDisplayBuffer[EXPONENT_SIGN_POSITION] = '-';
         } else {
-            builder.setCharAt(EXPONENT_SIGN_POSITION, ' ');
+            exponentDisplayBuffer[EXPONENT_SIGN_POSITION] = ' ';
         }
-        builder.setCharAt(EXPONENT_POSITION, (char) (enteredExponent / 10 + '0'));
-        builder.setCharAt(EXPONENT_POSITION + 1, (char) (enteredExponent % 10 + '0'));
-        return builder.toString();
+        exponentDisplayBuffer[EXPONENT_POSITION] = (char) (enteredExponent / 10 + '0');
+        exponentDisplayBuffer[EXPONENT_POSITION + 1] = (char) (enteredExponent % 10 + '0');
     }
 
     synchronized void enterExponent() {
-//        if (!enteringExponent) {
-            var xBytes = x.getBytes();
-
-            var allZero = true;
-            for (int i = 0; i < MANTISSA_SIZE; i++) {
-                if (xBytes[i] != 0) {
-                    allZero = false;
-                    break;
-                }
-            }
-            if (allZero) {
-                xBytes[7] = 1;
-                x = new Value(xBytes);
-            }
-            xBufferExponent = ValueUtil.getExponent(xBytes);
-            System.arraycopy(xBytes, 0, xBuffer, 0, xBytes.length);
-            tempValueToEnterExponent = x;
-   //     }
-
         enteringExponent = true;
+        exponentSign = 1;
+
+        // Запоминаем текущий дисплей
+        exponentDisplayBuffer = padToDisplay(display).toCharArray();
+
+        // Ставим экспоненту +00
+        exponentDisplayBuffer[EXPONENT_SIGN_POSITION] = ' ';
+        exponentDisplayBuffer[EXPONENT_POSITION] = '0';
+        exponentDisplayBuffer[EXPONENT_POSITION + 1] = '0';
+
+        // Запоминаем текущие байты регистра X
+        System.arraycopy(x.getBytes(), 0, xBuffer, 0, TETRADS_PER_REGISTER);
+
+        // Если X == 0., то ставим в 1.
+        var allZero = true;
+        for (int i = 0; i < MANTISSA_SIZE; i++) {
+            if (xBuffer[i] != 0) {
+                allZero = false;
+                break;
+            }
+        }
+        if (allZero) {
+            xBuffer[7] = 1;
+            x = new Value(xBuffer);
+            exponentDisplayBuffer[MANTISSA_POSITION] = '1';
+        }
+
+        xBufferExponent = ValueUtil.getExponent(xBuffer);
+
         enteredExponent = 0;
-        display = enteringExponentDisplay();
+        display = new String(exponentDisplayBuffer);
     }
 }

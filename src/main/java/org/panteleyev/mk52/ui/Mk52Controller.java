@@ -12,6 +12,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
@@ -143,6 +144,7 @@ public class Mk52Controller extends Controller {
                 menu("Файл",
                         menuItem("Сохранить...", _ -> onSaveMemoryDump()),
                         menuItem("Загрузить...", _ -> onLoadMemoryDump()),
+                        new SeparatorMenuItem(),
                         menuItem("Выход", _ -> onExit())
                 ),
                 menu("Инструменты",
