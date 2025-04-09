@@ -14,22 +14,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.panteleyev.mk52.engine.Constants.BYTE_0;
-import static org.panteleyev.mk52.engine.Constants.BYTE_1;
-import static org.panteleyev.mk52.engine.Constants.BYTE_2;
-import static org.panteleyev.mk52.engine.Constants.BYTE_3;
-import static org.panteleyev.mk52.engine.Constants.BYTE_4;
-import static org.panteleyev.mk52.engine.Constants.BYTE_5;
-import static org.panteleyev.mk52.engine.Constants.BYTE_6;
-import static org.panteleyev.mk52.engine.Constants.BYTE_7;
-import static org.panteleyev.mk52.engine.Constants.BYTE_8;
-import static org.panteleyev.mk52.engine.Constants.BYTE_9;
-import static org.panteleyev.mk52.engine.Constants.BYTE_A;
-import static org.panteleyev.mk52.engine.Constants.BYTE_B;
-import static org.panteleyev.mk52.engine.Constants.BYTE_C;
-import static org.panteleyev.mk52.engine.Constants.BYTE_D;
-import static org.panteleyev.mk52.engine.Constants.BYTE_E;
-import static org.panteleyev.mk52.engine.Constants.BYTE_F;
 
 @DisplayName("Адрес")
 public class AddressTest {
@@ -58,25 +42,25 @@ public class AddressTest {
 
     private static List<Arguments> testOfBytesArguments() {
         return List.of(
-                arguments(new byte[]{1, 0}, new Address(BYTE_1, BYTE_0)),
-                arguments(new byte[]{0xF, 9}, new Address(BYTE_5, BYTE_A)),
-                arguments(new byte[]{5, 0xA}, new Address(BYTE_5, BYTE_A)),
-                arguments(new byte[]{0xF, 0xF}, new Address(BYTE_F, BYTE_F))
+                arguments(1, 0, new Address(1, 0)),
+                arguments(0xF, 9, new Address(5, 0xA)),
+                arguments(5, 0xA, new Address(5, 0xA)),
+                arguments(0xF, 0xF, new Address(0xF, 0xF))
         );
     }
 
     @ParameterizedTest
     @MethodSource("testOfBytesArguments")
     @DisplayName("Создание адреса из байтов")
-    public void testOfBytes(byte[] bytes, Address expected) {
-        assertEquals(expected, Address.of(bytes));
+    public void testOfBytes(int low, int high, Address expected) {
+        assertEquals(expected, Address.of(low, high));
     }
 
     private static List<Arguments> testOfCodeArguments() {
         return List.of(
-                arguments(0x12, new Address(BYTE_2, BYTE_1)),
-                arguments(0x9F, new Address(BYTE_5, BYTE_A)),
-                arguments(0xAC, new Address(BYTE_2, BYTE_B))
+                arguments(0x12, new Address(2, 1)),
+                arguments(0x9F, new Address(5, 0xA)),
+                arguments(0xAC, new Address(2, 0xB))
         );
     }
 
@@ -89,17 +73,17 @@ public class AddressTest {
 
     private static List<Arguments> testIncrementArguments() {
         return List.of(
-                arguments(new Address(BYTE_0, BYTE_0), new Address(BYTE_1, BYTE_0)),
-                arguments(new Address(BYTE_8, BYTE_9), new Address(BYTE_9, BYTE_9)),
-                arguments(new Address(BYTE_9, BYTE_9), new Address(BYTE_0, BYTE_A)),
-                arguments(new Address(BYTE_9, BYTE_A), new Address(BYTE_0, BYTE_B)),
-                arguments(new Address(BYTE_9, BYTE_F), new Address(BYTE_0, BYTE_0)),
-                arguments(new Address(BYTE_A, BYTE_F), new Address(BYTE_1, BYTE_0)),
-                arguments(new Address(BYTE_B, BYTE_F), new Address(BYTE_2, BYTE_0)),
-                arguments(new Address(BYTE_C, BYTE_F), new Address(BYTE_3, BYTE_0)),
-                arguments(new Address(BYTE_D, BYTE_F), new Address(BYTE_4, BYTE_0)),
-                arguments(new Address(BYTE_E, BYTE_F), new Address(BYTE_5, BYTE_0)),
-                arguments(new Address(BYTE_F, BYTE_F), new Address(BYTE_6, BYTE_0))
+                arguments(new Address(0, 0), new Address(1, 0)),
+                arguments(new Address(8, 9), new Address(9, 9)),
+                arguments(new Address(9, 9), new Address(0, 0xA)),
+                arguments(new Address(9, 0xA), new Address(0, 0xB)),
+                arguments(new Address(9, 0xF), new Address(0, 0)),
+                arguments(new Address(0xA, 0xF), new Address(1, 0)),
+                arguments(new Address(0xB, 0xF), new Address(2, 0)),
+                arguments(new Address(0xC, 0xF), new Address(3, 0)),
+                arguments(new Address(0xD, 0xF), new Address(4, 0)),
+                arguments(new Address(0xE, 0xF), new Address(5, 0)),
+                arguments(new Address(0xF, 0xF), new Address(6, 0))
         );
     }
 
@@ -112,17 +96,17 @@ public class AddressTest {
 
     private static List<Arguments> testGetEffectiveAddressArguments() {
         return List.of(
-                arguments(new Address(BYTE_0, BYTE_0), 0),
-                arguments(new Address(BYTE_1, BYTE_0), 1),
-                arguments(new Address(BYTE_9, BYTE_9), 99),
-                arguments(new Address(BYTE_4, BYTE_A), 104),
-                arguments(new Address(BYTE_5, BYTE_A), 0),
-                arguments(new Address(BYTE_1, BYTE_B), 6),
-                arguments(new Address(BYTE_2, BYTE_B), 0),
-                arguments(new Address(BYTE_3, BYTE_B), 1),
-                arguments(new Address(BYTE_9, BYTE_E), 37),
-                arguments(new Address(BYTE_9, BYTE_F), 47),
-                arguments(new Address(BYTE_F, BYTE_F), 53)
+                arguments(new Address(0, 0), 0),
+                arguments(new Address(1, 0), 1),
+                arguments(new Address(9, 9), 99),
+                arguments(new Address(4, 0xA), 104),
+                arguments(new Address(5, 0xA), 0),
+                arguments(new Address(1, 0xB), 6),
+                arguments(new Address(2, 0xB), 0),
+                arguments(new Address(3, 0xB), 1),
+                arguments(new Address(9, 0xE), 37),
+                arguments(new Address(9, 0xF), 47),
+                arguments(new Address(0xF, 0xF), 53)
 
         );
     }
@@ -137,39 +121,39 @@ public class AddressTest {
     private static List<Arguments> testGetEffectiveRegisterArguments() {
         return List.of(
                 // Старшая цифра 0
-                arguments(new Address(BYTE_0, BYTE_0), 0),
-                arguments(new Address(BYTE_1, BYTE_0), 1),
-                arguments(new Address(BYTE_2, BYTE_0), 2),
-                arguments(new Address(BYTE_3, BYTE_0), 3),
-                arguments(new Address(BYTE_4, BYTE_0), 4),
-                arguments(new Address(BYTE_5, BYTE_0), 5),
-                arguments(new Address(BYTE_6, BYTE_0), 6),
-                arguments(new Address(BYTE_7, BYTE_0), 7),
-                arguments(new Address(BYTE_8, BYTE_0), 8),
-                arguments(new Address(BYTE_9, BYTE_0), 9),
-                arguments(new Address(BYTE_A, BYTE_0), 10),
-                arguments(new Address(BYTE_B, BYTE_0), 11),
-                arguments(new Address(BYTE_C, BYTE_0), 12),
-                arguments(new Address(BYTE_D, BYTE_0), 13),
-                arguments(new Address(BYTE_E, BYTE_0), 14),
-                arguments(new Address(BYTE_F, BYTE_0), 0),
+                arguments(new Address(0, 0), 0),
+                arguments(new Address(1, 0), 1),
+                arguments(new Address(2, 0), 2),
+                arguments(new Address(3, 0), 3),
+                arguments(new Address(4, 0), 4),
+                arguments(new Address(5, 0), 5),
+                arguments(new Address(6, 0), 6),
+                arguments(new Address(7, 0), 7),
+                arguments(new Address(8, 0), 8),
+                arguments(new Address(9, 0), 9),
+                arguments(new Address(0xA, 0), 10),
+                arguments(new Address(0xB, 0), 11),
+                arguments(new Address(0xC, 0), 12),
+                arguments(new Address(0xD, 0), 13),
+                arguments(new Address(0xE, 0), 14),
+                arguments(new Address(0xF, 0), 0),
                 // Старшая цифра не 0
-                arguments(new Address(BYTE_0, BYTE_1), 10),
-                arguments(new Address(BYTE_1, BYTE_1), 11),
-                arguments(new Address(BYTE_2, BYTE_2), 12),
-                arguments(new Address(BYTE_3, BYTE_3), 13),
-                arguments(new Address(BYTE_4, BYTE_4), 14),
-                arguments(new Address(BYTE_5, BYTE_5), 0),
-                arguments(new Address(BYTE_6, BYTE_6), 0),
-                arguments(new Address(BYTE_7, BYTE_7), 1),
-                arguments(new Address(BYTE_8, BYTE_8), 2),
-                arguments(new Address(BYTE_9, BYTE_9), 3),
-                arguments(new Address(BYTE_A, BYTE_A), 4),
-                arguments(new Address(BYTE_B, BYTE_B), 5),
-                arguments(new Address(BYTE_C, BYTE_C), 6),
-                arguments(new Address(BYTE_D, BYTE_D), 7),
-                arguments(new Address(BYTE_E, BYTE_E), 8),
-                arguments(new Address(BYTE_F, BYTE_F), 9)
+                arguments(new Address(0, 1), 10),
+                arguments(new Address(1, 1), 11),
+                arguments(new Address(2, 2), 12),
+                arguments(new Address(3, 3), 13),
+                arguments(new Address(4, 4), 14),
+                arguments(new Address(5, 5), 0),
+                arguments(new Address(6, 6), 0),
+                arguments(new Address(7, 7), 1),
+                arguments(new Address(8, 8), 2),
+                arguments(new Address(9, 9), 3),
+                arguments(new Address(0xA, 0xA), 4),
+                arguments(new Address(0xB, 0xB), 5),
+                arguments(new Address(0xC, 0xC), 6),
+                arguments(new Address(0xD, 0xD), 7),
+                arguments(new Address(0xE, 0xE), 8),
+                arguments(new Address(0xF, 0xF), 9)
         );
     }
 
@@ -194,7 +178,7 @@ public class AddressTest {
 
     @Test
     public void testBranchesBackwards() {
-        var address = new Address(BYTE_9, BYTE_F);
+        var address = new Address(9, 0xF);
 
         for (int i = ADDRESS_SPACE.length - 1; i >= 0; i--) {
             assertEquals(ADDRESS_SPACE[i], address.getEffectiveAddress());

@@ -8,10 +8,9 @@ import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 import static org.panteleyev.mk52.engine.Constants.BYTE_9;
 import static org.panteleyev.mk52.engine.Constants.BYTE_A;
 import static org.panteleyev.mk52.engine.Constants.BYTE_F;
-import static org.panteleyev.mk52.engine.Constants.BYTE_F0;
 import static org.panteleyev.mk52.engine.Constants.PROGRAM_MEMORY_SIZE;
 
-public record Address(byte low, byte high) {
+public record Address(int low, int high) {
     public static final Address ZERO = Address.of(0);
 
     // Используется для вычисления номера регистра при косвенной адресации
@@ -19,21 +18,17 @@ public record Address(byte low, byte high) {
             0xA, 0xB, 0xC, 0xD, 0xE, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
     };
 
-    public static Address of(byte[] bytes) {
-        if (bytes.length != 2) {
-            throw new IllegalArgumentException("Address must have 2 bytes, not " + bytes.length);
-        }
-
-        if ((bytes[1] & BYTE_F) == BYTE_F && (bytes[0] & BYTE_F) >= BYTE_A) {
-            return new Address(bytes[0], bytes[1]);
+    public static Address of(int low, int high) {
+        if ((high & 0xF) == 0xF && (low & 0xF) >= 0xA) {
+            return new Address(low, high);
         } else {
-            int raw = bytes[1] * 10 + bytes[0];
-            return new Address((byte) (raw % 10), (byte) (raw / 10));
+            int raw = high * 10 + low;
+            return new Address(raw % 10, raw / 10);
         }
     }
 
     public static Address of(int code) {
-        return of(new byte[]{(byte) (code & BYTE_F), (byte) ((code & BYTE_F0) >> 4)});
+        return of(code & 0xF, (code & 0xF0) >> 4);
     }
 
     public boolean isDark() {

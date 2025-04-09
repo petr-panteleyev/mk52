@@ -7,7 +7,7 @@ package org.panteleyev.mk52.eeprom;
 import org.panteleyev.mk52.engine.Registers;
 import org.panteleyev.mk52.program.Address;
 import org.panteleyev.mk52.program.ProgramMemory;
-import org.panteleyev.mk52.value.Value;
+import org.panteleyev.mk52.engine.Register;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -33,18 +33,18 @@ public final class Eeprom {
     public static final Duration SET_ADDRESS_DURATION = DUR_023;
     public static final Duration RW_DURATION = Duration.of(2, ChronoUnit.SECONDS);
 
+    private static final long EEPROM_STEPS_SHIFT = 4;
+
     // Каждый byte хранит одну тетраду
     private final byte[] eeprom = new byte[EEPROM_SIZE];
-    private static final int EEPROM_ADDRESS_STRING_SIZE = 8;       // 7 + пробел в начале
     private static final int MAX_STEPS = 98;
     public static final int EEPROM_LINE_SIZE = TETRADS_PER_REGISTER / 2;
-    private static final int EEPROM_ADDRESS_ALIGNMENT = 16;
 
     private final ProgramMemory memory;
     private final Registers registers;
 
     private final AtomicReference<EepromAddress> address = new AtomicReference<>(
-            valueToEepromAddress(Value.ZERO));
+            valueToEepromAddress(0));
 
     public Eeprom(ProgramMemory memory, Registers registers) {
         this.memory = memory;
@@ -57,7 +57,7 @@ public final class Eeprom {
         return eeprom;
     }
 
-    public void setAddress(Value address) {
+    public void setAddress(long address) {
         this.address.set(valueToEepromAddress(address));
     }
 
@@ -69,24 +69,24 @@ public final class Eeprom {
         }
     }
 
-    static EepromAddress valueToEepromAddress(Value value) {
-        if (value == null) {
+    static EepromAddress valueToEepromAddress(long x) {
+        if (Register.isZero(x)) {
             return new EepromAddress(0, 0);
         }
 
-        var str = value.stringValue().replace(".", "");
-        if (str.length() >= EEPROM_ADDRESS_STRING_SIZE) {
-            str = str.substring(0, EEPROM_ADDRESS_STRING_SIZE).stripTrailing();
-        }
+        x >>= EEPROM_STEPS_SHIFT;
+        int steps = (int)(x & 0xF);
+        x >>= 4;
+        steps += (int)((x & 0xF) * 10);
+        x >>= 4;
+        var addr = (int)(x & 0xF);
+        x >>= 4;
+        addr += (int)((x & 0xF) * 10);
+        x >>= 4;
+        addr += (int)((x & 0xF) * 100);
+        x >>= 4;
+        addr += (int)((x & 0xF) * 1000);
 
-        if (str.length() < EEPROM_ADDRESS_STRING_SIZE) {
-            return new EepromAddress(0, 0);
-        }
-
-        var addrString = str.substring(2, 6);
-        var addr = Integer.parseInt(addrString);
-        var stepsString = str.substring(6);
-        var steps = Integer.parseInt(stepsString);
         steps = steps - steps % EEPROM_LINE_SIZE;
         return new EepromAddress(addr, Math.min(MAX_STEPS, steps));
     }
@@ -124,9 +124,8 @@ public final class Eeprom {
                 case DATA -> {
                     var regCount = addr.steps() / EEPROM_LINE_SIZE;
                     for (int i = 0; i < regCount; i++) {
-                        var registerValue = registers.load(new Address((byte) i, BYTE_0));
-                        var line = registerValue.getBytes();
-                        EepromUtils.writeEepromLine(eeprom, addr.start() + i * TETRADS_PER_REGISTER, line, mode);
+                        var value = registers.load(new Address((byte) i, BYTE_0));
+                        EepromUtils.writeRegisterToEeprom(eeprom, addr.start() + i * TETRADS_PER_REGISTER, value);
                     }
                     registers.erase(regCount);
                 }
@@ -141,15 +140,14 @@ public final class Eeprom {
                 case PROGRAM -> {
                     var newBytes = new int[addr.steps()];
                     for (int i = 0; i < addr.steps() / EEPROM_LINE_SIZE; i++) {
-                        var line = EepromUtils.readEepromLine(eeprom, addr.start() + i * TETRADS_PER_REGISTER, mode);
+                        var line = EepromUtils.readEepromLine(eeprom, addr.start() + i * TETRADS_PER_REGISTER);
                         EepromUtils.memoryFromEepromLine(line, newBytes, i * EEPROM_LINE_SIZE);
                     }
                     memory.storeCodes(newBytes);
                 }
                 case DATA -> {
                     for (int i = 0; i < addr.steps() / EEPROM_LINE_SIZE; i++) {
-                        var line = EepromUtils.readEepromLine(eeprom, addr.start() + i * TETRADS_PER_REGISTER, mode);
-                        var value = new Value(line);
+                        var value = EepromUtils.readRegisterFromEeprom(eeprom, addr.start() + i * TETRADS_PER_REGISTER);
                         registers.store(new Address((byte) i, BYTE_0), value);
                     }
                 }

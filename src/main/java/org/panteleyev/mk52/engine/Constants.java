@@ -16,24 +16,10 @@ public final class Constants {
     public static final String ERROR_DISPLAY = " EDDOD";
 
     public static final byte BYTE_0 = (byte) 0;
-    public static final byte BYTE_1 = (byte) 1;
-    public static final byte BYTE_2 = (byte) 2;
-    public static final byte BYTE_3 = (byte) 3;
-    public static final byte BYTE_4 = (byte) 4;
-    public static final byte BYTE_5 = (byte) 5;
-    public static final byte BYTE_6 = (byte) 6;
-    public static final byte BYTE_7 = (byte) 7;
-    public static final byte BYTE_8 = (byte) 8;
     public static final byte BYTE_9 = (byte) 9;
     public static final byte BYTE_A = (byte) 0xA;
-    public static final byte BYTE_B = (byte) 0xB;
-    public static final byte BYTE_C = (byte) 0xC;
-    public static final byte BYTE_D = (byte) 0xD;
-    public static final byte BYTE_E = (byte) 0xE;
     public static final byte BYTE_F = (byte) 0xF;
     public static final byte BYTE_F0 = (byte) 0xF0;
-
-    public static final String EMPTY_STRING = "";
 
     public static final int MANTISSA_SIZE = 8;
 

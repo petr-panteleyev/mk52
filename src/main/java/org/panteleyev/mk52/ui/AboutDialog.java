@@ -47,7 +47,7 @@ public class AboutDialog extends BaseDialog<Object> {
     private static final DateTimeFormatter LOCAL_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 
     public AboutDialog(Controller owner) {
-        super(owner, "/about-dialog.css");
+        super(null, "/about-dialog.css");
 
         setHeaderText("MК-52");
         setGraphic(new ImageView(Picture.ICON.getImage()));

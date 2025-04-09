@@ -4,15 +4,15 @@
  */
 package org.panteleyev.mk52.math;
 
-import org.panteleyev.mk52.value.Value;
+import org.panteleyev.mk52.engine.Register;
 
 import java.text.DecimalFormat;
 
 public final class Converter {
     private static final DecimalFormat FORMAT = new DecimalFormat("#0.00000000");
 
-    public static HoursMinutes toHoursMinutes(Value x) {
-        var str = FORMAT.format(x.doubleValue()).replace(",", ".");
+    public static HoursMinutes toHoursMinutes(long x) {
+        var str = FORMAT.format(Register.toDouble(x)).replace(",", ".");
 
         var dot = str.indexOf(".");
         var hours = Integer.parseInt(str.substring(0, dot));
@@ -23,8 +23,8 @@ public final class Converter {
         return new HoursMinutes(hours, minutes);
     }
 
-    public static HoursMinutesSeconds toHoursMinutesSeconds(Value x) {
-        var str = FORMAT.format(x.doubleValue()).replace(",", ".");
+    public static HoursMinutesSeconds toHoursMinutesSeconds(long x) {
+        var str = FORMAT.format(Register.toDouble(x)).replace(",", ".");
 
         var dot = str.indexOf(".");
         var hours = Integer.parseInt(str.substring(0, dot));

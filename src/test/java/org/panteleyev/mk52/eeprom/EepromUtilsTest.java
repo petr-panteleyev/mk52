@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class EepromUtilsTest {
@@ -34,17 +35,27 @@ public class EepromUtilsTest {
 
     private static List<Arguments> testReadEepromLineArguments() {
         return List.of(
-                arguments(new byte[]{2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD, 0, 1}, EepromMode.PROGRAM,
-                        new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD}),
-                arguments(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD}, EepromMode.DATA,
+                arguments(new byte[]{2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD, 0, 1},
                         new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD})
         );
     }
 
     @ParameterizedTest
     @MethodSource("testReadEepromLineArguments")
-    public void testReadEepromLine(byte[] eeprom, EepromMode mode, byte[] expected) {
-        var actual = EepromUtils.readEepromLine(eeprom, 0, mode);
+    public void testReadEepromLine(byte[] eeprom, byte[] expected) {
+        var actual = EepromUtils.readEepromLine(eeprom, 0);
         assertArrayEquals(expected, actual);
+    }
+
+    private static List<Arguments> testReadRegisterFromEepromArguments() {
+        return List.of(
+                arguments(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD}, 0xDCBA9876543210L)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("testReadRegisterFromEepromArguments")
+    public void testReadRegisterFromEeprom(byte[] eeprom, long expected) {
+        assertEquals(expected, EepromUtils.readRegisterFromEeprom(eeprom, 0));
     }
 }

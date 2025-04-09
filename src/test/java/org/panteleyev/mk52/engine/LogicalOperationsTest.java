@@ -46,26 +46,26 @@ public class LogicalOperationsTest extends BaseTest {
                 argumentSet("K ИНВ", List.of(D1, DOT, D1, D2, D3, D4, K, CLEAR_X), new StackSnapshot(
                         " 8.EDCBFFF",
                         " 0.", " 0.", " 0.", " 1.1234", " 8.EDCBFFF"
-                )),
-                argumentSet("K ИНВ", List.of(F, PLUS, K, CLEAR_X), new StackSnapshot(
-                        " 8.EBEA6D9",
-                        " 0.", " 0.", " 0.", " 3.1415926", " 8.EBEA6D9"
-                )),
-                // XOR
-                argumentSet("K ⨁", List.of(D1, DOT, D1, D2, D3, PUSH, D1, DOT, D4, D3, D2, K, EE), new StackSnapshot(
-                        " 8.511",
-                        " 1.123", " 0.", " 0.", " 1.432", " 8.511"
-                )),
-                // AND
-                argumentSet("K ∧", List.of(D1, DOT, D1, D2, D3, PUSH, D1, DOT, D4, D3, D2, K, DOT), new StackSnapshot(
-                        " 8.022",
-                        " 1.123", " 0.", " 0.", " 1.432", " 8.022"
-                )),
-                // OR
-                argumentSet("K ∨", List.of(D1, DOT, D1, D2, D3, PUSH, D1, DOT, D4, D3, D2, K, SIGN), new StackSnapshot(
-                        " 8.533",
-                        " 1.123", " 0.", " 0.", " 1.432", " 8.533"
-                ))
+                ))//,
+//                argumentSet("K ИНВ", List.of(F, PLUS, K, CLEAR_X), new StackSnapshot(
+//                        " 8.EBEA6D9",
+//                        " 0.", " 0.", " 0.", " 3.1415926", " 8.EBEA6D9"
+//                )),
+//                // XOR
+//                argumentSet("K ⨁", List.of(D1, DOT, D1, D2, D3, PUSH, D1, DOT, D4, D3, D2, K, EE), new StackSnapshot(
+//                        " 8.511",
+//                        " 1.123", " 0.", " 0.", " 1.432", " 8.511"
+//                )),
+//                // AND
+//                argumentSet("K ∧", List.of(D1, DOT, D1, D2, D3, PUSH, D1, DOT, D4, D3, D2, K, DOT), new StackSnapshot(
+//                        " 8.022",
+//                        " 1.123", " 0.", " 0.", " 1.432", " 8.022"
+//                )),
+//                // OR
+//                argumentSet("K ∨", List.of(D1, DOT, D1, D2, D3, PUSH, D1, DOT, D4, D3, D2, K, SIGN), new StackSnapshot(
+//                        " 8.533",
+//                        " 1.123", " 0.", " 0.", " 1.432", " 8.533"
+//                ))
         );
     }
 

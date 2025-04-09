@@ -5,34 +5,30 @@
 package org.panteleyev.mk52.engine;
 
 import org.panteleyev.mk52.program.OpCode;
-import org.panteleyev.mk52.value.Value;
-import org.panteleyev.mk52.value.ValueUtil;
 
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
-import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 import static org.panteleyev.mk52.engine.Constants.EXPONENT_POSITION;
 import static org.panteleyev.mk52.engine.Constants.EXPONENT_SIGN_POSITION;
 import static org.panteleyev.mk52.engine.Constants.MANTISSA_POSITION;
 import static org.panteleyev.mk52.engine.Constants.MANTISSA_SIZE;
-import static org.panteleyev.mk52.engine.Constants.TETRADS_PER_REGISTER;
 import static org.panteleyev.mk52.util.StringUtil.padToDisplay;
 
-@SuppressWarnings("SuspiciousNameCombination")
 class Stack {
-    private Value x = Value.ZERO;
-    private Value y = Value.ZERO;
-    private Value z = Value.ZERO;
-    private Value t = Value.ZERO;
-    private Value x1 = Value.ZERO;
-    private String display = x.stringValue();
+    private final AtomicLong x = new AtomicLong(0);
+    private final AtomicLong y = new AtomicLong(0);
+    private final AtomicLong z = new AtomicLong(0);
+    private final AtomicLong t = new AtomicLong(0);
+    private final AtomicLong x1 = new AtomicLong(0);
+    private String display = Register.toString(x);
 
     private final AtomicReference<OpCode> lastExecutedOpCode;
 
-    private final byte[] xBuffer = new byte[TETRADS_PER_REGISTER];
+    private long xBuffer = 0;
     private final char[] mantissaBuffer = new char[MANTISSA_SIZE + 1];
     private int mantissaIndex = 0;
     private char[] exponentDisplayBuffer = null;
@@ -48,20 +44,20 @@ class Stack {
     }
 
     synchronized void reset() {
-        x = Value.ZERO;
-        x1 = Value.ZERO;
-        y = Value.ZERO;
-        z = Value.ZERO;
-        t = Value.ZERO;
-        display = x.stringValue();
+        x.set(0);
+        x1.set(0);
+        y.set(0);
+        z.set(0);
+        t.set(0);
+        display = Register.toString(x);
         //
         enteringExponent = false;
     }
 
-    synchronized Value x() {
-        var tmp = x;
-        x = x.normalize();
-        display = x.stringValue();
+    synchronized long x() {
+        var tmp = x.get();
+        x.set(Register.normalize(x.get()));
+        display = Register.toString(x);
         return tmp;
     }
 
@@ -69,134 +65,123 @@ class Stack {
         return display;
     }
 
-    synchronized Value xOrBuffer() {
-        return x;
+    synchronized long xOrBuffer() {
+        return x.get();
     }
 
     synchronized public StackSnapshot getSnapshot() {
         return new StackSnapshot(
-                x.stringValue(),
-                y.stringValue(),
-                z.stringValue(),
-                t.stringValue(),
-                x1.stringValue(),
+                Register.toString(x),
+                Register.toString(y),
+                Register.toString(z),
+                Register.toString(t),
+                Register.toString(x1),
                 display
         );
     }
 
-    synchronized void setX(Value x) {
+    synchronized void setX(long x) {
         enteringExponent = false;
-
-        this.x = x;
-        display = x.stringValue();
+        this.x.set(x);
+        display = Register.toString(x);
     }
 
     synchronized public void clearX() {
         enteringExponent = false;
 
-        x = Value.ZERO;
-        display = x.stringValue();
+        x.set(0);
+        display = Register.toString(x);
     }
 
     synchronized public void pi() {
         enteringExponent = false;
 
         push();
-        x1 = x;
-        x = Value.PI;
-        display = x.stringValue();
+        x1.set(x.get());
+        x.set(Register.PI);
+        display = Register.toString(x);
     }
 
     synchronized void push() {
         enteringExponent = false;
 
-        t = z;
-        z = y;
-        y = x.normalize();
-        x = x.normalize();
-        display = x.stringValue();
+        t.set(z.get());
+        z.set(y.get());
+        y.set(Register.normalize(x.get()));
+        x.set(Register.normalize(x.get()));
+        display = Register.toString(x);
     }
 
     synchronized void rotate() {
         enteringExponent = false;
 
-        var tempX = x.normalize();
-        x = y;
-        y = z;
-        z = t;
-        t = tempX;
-        x1 = tempX;
-        display = x.stringValue();
+        var tempX = Register.normalize(x.get());
+        x.set(y.get());
+        y.set(z.get());
+        z.set(t.get());
+        t.set(tempX);
+        x1.set(tempX);
+        display = Register.toString(x);
     }
 
     synchronized void swap() {
         enteringExponent = false;
 
-        var tempX = x.normalize();
-        x = y;
-        y = tempX;
-        x1 = tempX;
-        display = x.stringValue();
+        var tempX = Register.normalize(x.get());
+        x.set(y.get());
+        y.set(tempX);
+        x1.set(tempX);
+        display = Register.toString(x);
     }
 
     synchronized void restoreX() {
         enteringExponent = false;
 
-        t = z;
-        z = y;
-        y = x;
-        x = x1;
-        display = x.stringValue();
+        t.set(z.get());
+        z.set(y.get());
+        y.set(x.get());
+        x.set(x1.get());
+        display = Register.toString(x);
     }
 
-    synchronized void unaryOperation(UnaryOperator<Value> operation) {
+    synchronized void unaryOperation(UnaryOperator<Long> operation) {
         enteringExponent = false;
 
-        x1 = x.normalize();
+        x1.set(Register.normalize(x.get()));
 
-        var result = operation.apply(x);
-        if (result.invalid()) {
-            throw new ArithmeticException("Error");
-        }
-
-        x = result;
-        display = x.stringValue();
+        var result = operation.apply(x.get());
+        x.set(result);
+        display = Register.toString(x);
     }
 
-    synchronized void binaryOperation(BinaryOperator<Value> operation) {
+    synchronized void binaryOperation(BinaryOperator<Long> operation) {
         enteringExponent = false;
 
-        x1 = x.normalize();
+        x1.set(Register.normalize(x.get()));
 
-        var result = operation.apply(x, y);
-        if (result.invalid()) {
-            throw new ArithmeticException("Error");
-        }
+        var result = operation.apply(x.get(), y.get());
 
-        x = result;
-        y = z;
-        z = t;
-        display = x.stringValue();
+        x.set(result);
+        y.set(z.get());
+        z.set(t.get());
+        display = Register.toString(x);
     }
 
-    synchronized void binaryKeepYOperation(BinaryOperator<Value> operation) {
+    synchronized void binaryKeepYOperation(BinaryOperator<Long> operation) {
         enteringExponent = false;
 
-        x1 = x;
+        x1.set(x.get());
 
-        var result = operation.apply(x, y);
-        if (result.invalid()) {
-            throw new ArithmeticException("Error");
-        }
+        var result = operation.apply(x.get(), y.get());
 
-        x = result;
-        display = x.stringValue();
+        x.set(result);
+        display = Register.toString(x);
     }
 
     synchronized void negate() {
         if (!enteringExponent) {
-            x = x.negate().normalize();
-            display = x.stringValue();
+            x.set(Register.normalize(Register.negate(x.get())));
+            display = Register.toString(x);
         } else {
             addCharacter('-');
         }
@@ -208,7 +193,7 @@ class Stack {
             if (lastOpCode != OpCode.PUSH && lastOpCode != OpCode.CLEAR_X) {
                 push();
             }
-            Arrays.fill(xBuffer, BYTE_0);
+            xBuffer = 0;
             xBufferPosition = 7;
             xBufferExponent = 0;
             hasDot = false;
@@ -228,7 +213,7 @@ class Stack {
                     throw new ArithmeticException();
                 }
             }
-            ValueUtil.setExponent(xBuffer, exponentSign * enteredExponent + xBufferExponent);
+            xBuffer = Register.setExponent(xBuffer, exponentSign * enteredExponent + xBufferExponent);
             updateExponentDisplay();
         } else {
             if (c == '.') {
@@ -243,20 +228,20 @@ class Stack {
             if (xBufferPosition < 0) {
                 return;
             }
-            xBuffer[xBufferPosition] = (byte) (c - '0');
+            xBuffer = Register.setMantissaDigit(xBuffer, xBufferPosition, c);
             mantissaBuffer[mantissaIndex++] = c;
             if (!hasDot) {
                 xBufferExponent = 7 - xBufferPosition;
-                ValueUtil.setExponent(xBuffer, xBufferExponent);
+                xBuffer = Register.setExponent(xBuffer, xBufferExponent);
                 mantissaBuffer[mantissaIndex] = '.';
             }
             xBufferPosition--;
         }
         if (enteringExponent) {
-            x = new Value(xBuffer).normalize();
+            x.set(Register.normalize(xBuffer));
             display = new String(exponentDisplayBuffer).stripTrailing();
         } else {
-            x = new Value(xBuffer).normalize();
+            x.set(Register.normalize(xBuffer));
             display = " " + new String(mantissaBuffer).stripTrailing();
         }
     }
@@ -284,23 +269,16 @@ class Stack {
         exponentDisplayBuffer[EXPONENT_POSITION + 1] = '0';
 
         // Запоминаем текущие байты регистра X
-        System.arraycopy(x.getBytes(), 0, xBuffer, 0, TETRADS_PER_REGISTER);
+        xBuffer = x.get();
 
         // Если X == 0., то ставим в 1.
-        var allZero = true;
-        for (int i = 0; i < MANTISSA_SIZE; i++) {
-            if (xBuffer[i] != 0) {
-                allZero = false;
-                break;
-            }
-        }
-        if (allZero) {
-            xBuffer[7] = 1;
-            x = new Value(xBuffer);
+        if (Register.isZero(xBuffer)) {
+            xBuffer = Register.ONE;
+            x.set(xBuffer);
             exponentDisplayBuffer[MANTISSA_POSITION] = '1';
         }
 
-        xBufferExponent = ValueUtil.getExponent(xBuffer);
+        xBufferExponent = Register.getExponent(xBuffer);
 
         enteredExponent = 0;
         display = new String(exponentDisplayBuffer);

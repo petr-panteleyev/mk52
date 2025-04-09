@@ -5,8 +5,6 @@
 package org.panteleyev.mk52.engine;
 
 import org.panteleyev.mk52.program.Address;
-import org.panteleyev.mk52.value.Value;
-import org.panteleyev.mk52.value.ValueUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,19 +13,19 @@ import java.util.List;
 import static org.panteleyev.mk52.engine.Constants.REGISTERS_SIZE;
 
 public class Registers {
-    private final Value[] registers = new Value[REGISTERS_SIZE];
+    private final long[] registers = new long[REGISTERS_SIZE];
 
     public Registers() {
         reset();
     }
 
-    public void store(Address address, Value value) {
+    public void store(Address address, long value) {
         synchronized (registers) {
             registers[address.getEffectiveRegister()] = value;
         }
     }
 
-    public Value load(Address address) {
+    public long load(Address address) {
         synchronized (registers) {
             return registers[address.getEffectiveRegister()];
         }
@@ -36,42 +34,42 @@ public class Registers {
     public Address modifyAndGetAddressValue(Address address) {
         synchronized (registers) {
             var index = address.getEffectiveRegister();
-            var bytes = registers[index].getBytes();
-            ValueUtil.convertForIndirect(bytes);
+
+            var x = Register.convertForIndirect(registers[index]);
 
             if (index <= 3) {
-                ValueUtil.decrementMantissa(bytes);
+                x = Register.decrementMantissa(x);
             } else if (index <= 6) {
-                ValueUtil.incrementMantissa(bytes);
+                x = Register.incrementMantissa(x);
             }
 
-            registers[index] = new Value(bytes);
-            return Address.of(new byte[]{bytes[0], bytes[1]});
+            registers[index] = x;
+            return Address.of((int) (x & 0xFF));
         }
     }
 
     public int modifyAndGetLoopValue(int index) {
         synchronized (registers) {
-            var bytes = registers[index].getBytes();
-            ValueUtil.convertForIndirect(bytes);
-            if (ValueUtil.getIndirectValue(bytes) == 1) {
+            var x = Register.convertForIndirect(registers[index]);
+            x = Register.convertForIndirect(x);
+            if (Register.getIndirectValue(x) == 1) {
                 return 0;
             }
 
             if (index <= 3) {
-                ValueUtil.decrementMantissa(bytes);
+                x = Register.decrementMantissa(x);
             } else if (index <= 6) {
-                ValueUtil.incrementMantissa(bytes);
+                x = Register.incrementMantissa(x);
             }
 
-            registers[index] = new Value(bytes);
-            return ValueUtil.getIndirectValue(bytes);
+            registers[index] = x;
+            return Register.getIndirectValue(x);
         }
     }
 
     public void reset() {
         synchronized (registers) {
-            Arrays.fill(registers, Value.ZERO);
+            Arrays.fill(registers, 0);
         }
     }
 
@@ -79,7 +77,7 @@ public class Registers {
         synchronized (registers) {
             var snapshot = new ArrayList<String>(REGISTERS_SIZE);
             for (var register : registers) {
-                snapshot.add(register.stringValue());
+                snapshot.add(Register.toString(register));
             }
             return snapshot;
         }
@@ -87,7 +85,7 @@ public class Registers {
 
     public void erase(int count) {
         synchronized (registers) {
-            Arrays.fill(registers, 0, count, Value.ZERO);
+            Arrays.fill(registers, 0, count, 0);
         }
     }
 }

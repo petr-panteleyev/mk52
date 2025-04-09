@@ -17,19 +17,12 @@ final class EepromUtils {
         return index % EEPROM_SIZE;
     }
 
-    public static byte[] readEepromLine(byte[] eeprom, int start, EepromMode mode) {
+    public static byte[] readEepromLine(byte[] eeprom, int start) {
         var line = new byte[TETRADS_PER_REGISTER];
-
-        if (mode == EepromMode.PROGRAM) {
-            line[0] = eeprom[normalizeEepromIndex(start + TETRADS_PER_REGISTER - 2)];
-            line[1] = eeprom[normalizeEepromIndex(start + TETRADS_PER_REGISTER - 1)];
-            for (var index = 2; index < line.length; index++) {
-                line[index] = eeprom[normalizeEepromIndex(start + index - 2)];
-            }
-        } else {
-            for (int i = 0; i < line.length; i++) {
-                line[i] = eeprom[normalizeEepromIndex(start + i)];
-            }
+        line[0] = eeprom[normalizeEepromIndex(start + TETRADS_PER_REGISTER - 2)];
+        line[1] = eeprom[normalizeEepromIndex(start + TETRADS_PER_REGISTER - 1)];
+        for (var index = 2; index < line.length; index++) {
+            line[index] = eeprom[normalizeEepromIndex(start + index - 2)];
         }
         return line;
     }
@@ -50,6 +43,23 @@ final class EepromUtils {
             for (var index = 0; index < line.length; index++) {
                 eeprom[normalizeEepromIndex(start + index)] |= line[index];
             }
+        }
+    }
+
+    public static long readRegisterFromEeprom(byte[] eeprom, int start) {
+        long register = 0;
+        for (int i = 0, shift = 0; i < TETRADS_PER_REGISTER; i++, shift += 4) {
+            register |= (long) eeprom[normalizeEepromIndex(start + i)] << shift;
+        }
+        return register;
+    }
+
+
+    public static void writeRegisterToEeprom(byte[] eeprom, int start, long register) {
+        for (var index = 0; index < TETRADS_PER_REGISTER; index++) {
+            var tetrad = register & 0xF;
+            eeprom[normalizeEepromIndex(start + index)] |= (byte) tetrad;
+            register >>= 4;
         }
     }
 

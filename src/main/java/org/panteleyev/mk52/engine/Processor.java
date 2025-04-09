@@ -11,7 +11,6 @@ import org.panteleyev.mk52.program.ProgramCounter;
 import org.panteleyev.mk52.program.ProgramMemory;
 import org.panteleyev.mk52.program.StepExecutionCallback;
 import org.panteleyev.mk52.program.StepExecutionResult;
-import org.panteleyev.mk52.value.Value;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,10 +29,10 @@ final class Processor {
         ERROR
     }
 
-    private static final Predicate<Value> LT_0 = v -> v.doubleValue() < 0;
-    private static final Predicate<Value> EQ_0 = v -> v.doubleValue() == 0;
-    private static final Predicate<Value> GE_0 = v -> v.doubleValue() >= 0;
-    private static final Predicate<Value> NE_0 = v -> v.doubleValue() != 0;
+    private static final Predicate<Long> LT_0 = Register::isNegative;
+    private static final Predicate<Long> EQ_0 = Register::isZero;
+    private static final Predicate<Long> GE_0 = x -> Register.isZero(x) || !Register.isNegative(x);
+    private static final Predicate<Long> NE_0 = x -> !Register.isZero(x);
 
     private final ProgramCounter programCounter = new ProgramCounter();
     private final Stack stack;
@@ -106,12 +105,12 @@ final class Processor {
     public void run() {
         var status = ExecutionStatus.CONTINUE;
         while (true) {
-            if (!running.get() || status != ExecutionStatus.CONTINUE || stack.xOrBuffer().invalid()) {
+            if (!running.get() || status != ExecutionStatus.CONTINUE) {
                 running.set(false);
                 if (status == ExecutionStatus.ERROR) {
                     stepCallback.after(newStepExecutionResult(ERROR_DISPLAY));
                 } else {
-                    stepCallback.after(newStepExecutionResult(stack.x().stringValue()));
+                    stepCallback.after(newStepExecutionResult(Register.toString(stack.x())));
                 }
                 break;
             }
@@ -172,7 +171,7 @@ final class Processor {
         goTo(newPc);
     }
 
-    private void conditionalGoto(Address pc, Predicate<Value> predicate) {
+    private void conditionalGoto(Address pc, Predicate<Long> predicate) {
         if (!predicate.test(stack.x())) {
             goTo(pc);
         }
@@ -188,7 +187,7 @@ final class Processor {
         }
     }
 
-    private void conditionalIndirectGoto(Address address, Predicate<Value> predicate) {
+    private void conditionalIndirectGoto(Address address, Predicate<Long> predicate) {
         if (!predicate.test(stack.x())) {
             indirectGoto(address);
         }

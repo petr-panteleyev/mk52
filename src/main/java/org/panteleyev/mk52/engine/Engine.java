@@ -229,9 +229,7 @@ public final class Engine {
                         if (val != null) {
                             addressBuffer[1] = val;
                         }
-                        execute(new Instruction(addressOpCode, Address.of(
-                                new byte[] {(byte)addressBuffer[1], (byte)addressBuffer[0]}
-                        )));
+                        execute(new Instruction(addressOpCode, Address.of(addressBuffer[1], addressBuffer[0])));
                         keyboardMode = KeyboardMode.NORMAL;
                         yield OpCode.EMPTY;
                     }
