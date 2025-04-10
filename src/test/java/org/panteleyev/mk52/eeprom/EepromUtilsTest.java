@@ -58,4 +58,33 @@ public class EepromUtilsTest {
     public void testReadRegisterFromEeprom(byte[] eeprom, long expected) {
         assertEquals(expected, EepromUtils.readRegisterFromEeprom(eeprom, 0));
     }
+
+    private static List<Arguments> testAlignEraseStartArguments() {
+        return List.of(
+                arguments(0, 0),
+                arguments(12, 0),
+                arguments(13, 0),
+                arguments(14, 14)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("testAlignEraseStartArguments")
+    public void testAlignEraseStart(int start, int expected) {
+        assertEquals(expected, EepromUtils.alignEraseStart(start));
+    }
+
+    private static List<Arguments> testAlignEraseEndArguments() {
+        return List.of(
+                arguments(6, 14),
+                arguments(13, 14),
+                arguments(15, 28)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("testAlignEraseEndArguments")
+    public void testAlignEraseEnd(int start, int expected) {
+        assertEquals(expected, EepromUtils.alignEraseEnd(start));
+    }
 }

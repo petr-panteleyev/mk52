@@ -4,10 +4,6 @@
  */
 package org.panteleyev.mk52.program;
 
-import static org.panteleyev.mk52.engine.Constants.BYTE_0;
-import static org.panteleyev.mk52.engine.Constants.BYTE_9;
-import static org.panteleyev.mk52.engine.Constants.BYTE_A;
-import static org.panteleyev.mk52.engine.Constants.BYTE_F;
 import static org.panteleyev.mk52.engine.Constants.PROGRAM_MEMORY_SIZE;
 
 public record Address(int low, int high) {
@@ -36,15 +32,15 @@ public record Address(int low, int high) {
     }
 
     public Address increment() {
-        if (high == BYTE_F && low >= BYTE_A) {
-            return new Address((byte) (low - 9), BYTE_0);
+        if (high == 0xF && low >= 0xA) {
+            return new Address((byte) (low - 9), 0);
         }
 
         if (low + 1 == 10) {
-            if (high == BYTE_F) {
+            if (high == 0xF) {
                 return Address.ZERO;
             } else {
-                return new Address(BYTE_0, (byte) (high + 1));
+                return new Address(0, (byte) (high + 1));
             }
         } else {
             return new Address((byte) (low + 1), high);
@@ -53,7 +49,7 @@ public record Address(int low, int high) {
 
     public Address decrement() {
         if (low > 9) {
-            return new Address(BYTE_9, high);
+            return new Address(9, high);
         }
 
         if (low > 0) {
@@ -61,10 +57,10 @@ public record Address(int low, int high) {
         }
 
         if (high == 0) {
-            return new Address(BYTE_9, BYTE_F);
+            return new Address(9, 0xF);
         }
 
-        return new Address(BYTE_9, (byte) (high - 1));
+        return new Address(9, (byte) (high - 1));
     }
 
     public int getEffectiveAddress() {

@@ -16,10 +16,6 @@ public final class Constants {
     public static final String ERROR_DISPLAY = " EDDOD";
 
     public static final byte BYTE_0 = (byte) 0;
-    public static final byte BYTE_9 = (byte) 9;
-    public static final byte BYTE_A = (byte) 0xA;
-    public static final byte BYTE_F = (byte) 0xF;
-    public static final byte BYTE_F0 = (byte) 0xF0;
 
     public static final int MANTISSA_SIZE = 8;
 
@@ -31,11 +27,11 @@ public final class Constants {
     public static final int PROGRAM_MEMORY_SIZE = 105;
     public static final int CALL_STACK_SIZE = 5;
     public static final int REGISTERS_SIZE = 15;
-    // Количество тетрад на представление регистра: 12 + 2
-    public static final int TETRADS_PER_REGISTER = 14;
 
     // Размер в ячейках, одна ячейка - 4 бита
     public static final int EEPROM_SIZE = 1024;
+    public static final int EEPROM_LINE_SIZE = 7;
+    public static final int TETRADS_PER_EEPROM_LINE = 2 * EEPROM_LINE_SIZE;
 
     // Время исполнения команд
     public static final Duration DUR_023 = Duration.of(230, ChronoUnit.MILLIS);

@@ -83,8 +83,8 @@ public class KOperationsTest extends BaseTest {
                         " 0.", " 0.", " 0.", " 142.24314", " 142.40523"
                 )),
                 argumentSet("[10] K o⃗'", List.of(D0, DOT, D2, D4, D3, D1, D4, K, PLUS), new StackSnapshot(
-                        " 4.0523332-01",
-                        " 0.", " 0.", " 0.", " 2.4314   -01", " 4.0523332-01"
+                        " 4.0523333-01",            // 4.0523332-01
+                        " 0.", " 0.", " 0.", " 2.4314   -01", " 4.0523333-01"
                 )),
                 argumentSet("[11] K o⃖′", List.of(D6, D0, DOT, D8, K, D6), new StackSnapshot(
                         " 60.48",

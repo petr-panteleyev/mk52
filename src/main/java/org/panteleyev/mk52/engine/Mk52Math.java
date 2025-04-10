@@ -52,6 +52,9 @@ final class Mk52Math {
     }
 
     public static long sqrt(long x) {
+        if (Register.isNegative(x)) {
+            throw new ArithmeticException();
+        }
         var doubleValue = Math.sqrt(toDouble(x));
         checkResult(doubleValue);
         return valueOf(doubleValue);

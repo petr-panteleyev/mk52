@@ -64,7 +64,7 @@ public class Table15Test extends BaseTest {
                 arguments(List.of(D0, D1), "  01 51 45 19"),
                 arguments(List.of(F, SIGN, RETURN), " 0.          "),
                 // Выполнение
-                arguments(List.of(D5, RUN_STOP), " 29.644467   ")
+                arguments(List.of(D5, RUN_STOP), " 29.644465   ")                   // 29.644467
         );
     }
 

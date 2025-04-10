@@ -186,10 +186,6 @@ public enum OpCode {
         return size == 2;
     }
 
-    public Address getRegisterAddress() {
-        return new Address((byte) (code & 0xF), BYTE_0);
-    }
-
     public boolean inRange(OpCode first, OpCode last) {
         return this.ordinal() >= first.ordinal() && this.ordinal() <= last.ordinal();
     }

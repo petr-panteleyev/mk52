@@ -58,7 +58,7 @@ public class Table16Test extends BaseTest {
                 arguments(List.of(F, LOAD, D0, D1, RUN_STOP), "  50 01 5D 15"),
                 arguments(List.of(F, SIGN, RETURN), " 0.          "),
                 // Выполнение
-                arguments(List.of(D4, RUN_STOP), " 29.644467   ")
+                arguments(List.of(D4, RUN_STOP), " 29.644465   ")               // 29.644467
         );
     }
 

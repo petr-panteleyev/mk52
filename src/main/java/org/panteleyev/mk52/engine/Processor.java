@@ -7,6 +7,7 @@ package org.panteleyev.mk52.engine;
 import org.panteleyev.mk52.program.Address;
 import org.panteleyev.mk52.program.Instruction;
 import org.panteleyev.mk52.program.OpCode;
+import org.panteleyev.mk52.program.Operations;
 import org.panteleyev.mk52.program.ProgramCounter;
 import org.panteleyev.mk52.program.ProgramMemory;
 import org.panteleyev.mk52.program.StepExecutionCallback;
@@ -198,26 +199,29 @@ final class Processor {
     }
 
     private ExecutionStatus execute(OpCode opCode) {
-        if (opCode.inRange(OpCode.STORE_R0, OpCode.STORE_RE)) {
-            store(opCode.getRegisterAddress());
-        } else if (opCode.inRange(OpCode.LOAD_R0, OpCode.LOAD_RE)) {
-            load(opCode.getRegisterAddress());
-        } else if (opCode.inRange(OpCode.IND_STORE_R0, OpCode.IND_STORE_RE)) {
-            indirectStore(opCode.getRegisterAddress());
-        } else if (opCode.inRange(OpCode.IND_LOAD_R0, OpCode.IND_LOAD_RE)) {
-            indirectLoad(opCode.getRegisterAddress());
-        } else if (opCode.inRange(OpCode.GOTO_R0, OpCode.GOTO_RE)) {
-            indirectGoto(opCode.getRegisterAddress());
-        } else if (opCode.inRange(OpCode.GOTO_LT_0_R0, OpCode.GOTO_LT_0_RE)) {
-            conditionalIndirectGoto(opCode.getRegisterAddress(), LT_0);
-        } else if (opCode.inRange(OpCode.GOTO_EQ_0_R0, OpCode.GOTO_EQ_0_RE)) {
-            conditionalIndirectGoto(opCode.getRegisterAddress(), EQ_0);
-        } else if (opCode.inRange(OpCode.GOTO_GE_0_R0, OpCode.GOTO_GE_0_RE)) {
-            conditionalIndirectGoto(opCode.getRegisterAddress(), GE_0);
-        } else if (opCode.inRange(OpCode.GOTO_NE_0_R0, OpCode.GOTO_NE_0_RE)) {
-            conditionalIndirectGoto(opCode.getRegisterAddress(), NE_0);
-        } else if (opCode.inRange(OpCode.GOSUB_R0, OpCode.GOSUB_RE)) {
-            indirectGoSub(opCode.getRegisterAddress());
+        var codeHigh = opCode.code() & 0xF0;
+        var codeLow = opCode.code() & 0xF;
+
+        if (codeHigh == Operations.STORE_BASE) {
+            store(Address.of(codeLow));
+        } else if (codeHigh == Operations.LOAD_BASE) {
+            load(Address.of(codeLow));
+        } else if (codeHigh == Operations.INDIRECT_STORE_BASE) {
+            indirectStore(Address.of(codeLow));
+        } else if (codeHigh == Operations.INDIRECT_LOAD_BASE) {
+            indirectLoad(Address.of(codeLow));
+        } else if (codeHigh == Operations.INDIRECT_GOTO_BASE) {
+            indirectGoto(Address.of(codeLow));
+        } else if (codeHigh == Operations.GOTO_LT_0_BASE) {
+            conditionalIndirectGoto(Address.of(codeLow), LT_0);
+        } else if (codeHigh == Operations.GOTO_EQ_0_BASE) {
+            conditionalIndirectGoto(Address.of(codeLow), EQ_0);
+        } else if (codeHigh == Operations.GOTO_GE_0_BASE) {
+            conditionalIndirectGoto(Address.of(codeLow), GE_0);
+        } else if (codeHigh == Operations.GOTO_NE_0_BASE) {
+            conditionalIndirectGoto(Address.of(codeLow), NE_0);
+        } else if (codeHigh == Operations.INDIRECT_GOSUB_BASE) {
+            indirectGoSub(Address.of(codeLow));
         } else if (opCode == OpCode.RETURN) {
             if (fetchedInstruction.get()) {
                 returnFromSubroutine();

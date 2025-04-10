@@ -168,7 +168,7 @@ public final class Engine {
         }
 
         if (running.get()) {
-            if (keyboardMode == KeyboardMode.NORMAL && button == RUN_STOP) {
+            if (button != EEPROM_ADDRESS && button != EEPROM_EXCHANGE) {
                 running.set(false);
             }
             return;

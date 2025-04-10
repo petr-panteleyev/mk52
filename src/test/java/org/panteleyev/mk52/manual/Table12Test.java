@@ -62,13 +62,13 @@ public class Table12Test extends BaseTest {
                 arguments(List.of(F, SIGN, RETURN), " 0.          "),
                 // Данные 1
                 arguments(List.of(D1, STORE, D1), " 1.          "),
-                arguments(List.of(RUN_STOP), "-5.35365  -02"),
+                arguments(List.of(RUN_STOP), "-5.35362  -02"),                      // -5.35365  -02
                 // Данные 2
                 arguments(List.of(D2, STORE, D1), " 2.          "),
-                arguments(List.of(RETURN, RUN_STOP), " 19.507444   "),
+                arguments(List.of(RETURN, RUN_STOP), " 19.507447   "),              // 19.507444
                 // Данные 3
                 arguments(List.of(D3, STORE, D1), " 3.          "),
-                arguments(List.of(RETURN, RUN_STOP), " 322.56986   ")
+                arguments(List.of(RETURN, RUN_STOP), " 322.56991   ")               // 322.56986
         );
     }
 

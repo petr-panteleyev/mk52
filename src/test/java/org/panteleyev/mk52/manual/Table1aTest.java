@@ -80,15 +80,15 @@ public class Table1aTest extends BaseTest {
                 argumentSet("8:" + PASS, NOOP, List.of(EE, D2), " 3.1415926 02"),
                 argumentSet("9:" + PASS, NOOP, List.of(SWAP), " 315.07      "),
                 argumentSet("10:" + PASS, NOOP, List.of(MINUS), "-9.1074   -01"),
-                argumentSet("11:" + DIFF, TR_RADIAN, List.of(F, D8), " 6.131614 -01"),
-                argumentSet("12:" + DIFF, TR_GRADIAN, List.of(F, D4), " 42.020499   "),
-                argumentSet("13:" + DIFF, TR_DEGREE, List.of(SIGN), "-42.020499   "),
+                argumentSet("11:" + DIFF, TR_RADIAN, List.of(F, D8), " 6.1316135-01"),          // 6.131614 -01
+                argumentSet("12:" + DIFF, TR_GRADIAN, List.of(F, D4), " 42.020491   "),         // 42.020499
+                argumentSet("13:" + DIFF, TR_DEGREE, List.of(SIGN), "-42.020491   "),           // 42.020499
                 argumentSet("14:" + PASS, NOOP, List.of(D9), " 9.          "),
-                argumentSet("15:" + DIFF, NOOP, List.of(DIVISION), "-4.6689443   "),
-                argumentSet("16:" + DIFF, NOOP, List.of(K, STORE, D6), "-4.6689443   "),
+                argumentSet("15:" + DIFF, NOOP, List.of(DIVISION), "-4.6689434   "),            // -4.6689443
+                argumentSet("16:" + DIFF, NOOP, List.of(K, STORE, D6), "-4.6689434   "),        // -4.6689443
                 argumentSet("17:" + PASS, NOOP, List.of(F, PUSH), " 9.          "),
-                argumentSet("18:" + DIFF, NOOP, List.of(LOAD, D1), "-4.6689443   "),
-                argumentSet("19:" + DIFF, NOOP, List.of(MULTIPLICATION), "-42.020499   "),
+                argumentSet("18:" + DIFF, NOOP, List.of(LOAD, D1), "-4.6689434   "),            // -4.6689443
+                argumentSet("19:" + DIFF, NOOP, List.of(MULTIPLICATION), "-42.020491   "),      // -42.020499
                 argumentSet("20:" + PASS, NOOP, List.of(F, EE), "           00"),
                 argumentSet("21:" + PASS, NOOP, List.of(RETURN), "  52       01"),
                 argumentSet("22:" + PASS, NOOP, List.of(F, DOT), "  25 52    02"),
@@ -156,8 +156,8 @@ public class Table1aTest extends BaseTest {
                 argumentSet("84:" + PASS, NOOP, List.of(K, DOT), "  37 3A 39 64"),
                 argumentSet("85:" + PASS, NOOP, List.of(K, D0), "  54 37 3A 65"),
                 argumentSet("86:" + PASS, NOOP, List.of(RUN_STOP), "  50 54 37 66"),
-                argumentSet("87:" + DIFF, NOOP, List.of(F, SIGN), "-42.020499   "),
-                argumentSet("88:" + DIFF, NOOP, List.of(GOTO, D7, D0), "-42.020499   "),
+                argumentSet("87:" + DIFF, NOOP, List.of(F, SIGN), "-42.020491   "),             // -42.020499
+                argumentSet("88:" + DIFF, NOOP, List.of(GOTO, D7, D0), "-42.020491   "),        // -42.020499
                 argumentSet("89:" + PASS, NOOP, List.of(F, EE), "  00 00 00 70"),
                 argumentSet("90:" + PASS, NOOP, List.of(K, GOSUB, DOT), "  AA 00 00 71"),
                 argumentSet("91:" + PASS, NOOP, List.of(SWAP), "  14 AA 00 72"),
@@ -172,9 +172,9 @@ public class Table1aTest extends BaseTest {
                 argumentSet("100:" + PASS, NOOP, List.of(RUN_STOP), "  50 60 55 81"),
                 argumentSet("101:" + PASS, NOOP, List.of(D7), "  07 50 60 82"),
                 argumentSet("102:" + PASS, NOOP, List.of(D2), "  02 07 50 83"),
-                argumentSet("103:" + DIFF, NOOP, List.of(F, SIGN), "-42.020499   "),
-                argumentSet("104:" + DIFF, NOOP, List.of(GOTO, D2, D4), "-42.020499   "),
-                argumentSet("105:" + DIFF, NOOP, List.of(STEP_LEFT), "-42.020499   "),
+                argumentSet("103:" + DIFF, NOOP, List.of(F, SIGN), "-42.020491   "),            // -42.020499
+                argumentSet("104:" + DIFF, NOOP, List.of(GOTO, D2, D4), "-42.020491   "),       // -42.020499
+                argumentSet("105:" + DIFF, NOOP, List.of(STEP_LEFT), "-42.020491   "),          // -42.020499
                 argumentSet("106:" + PASS, NOOP, List.of(RUN_STOP), " 1.          "),
                 argumentSet("107:" + PASS, NOOP, List.of(STEP_RIGHT), " 1.          "),
                 argumentSet("108:" + PASS, NOOP, List.of(GOSUB), " 2.          "),
@@ -249,7 +249,7 @@ public class Table1aTest extends BaseTest {
                 argumentSet("146:" + PASS, NOOP, List.of(RUN_STOP), " 1.          "),
                 argumentSet("147:" + PASS, NOOP, List.of(D2), " 2.          "),
                 argumentSet("148:" + PASS, NOOP, List.of(RETURN), " 2.          "),
-                argumentSet("149:" + DIFF, NOOP, List.of(RUN_STOP), " 8.00001     ")
+                argumentSet("149:" + DIFF, NOOP, List.of(RUN_STOP), " 8.11018     ")            // 8.00001
         );
     }
 

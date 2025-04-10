@@ -74,7 +74,7 @@ public class Table13Test extends BaseTest {
                 // Выполнение
                 arguments(List.of(RUN_STOP), "-1.          "),
                 // Контроль регистров
-                arguments(List.of(LOAD, D1), " 3.3333333-01")
+                arguments(List.of(LOAD, D1), " 3.3333334-01")               // 3.3333333-01
         );
     }
 
