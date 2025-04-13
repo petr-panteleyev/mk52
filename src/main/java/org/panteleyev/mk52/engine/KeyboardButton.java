@@ -20,9 +20,9 @@ public enum KeyboardButton {
     D8(0x88, OpCode.EIGHT, OpCode.COS, OpCode.FRACTIONAL),
     D9(0x89, OpCode.NINE, OpCode.TAN, OpCode.MAX),
     PLUS(0x10, OpCode.ADD, OpCode.PI, OpCode.HH_MM_TO_DEG),
-    MINUS(0x11, OpCode.SUBTRACT, OpCode.SQRT, OpCode.EMPTY),
-    MULTIPLICATION(0x12, OpCode.MULTIPLY, OpCode.SQR, OpCode.EMPTY),
-    DIVISION(0x13, OpCode.DIVIDE, OpCode.ONE_BY_X, OpCode.EMPTY),
+    MINUS(0x11, OpCode.SUBTRACT, OpCode.SQRT, OpCode.K_MINUS),
+    MULTIPLICATION(0x12, OpCode.MULTIPLY, OpCode.SQR, OpCode.K_MULT),
+    DIVISION(0x13, OpCode.DIVIDE, OpCode.ONE_BY_X, OpCode.K_DIV),
     SWAP(0x14, OpCode.SWAP, OpCode.POWER_OF_X, OpCode.HH_MM_SS_TO_DEG),
     DOT(0x15, OpCode.DOT, OpCode.ROTATE, OpCode.AND),
     SIGN(0x16, OpCode.SIGN, OpCode.TO_EXECUTION_MODE, OpCode.OR),
@@ -77,7 +77,15 @@ public enum KeyboardButton {
             Map.entry(D7, 0x7),
             Map.entry(D8, 0x8),
             Map.entry(D9, 0x9),
-            Map.entry(DOT, 0xA)
+            Map.entry(DOT, 0xA),
+            Map.entry(SIGN, 0xB),
+            Map.entry(EE, 0xC),
+            Map.entry(CLEAR_X, 0xD),
+            Map.entry(PUSH, 0xE),
+            Map.entry(PLUS, 0x0),
+            Map.entry(MINUS, 0x1),
+            Map.entry(MULTIPLICATION, 0x2),
+            Map.entry(DIVISION, 0x3)
     );
 
     KeyboardButton(int keyCode, OpCode opCode, OpCode fOpCode, OpCode kOpCode) {

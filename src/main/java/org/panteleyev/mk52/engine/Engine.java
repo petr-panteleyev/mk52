@@ -100,7 +100,7 @@ public final class Engine {
     private EepromMode eepromMode = EepromMode.DATA;
 
     // Сюда сохраняем цифры адреса при вводе двухбайтовой команды
-    private final int[] addressBuffer = new int[2];
+    private int address = 0;
     // Сюда сохраняем начало регистровой команды
     private OpCode registerOpCode = OpCode.EMPTY;
     // Сюда сохраняем начало адресной команды
@@ -219,7 +219,7 @@ public final class Engine {
                     case KeyboardMode.ADDRESS_DIGIT_1 -> {
                         var val = BUTTON_TO_ADDRESS.get(button);
                         if (val != null) {
-                            addressBuffer[0] = val;
+                            address = val;
                         }
                         keyboardMode = KeyboardMode.ADDRESS_DIGIT_2;
                         yield OpCode.EMPTY;
@@ -227,9 +227,9 @@ public final class Engine {
                     case KeyboardMode.ADDRESS_DIGIT_2 -> {
                         var val = BUTTON_TO_ADDRESS.get(button);
                         if (val != null) {
-                            addressBuffer[1] = val;
+                            address = address << 4 | val;
                         }
-                        execute(new Instruction(addressOpCode, Address.of(addressBuffer[1], addressBuffer[0])));
+                        execute(new Instruction(addressOpCode, Address.of(address & 0xFF)));
                         keyboardMode = KeyboardMode.NORMAL;
                         yield OpCode.EMPTY;
                     }
@@ -282,7 +282,7 @@ public final class Engine {
                     case KeyboardMode.ADDRESS_DIGIT_1 -> {
                         var val = BUTTON_TO_ADDRESS.get(button);
                         if (val != null) {
-                            addressBuffer[0] = val;
+                            address = val;
                         }
                         keyboardMode = KeyboardMode.ADDRESS_DIGIT_2;
                         yield OpCode.EMPTY;
@@ -290,10 +290,9 @@ public final class Engine {
                     case KeyboardMode.ADDRESS_DIGIT_2 -> {
                         var val = BUTTON_TO_ADDRESS.get(button);
                         if (val != null) {
-                            addressBuffer[1] = val;
+                            address = address << 4 | val;
                         }
-                        var code = addressBuffer[0] * 16 + addressBuffer[1];
-                        storeCode(code);
+                        storeCode(address & 0xFF);
                         keyboardMode = KeyboardMode.NORMAL;
                         yield OpCode.EMPTY;
                     }

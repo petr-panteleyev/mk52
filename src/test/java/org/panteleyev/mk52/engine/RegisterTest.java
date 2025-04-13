@@ -18,7 +18,7 @@ public class RegisterTest {
     private static List<Arguments> testToStringArguments() {
         return List.of(
                 // Ненормализованное число
-//                arguments(0x40206586025L, "-0.6586025 40"),
+                arguments(0x40206586025L, "-0.6586025 40"),
                 arguments(0x7000000000L, " 00000000."),
                 arguments(0x7000000006L, " 00000006."),
                 // Нормализованное число

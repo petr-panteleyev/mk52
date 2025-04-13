@@ -150,8 +150,8 @@ class Stack {
         x1.set(Register.normalize(x.get()));
 
         var result = operation.apply(x.get());
-        x.set(result);
-        display = Register.toString(x);
+        x.set(Register.normalize(result));
+        display = Register.toString(result);
     }
 
     synchronized void binaryOperation(BinaryOperator<Long> operation) {
@@ -161,10 +161,10 @@ class Stack {
 
         var result = operation.apply(x.get(), y.get());
 
-        x.set(result);
+        x.set(Register.normalize(result));
         y.set(z.get());
         z.set(t.get());
-        display = Register.toString(x);
+        display = Register.toString(result);
     }
 
     synchronized void binaryKeepYOperation(BinaryOperator<Long> operation) {
@@ -174,8 +174,8 @@ class Stack {
 
         var result = operation.apply(x.get(), y.get());
 
-        x.set(result);
-        display = Register.toString(x);
+        x.set(Register.normalize(result));
+        display = Register.toString(result);
     }
 
     synchronized void negate() {

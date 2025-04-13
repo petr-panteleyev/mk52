@@ -2,24 +2,24 @@
  Copyright © 2025 Petr Panteleyev <petr@panteleyev.org>
  SPDX-License-Identifier: BSD-2-Clause
  */
-package org.panteleyev.mk52.engine;
+package org.panteleyev.mk52.math;
 
-import org.panteleyev.mk52.math.Converter;
+import org.panteleyev.mk52.engine.Register;
+import org.panteleyev.mk52.engine.TrigonometricMode;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Random;
 
-import static org.panteleyev.mk52.engine.Constants.MANTISSA_SIZE;
 import static org.panteleyev.mk52.engine.Register.isNegative;
 import static org.panteleyev.mk52.engine.Register.isZero;
 import static org.panteleyev.mk52.engine.Register.toDouble;
 import static org.panteleyev.mk52.engine.Register.valueOf;
 
-final class Mk52Math {
+public final class Mk52Math {
     private static final Random RANDOM = new Random(System.currentTimeMillis());
-    private static final BigDecimal SIXTY = BigDecimal.valueOf(60);
-    private static final BigDecimal D_3600 = BigDecimal.valueOf(3600);
+
+    public static final long SIXTY = 0x1060000000L;
+    private static final long DEGREES_TO_RADIANS = 0x998017453292L;
+    private static final long RADIANS_TO_DEGREES = 0x001057295779L;
 
     private static void checkResult(double x) {
         if (Double.isNaN(x) || Double.isInfinite(x)) {
@@ -110,14 +110,37 @@ final class Mk52Math {
         return Register.abs(x);
     }
 
-    // TODO: переделать
     public static long integer(long x) {
-        return Register.valueOf((int) Register.toDouble(x));
+        if (x == 0) {
+            return 0;
+        }
+
+        var exp = Register.getExponent(x);
+        if (exp < 0) {
+            return 0;
+        } else if (exp >= 7) {
+            return x;
+        } else {
+            for (int i = 0; i < 7 - exp; i++) {
+                x = Register.clearMantissaDigit(x, i);
+            }
+            return x;
+        }
     }
 
-    // TODO: переделать
     public static long fractional(long x) {
-        return Register.valueOf(Register.toDouble(x) - (int) Register.toDouble(x));
+        if (x == 0) {
+            return 0;
+        }
+
+        var exp = Register.getExponent(x);
+        if (exp < 0) {
+            return x;
+        } else if (exp >= 7) {
+            return 0;
+        } else {
+            return Register.shiftLeft(x, exp + 1);
+        }
     }
 
     public static long max(long x, long y) {
@@ -146,7 +169,7 @@ final class Mk52Math {
     // Тригонометрия
 
     public static long sin(long x, TrigonometricMode mode) {
-        var doubleValue = Math.sin(toRadian(Register.toDouble(x), mode));
+        var doubleValue = Math.sin(Register.toDouble(toRadian(x, mode)));
         checkResult(doubleValue);
         return Register.valueOf(doubleValue);
     }
@@ -158,7 +181,7 @@ final class Mk52Math {
     }
 
     public static long cos(long x, TrigonometricMode mode) {
-        var doubleValue = Math.cos(toRadian(Register.toDouble(x), mode));
+        var doubleValue = Math.cos(Register.toDouble(toRadian(x, mode)));
         checkResult(doubleValue);
         return Register.valueOf(doubleValue);
     }
@@ -170,7 +193,7 @@ final class Mk52Math {
     }
 
     public static long tan(long x, TrigonometricMode mode) {
-        var doubleValue = Math.tan(toRadian(Register.toDouble(x), mode));
+        var doubleValue = Math.tan(Register.toDouble(toRadian(x, mode)));
         checkResult(doubleValue);
         return Register.valueOf(doubleValue);
     }
@@ -202,63 +225,38 @@ final class Mk52Math {
     // Угловые операции
 
     public static long hoursMinutesToDegrees(long x) {
-        var hhMM = Converter.toHoursMinutes(x);
-        var signum = Math.signum(hhMM.hours());
-
-        var result = toBigDecimal(hhMM.minutes())
-                .divide(SIXTY, MANTISSA_SIZE, RoundingMode.FLOOR)
-                .add(toBigDecimal(Math.abs(hhMM.hours())));
-
-        if (signum < 0) {
-            result = result.negate();
-        }
-
-        return Register.valueOf(downScale(result).doubleValue());
+        return add(integer(x), Register.modifyExponent(divide(SIXTY, fractional(x)), 2));
     }
 
     public static long hoursMinutesSecondsToDegrees(long x) {
-        var hhMmSs = Converter.toHoursMinutesSeconds(x);
-        var result = toBigDecimal(hhMmSs.hours())
-                .add(toBigDecimal(hhMmSs.minutes()).divide(SIXTY, MANTISSA_SIZE, RoundingMode.FLOOR))
-                .add(toBigDecimal(hhMmSs.seconds()).divide(D_3600, MANTISSA_SIZE, RoundingMode.FLOOR));
-
-        return Register.valueOf(downScale(result).doubleValue());
+        var frac100 = Register.modifyExponent(fractional(x), 2);
+        return add(integer(x), divide(SIXTY,
+                add(integer(frac100), divide(0x60000000, Register.modifyExponent(fractional(frac100), 1)))));
     }
 
     public static long degreesToHoursMinutes(long x) {
-        var hours = BigDecimal.valueOf(Register.toDouble(x));
-        var fraction = hours.remainder(BigDecimal.ONE);
-
-        var result = fraction.multiply(SIXTY)
-                .stripTrailingZeros()
-                .movePointLeft(2)
-                .add(BigDecimal.valueOf(hours.intValue()));
-
-        return Register.valueOf(downScale(result).doubleValue());
+        var xInt = integer(x);
+        var conv = multiply(fractional(x), 0x999060000000L);
+        if (Register.isZero(xInt)) {
+            return conv;
+        } else {
+            return add(xInt, conv);
+        }
     }
 
     public static long degreesToHoursMinutesSeconds(long x) {
-        var hours = BigDecimal.valueOf(Register.toDouble(x));
-        var fraction = hours.remainder(BigDecimal.ONE);
+        var minutes = multiply(fractional(x), SIXTY);
+        var seconds = multiply(fractional(minutes), SIXTY);
 
-        var minutes = fraction.multiply(SIXTY);
-
-        var minuteFraction = minutes.remainder(BigDecimal.ONE);
-        var seconds = minuteFraction.multiply(SIXTY).stripTrailingZeros();
-        var secondsFraction = seconds.remainder(BigDecimal.ONE);
-
-        var result = BigDecimal.valueOf(hours.intValue())
-                .add(BigDecimal.valueOf(minutes.intValue()).movePointLeft(2))
-                .add(BigDecimal.valueOf(seconds.intValue()).movePointLeft(4))
-                .add(secondsFraction.movePointLeft(4));
-        return Register.valueOf(downScale(result).doubleValue());
+        return add(add(add(integer(x), Register.modifyExponent(integer(minutes), -2)),
+                Register.modifyExponent(integer(seconds), -4)), Register.modifyExponent(fractional(seconds), -4));
     }
 
-    private static double toRadian(double x, TrigonometricMode mode) {
+    private static long toRadian(long x, TrigonometricMode mode) {
         return switch (mode) {
             case RADIAN -> x;
-            case DEGREE -> Math.toRadians(x);
-            case GRADIAN -> x * Math.PI / 200;
+            case DEGREE -> multiply(x, DEGREES_TO_RADIANS);
+            case GRADIAN -> multiply(x, 0x998015707963L);
         };
     }
 
@@ -268,22 +266,5 @@ final class Mk52Math {
             case DEGREE -> Math.toDegrees(x);
             case GRADIAN -> 200.0 * x / Math.PI;
         };
-    }
-
-    private static BigDecimal toBigDecimal(int x) {
-        return BigDecimal.valueOf(x);
-    }
-
-    private static BigDecimal toBigDecimal(double x) {
-        return BigDecimal.valueOf(x);
-    }
-
-    private static BigDecimal downScale(BigDecimal x) {
-        var extraPrecision = x.precision() - MANTISSA_SIZE;
-        if (extraPrecision > 0) {
-            return x.setScale(x.scale() - extraPrecision, RoundingMode.FLOOR);
-        } else {
-            return x;
-        }
     }
 }

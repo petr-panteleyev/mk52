@@ -7,7 +7,6 @@ package org.panteleyev.mk52.program;
 import java.time.Duration;
 import java.util.Arrays;
 
-import static org.panteleyev.mk52.engine.Constants.BYTE_0;
 import static org.panteleyev.mk52.engine.Constants.DUR_023;
 import static org.panteleyev.mk52.engine.Constants.DUR_028;
 import static org.panteleyev.mk52.engine.Constants.DUR_036;
@@ -144,7 +143,25 @@ public enum OpCode {
     AND(0x37, DUR_023),
     OR(0x38, DUR_023),
     XOR(0x39, DUR_023),
-    INVERSION(0x3A, DUR_023);
+    INVERSION(0x3A, DUR_023),
+    // Недокументированные операции
+    K_MINUS(0x27, DUR_023),
+    K_MULT(0x28, DUR_023),
+    K_DIV(0x29, DUR_023);
+
+    private static final int STORE_BASE = 0x40;
+    private static final int LOAD_BASE = 0x60;
+
+    private static final int INDIRECT_STORE_BASE = 0xB0;
+    private static final int INDIRECT_LOAD_BASE = 0xD0;
+
+    private static final int INDIRECT_GOTO_BASE = 0x80;
+    private static final int INDIRECT_GOSUB_BASE = 0xA0;
+
+    private static final int GOTO_NE_0_BASE = 0x70;
+    private static final int GOTO_GE_0_BASE = 0x90;
+    private static final int GOTO_LT_0_BASE = 0xC0;
+    private static final int GOTO_EQ_0_BASE = 0xE0;
 
     private final int code;
     private final Duration duration;
@@ -184,6 +201,50 @@ public enum OpCode {
 
     public boolean hasAddress() {
         return size == 2;
+    }
+
+    public int getRegister() {
+        return code & 0xF;
+    }
+
+    public boolean isStore() {
+        return (code & 0xF0) == STORE_BASE;
+    }
+
+    public boolean isLoad() {
+        return (code & 0xF0) == LOAD_BASE;
+    }
+
+    public boolean isIndirectStore() {
+        return (code & 0xF0) == INDIRECT_STORE_BASE;
+    }
+
+    public boolean isIndirectLoad() {
+        return (code & 0xF0) == INDIRECT_LOAD_BASE;
+    }
+
+    public boolean isIndirectGoto() {
+        return (code & 0xF0) == INDIRECT_GOTO_BASE;
+    }
+
+    public boolean isIndirectGosub() {
+        return (code & 0xF0) == INDIRECT_GOSUB_BASE;
+    }
+
+    public boolean isGotoLt0() {
+        return (code & 0xF0) == GOTO_LT_0_BASE;
+    }
+
+    public boolean isGotoEq0() {
+        return (code & 0xF0) == GOTO_EQ_0_BASE;
+    }
+
+    public boolean isGotoGe0() {
+        return (code & 0xF0) == GOTO_GE_0_BASE;
+    }
+
+    public boolean isGotoNe0() {
+        return (code & 0xF0) == GOTO_NE_0_BASE;
     }
 
     public boolean inRange(OpCode first, OpCode last) {

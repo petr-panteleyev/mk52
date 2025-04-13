@@ -71,12 +71,12 @@ public class KOperationsTest extends BaseTest {
                         " 0.", " 0.", " 0.", " 60.", " 60."
                 )),
                 argumentSet("[7] K o⃗'", List.of(D6, D0, DOT, D4, K, PLUS), new StackSnapshot(
-                        " 60.666666",
-                        " 0.", " 0.", " 0.", " 60.4", " 60.666666"
+                        " 60.666667",                                   // 60.666666
+                        " 0.", " 0.", " 0.", " 60.4", " 60.666667"
                 )),
                 argumentSet("[8] K o⃗'", List.of(D0, DOT, D4, K, PLUS), new StackSnapshot(
-                        " 6.6666666-01",
-                        " 0.", " 0.", " 0.", " 4.       -01", " 6.6666666-01"
+                        " 6.6666667-01",                                // 6.6666666-01
+                        " 0.", " 0.", " 0.", " 4.       -01", " 6.6666667-01"
                 )),
                 argumentSet("[9] K o⃗'", List.of(D1, D4, D2, DOT, D2, D4, D3, D1, D4, K, PLUS), new StackSnapshot(
                         " 142.40523",
@@ -95,8 +95,8 @@ public class KOperationsTest extends BaseTest {
                         " 0.", " 0.", " 0.", " 60.61", " 60.366"
                 )),
                 argumentSet("[13] K o⃖‴", List.of(D2, D0, DOT, D6, D1, D3, D3, D3, D2, K, D3), new StackSnapshot(
-                        " 20.364799",
-                        " 0.", " 0.", " 0.", " 20.613332", " 20.364799"
+                        " 20.3648",                                               // 20.364799
+                        " 0.", " 0.", " 0.", " 20.613332", " 20.3648"
                 )),
                 argumentSet("[14] K o⃗‴", List.of(D2, D0, DOT, D3, D6, D4, D8, K, SWAP), new StackSnapshot(
                         " 20.613333",

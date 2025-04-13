@@ -249,7 +249,7 @@ public class Table1aTest extends BaseTest {
                 argumentSet("146:" + PASS, NOOP, List.of(RUN_STOP), " 1.          "),
                 argumentSet("147:" + PASS, NOOP, List.of(D2), " 2.          "),
                 argumentSet("148:" + PASS, NOOP, List.of(RETURN), " 2.          "),
-                argumentSet("149:" + DIFF, NOOP, List.of(RUN_STOP), " 8.11018     ")            // 8.00001
+                argumentSet("149:" + DIFF, NOOP, List.of(RUN_STOP), " 8.1101      ")            // 8.00001
         );
     }
 

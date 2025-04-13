@@ -4,7 +4,6 @@
  */
 package org.panteleyev.mk52.engine;
 
-
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -76,6 +75,11 @@ public final class Register {
                 | exponentHi;
     }
 
+    public static long modifyExponent(long x, int delta) {
+        var exponent = Register.getExponent(x);
+        return Register.setExponent(x, exponent + delta);
+    }
+
     public static long setMantissaDigit(long x, int index, char digit) {
         return setMantissaDigit(x, index, digit - '0');
     }
@@ -90,9 +94,29 @@ public final class Register {
         return (x & ~clearMask) | digitMask;
     }
 
+    public static long clearMantissaDigit(long x, int index) {
+        if (index < 0 || index > 7) {
+            throw new IllegalArgumentException();
+        }
+
+        return (x & ~(0xFL << (index * 4))) & REGISTER_MASK;
+    }
+
+    public static long shiftLeft(long x, int count) {
+        if (count <= 0) {
+            return x;
+        }
+
+        var exp = getExponent(x);
+        long mantissa = ((x & MANTISSA_MASK) << 4 * count) & MANTISSA_MASK;
+        x = x & MANTISSA_CLEAR_MASK | mantissa;
+        var newExp = isZero(x) ? 0 : exp - count;
+        return setExponent(x, newExp);
+    }
+
     public static long normalize(long register) {
         if (isZero(register)) {
-            return register;
+            return 0;
         }
 
         if ((register & MANTISSA_HI_DIGIT_MASK) != 0) {
@@ -195,6 +219,21 @@ public final class Register {
     }
 
     public static long valueOf(double x) {
+//        var format = new DecimalFormat("0.0000000E00");
+//        format.setMaximumIntegerDigits(1);
+//        format.setRoundingMode(RoundingMode.HALF_DOWN);
+//        format.setPositivePrefix("+");
+//        var normalized = format.format(x)
+//                .replace("e", "")
+//                .replace("E", "")
+//                .replace(".", "")
+//                .replace(",", "");
+//        var bbb = new StringBuilder(normalized);
+//        if (bbb.charAt(9) != '-') {
+//            bbb.insert(9, "+");
+//            normalized = bbb.toString();
+//        }
+
         var normalized = String.format("% .7e", x)
                 .replace("e", "")
                 .replace(".", "")
