@@ -238,4 +238,26 @@ public class RegisterTest {
         value = Register.incrementMantissa(value);
         assertEquals(expected, Register.toString(value));
     }
+
+    private static List<Arguments> testXToIndicatorArguments() {
+        return List.of(
+                arguments(0x007012345678L, new IR(0xFFFF12345678L, 1)),
+                arguments(0x000031415926L, new IR(0xFFFF31415926L, 0b10000000)),
+                arguments(0x000931415926L, new IR(0xFFFA31415926L, 0b10000000)),
+                arguments(0x000010012300L, new IR(0xFFFF100123FFL, 0b10000000)),
+                //
+                arguments(0x999031830989L, new IR(0xA01F31830989L, 0b10000000)),
+                arguments(0x030012345678L, new IR(0xF30F12345678L, 0b10000000)),
+                // Адрес
+                arguments(0x007000000001L, new IR(0xFFFF00000001L, 1)),
+                // Ненормализованное число
+                arguments(0x40206586025L, new IR(0xF40A06586025L, 1 << 7))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("testXToIndicatorArguments")
+    public void testXToIndicator(long x, IR expected) {
+        assertEquals(expected, Register.xToIndicator(x));
+    }
 }

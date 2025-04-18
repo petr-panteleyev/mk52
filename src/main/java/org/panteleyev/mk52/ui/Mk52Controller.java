@@ -19,6 +19,7 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -42,7 +43,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -71,7 +71,6 @@ public class Mk52Controller extends Controller {
         @Override
         public void update(StepExecutionResult snapshot, boolean running) {
             Platform.runLater(() -> {
-                display.setOpacity(running ? 0.3 : 1.0);
                 stackAndRegistersPanel.displaySnapshot(snapshot);
                 memoryPanel.showPc(snapshot.programCounter().getEffectiveAddress());
             });
@@ -96,7 +95,18 @@ public class Mk52Controller extends Controller {
     private final Engine engine = new Engine(true, registersUpdateCallback, memoryUpdateCallback);
     private final Consumer<KeyboardButton> keyboardButtonConsumer = engine::processButton;
 
-    private final Label display = new Label();
+    private final Label[] digitCells = new Label[]{
+            new Label("F"), new Label("F"), new Label("F"), new Label("F"),
+            new Label("F"), new Label("F"), new Label("F"), new Label("F"),
+            new Label("F"), new Label("F"), new Label("F"), new Label("F")
+    };
+    private final Label[] dotCells = new Label[]{
+            new Label(" "), new Label(" "), new Label(" "), new Label(" "),
+            new Label(" "), new Label(" "), new Label(" "), new Label(" "),
+            new Label(" "), new Label(" "), new Label(" "), new Label(" ")
+    };
+
+    private final ToggleButton onButton = new ToggleButton("Вкл");
 
     private final BorderPane root = new BorderPane();
     private final VBox toolBox = new VBox(10);
@@ -124,7 +134,24 @@ public class Mk52Controller extends Controller {
         root.setBottom(toolBox);
         BorderPane.setMargin(toolBox, new Insets(10, 0, 0, 0));
 
-        display.textProperty().bind(engine.displayProperty());
+        engine.displayProperty().addListener((_, oldValue, newValue) -> {
+            if (oldValue == newValue || newValue == null) {
+                return;
+            }
+
+            var ri = newValue.indicator();
+            var dots = newValue.dots();
+            var opacity = engine.automaticMode().get() ? 0.3 : 1.0;
+
+            for (int i = 0; i < 12; i++) {
+                digitCells[i].setText(Long.toString(ri & 0xF, 16).toUpperCase());
+                digitCells[i].setOpacity(opacity);
+                dotCells[i].setText((dots & 1) == 1 ? "." : " ");
+                dotCells[i].setOpacity(opacity);
+                ri = ri >> 4;
+                dots = dots >> 1;
+            }
+        });
 
         setupWindow(root);
         getStage().sizeToScene();
@@ -132,6 +159,8 @@ public class Mk52Controller extends Controller {
         setupAccelerators();
 
         files().read(ApplicationFiles.AppFile.EEPROM, engine::importEeprom);
+
+        onButton.fire();
     }
 
     @Override
@@ -160,8 +189,39 @@ public class Mk52Controller extends Controller {
     private BorderPane createDisplay() {
         var pane = new BorderPane();
         pane.getStyleClass().add("lcdPanel");
-        pane.setCenter(display);
-        display.getStyleClass().add("lcd");
+        pane.setMouseTransparent(true);
+
+        for (var l : digitCells) {
+            l.getStyleClass().add("lcd");
+        }
+        for (var d : dotCells) {
+            d.getStyleClass().add("dotLcd");
+        }
+        var cellsPane = new HBox(0);
+        cellsPane.getChildren().addAll(
+                // Знак мантиссы
+                digitCells[8], dotCells[8],
+                // Мантисса
+                digitCells[7], dotCells[7],
+                digitCells[6], dotCells[6],
+                digitCells[5], dotCells[5],
+                digitCells[4], dotCells[4],
+                digitCells[3], dotCells[3],
+                digitCells[2], dotCells[2],
+                digitCells[1], dotCells[1],
+                digitCells[0], dotCells[0],
+                // Знак порядка
+                digitCells[11], dotCells[11],
+                // Порядок
+                digitCells[10], dotCells[10],
+                digitCells[9], dotCells[9]
+        );
+        cellsPane.setAlignment(Pos.BOTTOM_LEFT);
+        for (var dc : digitCells) {
+            HBox.setMargin(dc, new Insets(0, 0, 0, -3));
+        }
+
+        pane.setCenter(cellsPane);
         return pane;
     }
 
@@ -169,11 +229,9 @@ public class Mk52Controller extends Controller {
         var offButton = new ToggleButton(" ");
         offButton.setOnAction(_ -> onPowerOff());
         offButton.setFocusTraversable(false);
-        var onButton = new ToggleButton("Вкл");
         onButton.setOnAction(_ -> onPowerOn());
         onButton.setFocusTraversable(false);
         var powerSwitch = new SegmentedButton(offButton, onButton);
-        onButton.fire();
 
         var eraseButton = new ToggleButton("С");
         eraseButton.setOnAction(_ -> engine.setEepromOperation(EepromOperation.ERASE));
@@ -253,9 +311,9 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("5", "cos⁻¹", "ЗН", "grayButton", KeyboardButton.D5,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("6", "tg⁻¹", "o⃖′", "grayButton", KeyboardButton.D6,
+                        new ButtonNode("6", "tg⁻¹", "°←′", "grayButton", KeyboardButton.D6,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("➕", "π", "o⃗'", "grayButton", KeyboardButton.PLUS,
+                        new ButtonNode("➕", "π", "°→′", "grayButton", KeyboardButton.PLUS,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("✖", "x²", "", "grayButton", KeyboardButton.MULTIPLICATION,
                                 keyboardButtonConsumer).node()
@@ -271,9 +329,9 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("2", "lg", "", "grayButton", KeyboardButton.D2,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("3", "ln", "o⃖‴", "grayButton", KeyboardButton.D3,
+                        new ButtonNode("3", "ln", "°←‴", "grayButton", KeyboardButton.D3,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("←→", "xy", "o⃗‴", "grayButton", KeyboardButton.SWAP,
+                        new ButtonNode("←→", "xy", "°→‴", "grayButton", KeyboardButton.SWAP,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("В↑", "Вх", "СЧ", "grayButton", KeyboardButton.PUSH,
                                 keyboardButtonConsumer).node(),
@@ -288,8 +346,8 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("0", "10ˣ", "НОП", "grayButton", KeyboardButton.D0,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode(".", "⟳", "∧", "grayButton", KeyboardButton.DOT, keyboardButtonConsumer).node(),
-                        new ButtonNode("/-/", "АВТ", "∨", "grayButton", KeyboardButton.SIGN,
+                        new ButtonNode(".", "⟳", "⋀", "grayButton", KeyboardButton.DOT, keyboardButtonConsumer).node(),
+                        new ButtonNode("/-/", "АВТ", "⋁", "grayButton", KeyboardButton.SIGN,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("ВП", "ПРГ", "⨁", "grayButton", KeyboardButton.EE,
                                 keyboardButtonConsumer).node(),
@@ -367,6 +425,9 @@ public class Mk52Controller extends Controller {
             var lines = reader.lines().toList();
             outerLoop:
             for (var line : lines) {
+                if (line.startsWith("#")) {
+                    continue;
+                }
                 var strings = line.trim().split(" ");
                 for (var str : strings) {
                     if (index >= codes.length) {

@@ -12,9 +12,41 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class Mk52MathTest {
+    private static List<Arguments> testAddArguments() {
+        return List.of(
+                // Положительные числа
+                argumentSet("1.23 + 4.56 = 5.79", 0x12300000, 0x45600000, 0x000057900000L),
+                argumentSet("7.23 + 4.56 = 11.79", 0x72300000, 0x45600000, 0x001011790000L),
+                argumentSet("12345678 + 12345678 = 24691356", 0x007012345678L, 0x007012345678L, 0x007024691356L),
+                argumentSet("87654321 + 87654321 = 1.7530864 08", 0x007087654321L, 0x007087654321L, 0x008017530864L),
+                argumentSet("88888888 + 88888888 = 1.7777778 08", 0x007088888888L, 0x007088888888L, 0x008017777778L),
+                argumentSet("123.45 + 12.345",  0x002012345000L, 0x001012345000L, 0x002013579500L),
+                argumentSet("1 + 9.9999999-01 = 2", 0x000010000000L, 0x999099999999L, 0x000020000000L),
+                argumentSet("1 + 4.9999999-01 = 1.5", 0x000010000000L, 0x999049999999L, 0x000015000000L),
+                argumentSet("12345678 + 9.9999999-01 = 1.5", 0x007012345678L, 0x999099999999L, 0x007012345679L),
+                // Отрицательные числа
+                argumentSet("-1.23 + 4.56 = 3.33", 0x000912300000L, 0x000045600000L, 0x000033300000L),
+                argumentSet("-1.23 + -4.56 = -5.79", 0x000912300000L, 0x000945600000L, 0x000957900000L),
+                // Шестнадцатеричные
+                argumentSet("8.EBEA6D9 + 1.01", 0x00008EBEA6D9L, 0x000010100000L, 0x001010535074L)
+
+
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("testAddArguments")
+    @DisplayName("Сложение")
+    public void testAdd(long x, long y, long expected) {
+        assertEquals(expected, Mk52Math.add(x, y));
+    }
+
+
+
     private static List<Arguments> testIntegerArguments() {
         return List.of(
                 arguments(0, 0),

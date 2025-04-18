@@ -108,6 +108,13 @@
     -fx-font-family: 'Neat LCD';
 }
 
+.dotLcd {
+    -fx-font-weight: normal;
+    -fx-font-size: 15;
+    -fx-text-fill: lightgreen;
+    -fx-font-family: 'Neat LCD';
+}
+
 .switchPanel {
     -fx-font-size: x-small;
     -fx-background-color: #363942;

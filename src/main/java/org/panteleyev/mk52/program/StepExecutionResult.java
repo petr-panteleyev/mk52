@@ -5,13 +5,13 @@
 package org.panteleyev.mk52.program;
 
 import org.panteleyev.mk52.engine.CallStackSnapshot;
+import org.panteleyev.mk52.engine.IR;
 import org.panteleyev.mk52.engine.StackSnapshot;
 
-import java.util.Deque;
 import java.util.List;
 
 public record StepExecutionResult(
-        String display,
+        IR display,
         Address programCounter,
         StackSnapshot stack,
         List<String> registers,

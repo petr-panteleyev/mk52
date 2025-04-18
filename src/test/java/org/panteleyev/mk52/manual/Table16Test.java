@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.panteleyev.mk52.BaseTest;
 import org.panteleyev.mk52.engine.Engine;
+import org.panteleyev.mk52.engine.IR;
 import org.panteleyev.mk52.engine.KeyboardButton;
 import org.panteleyev.mk52.engine.TrigonometricMode;
 
@@ -50,21 +51,21 @@ public class Table16Test extends BaseTest {
     private static List<Arguments> testArguments() {
         return List.of(
                 // Программа
-                arguments(List.of(F, EE), "           00"),
-                arguments(List.of(STORE, D0, LOAD, D0, D3), "  03 60 40 03"),
-                arguments(List.of(DIVISION, F, D9, D2), "  02 1E 13 06"),
-                arguments(List.of(MULTIPLICATION, D4, PLUS), "  10 04 12 09"),
-                arguments(List.of(LOAD, D5, PLUS, STORE, D5), "  45 10 65 12"),
-                arguments(List.of(F, LOAD, D0, D1, RUN_STOP), "  50 01 5D 15"),
-                arguments(List.of(F, SIGN, RETURN), " 0.          "),
+                arguments(List.of(F, EE), new IR(0xF00F_FFFF_FFFFL)),
+                arguments(List.of(STORE, D0, LOAD, D0, D3), new IR(0xF_03_F_03_F_60_F_40L)),
+                arguments(List.of(DIVISION, F, D9, D2), new IR(0xF_06_F_02_F_1E_F_13L)),
+                arguments(List.of(MULTIPLICATION, D4, PLUS), new IR(0xF_09_F_10_F_04_F_12L)),
+                arguments(List.of(LOAD, D5, PLUS, STORE, D5), new IR(0xF_12_F_45_F_10_F_65L)),
+                arguments(List.of(F, LOAD, D0, D1, RUN_STOP), new IR(0xF_15_F_50_F_01_F_5DL)),
+                arguments(List.of(F, SIGN, RETURN), new IR(0xFFFF_0_FFF_FFFFL, 1 << 7)),
                 // Выполнение
-                arguments(List.of(D4, RUN_STOP), " 29.644465   ")               // 29.644467
+                arguments(List.of(D4, RUN_STOP), new IR(0xFFFF_2964_4465L, 1 << 6)) // 29.644467
         );
     }
 
     @ParameterizedTest
     @MethodSource("testArguments")
-    public void test(List<KeyboardButton> buttons, String expected) {
+    public void test(List<KeyboardButton> buttons, IR expected) {
         buttons.forEach(engine::processButton);
         assertEquals(expected, engine.displayProperty().get());
     }

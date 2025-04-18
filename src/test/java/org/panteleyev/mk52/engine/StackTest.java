@@ -14,7 +14,6 @@ import org.panteleyev.mk52.BaseTest;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.panteleyev.mk52.engine.KeyboardButton.CLEAR_X;
 import static org.panteleyev.mk52.engine.KeyboardButton.D1;
@@ -51,36 +50,31 @@ public class StackTest extends BaseTest {
     private static List<Arguments> testArguments() {
         return List.of(
                 arguments(List.of(D1, PUSH, D2, PLUS), new StackSnapshot(
-                        " 3.",
-                        " 0.", " 0.", " 0.", " 2.", " 3."
+                        0x3000_0000L, 0, 0, 0, 0x0000_2000_0000L, new IR(0xFFFF_3FFF_FFFFL, 1 << 7)
                 )),
                 arguments(List.of(F, EE, D1, PUSH, D2, PLUS, RUN_STOP, F, SIGN, RETURN, RUN_STOP), new StackSnapshot(
-                        " 3.",
-                        " 0.", " 0.", " 0.", " 2.", " 3."
+                        0x3000_0000L, 0, 0, 0, 0x0000_2000_0000L, new IR(0xFFFF_3FFF_FFFFL, 1 << 7)
                 )),
                 arguments(List.of(D1, D2, D3, CLEAR_X, D4, D5, D6), new StackSnapshot(
-                        " 456.",
-                        " 0.", " 0.", " 0.", " 0.", " 456."
+                        0x0020_4560_0000L, 0, 0, 0, 0, new IR(0xFFFF_456F_FFFFL, 1 << 5)
                 )),
                 arguments(List.of(D1, D2, D3, PUSH, D4, D5, D6), new StackSnapshot(
-                        " 456.",
-                        " 123.", " 0.", " 0.", " 0.", " 456."
+                        0x0020_4560_0000L, 0x0020_1230_0000L, 0, 0, 0, new IR(0xFFFF_456F_FFFFL, 1 << 5)
                 )),
                 arguments(List.of(D1, D2, D3, PUSH, D4, D5, D6, CLEAR_X, D7, D8, D9), new StackSnapshot(
-                        " 789.",
-                        " 123.", " 0.", " 0.", " 0.", " 789."
+                        0x0020_7890_0000L, 0x0020_1230_0000L, 0, 0, 0,
+                        new IR(0xFFFF_789F_FFFFL, 1 << 5)
                 )),
                 arguments(List.of(D1, D2, D3, SWAP, D4, D5, D6), new StackSnapshot(
-                        " 456.",
-                        " 0.", " 123.", " 0.", " 123.", " 456."
+                        0x0020_4560_0000L, 0, 0x0020_1230_0000L, 0, 0x0020_1230_0000L,
+                        new IR(0xFFFF_456F_FFFFL, 1 << 5)
                 )),
                 arguments(List.of(D1, D2, D3, F, PLUS), new StackSnapshot(
-                        " 3.1415926",
-                        " 123.", " 0.", " 0.", " 123.", " 3.1415926"
+                        Register.PI, 0x00201230_0000L, 0, 0, 0x00201230_0000L, IR.PI
                 )),
                 arguments(List.of(D1, PUSH, D2, PUSH, D3, PUSH, D4, F, MULTIPLICATION, F, PUSH), new StackSnapshot(
-                        " 4.",
-                        " 16.", " 3.", " 2.", " 4.", " 4."
+                        0x4000_0000L, 0x0101600_0000L, 0x3000_0000L, 0x2000_0000L, 0x4000_0000L,
+                        new IR(0xFFFF_4FFF_FFFFL, 1 << 7)
                 ))
         );
     }

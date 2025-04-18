@@ -11,8 +11,6 @@ public final class Constants {
     public static final double MAX_VALUE = 9.9999999e99;
 
     public static final int DISPLAY_SIZE = 13;
-    public static final String EMPTY_DISPLAY = " ".repeat(DISPLAY_SIZE);
-    public static final String INITIAL_DISPLAY = " 0." + " ".repeat(DISPLAY_SIZE - 3);
     public static final String ERROR_DISPLAY = " EDDOD";
 
     public static final byte BYTE_0 = (byte) 0;

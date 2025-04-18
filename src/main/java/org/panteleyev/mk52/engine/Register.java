@@ -16,8 +16,8 @@ public final class Register {
 
     private static final long REGISTER_MASK = 0xFFFF_FFFF_FFFFL;
     // Мантисса
-    private static final long MANTISSA_MASK = 0xFFFF_FFFFL;
-    private static final long MANTISSA_CLEAR_MASK = ~MANTISSA_MASK;
+    public static final long MANTISSA_MASK = 0xFFFF_FFFFL;
+    public static final long MANTISSA_CLEAR_MASK = ~MANTISSA_MASK;
 
     private static final long MANTISSA_SIGN_MASK = 0xF_0000_0000L;
     private static final long MANTISSA_SIGN_SHIFT = 32;
@@ -29,7 +29,7 @@ public final class Register {
     private static final long MANTISSA_LOGICAL_BITS = 0x8000_0000L;
 
     // Экспонента
-    private static final long EXPONENT_MASK = 0xFF0_0000_0000L;
+    private static final long EXPONENT_MASK = 0x1FF0_0000_0000L;
     private static final long EXPONENT_AND_SIGN_MASK = 0xFFF0_0000_0000L;
     private static final long EXPONENT_LO_MASK = 0x0F0_0000_0000L;
     private static final int EXPONENT_LO_SHIFT = 36;
@@ -85,10 +85,6 @@ public final class Register {
     }
 
     public static long setMantissaDigit(long x, int index, int digit) {
-        if (index < 0 || index > 7) {
-            throw new IllegalArgumentException();
-        }
-
         long clearMask = 0xFL << (index * 4);
         long digitMask = ((digit) & 0xFL) << (index * 4);
         return (x & ~clearMask) | digitMask;
@@ -329,7 +325,7 @@ public final class Register {
         return x;
     }
 
-    private static long calculateAbsoluteMantissa(long x) {
+    public static long calculateAbsoluteMantissa(long x) {
         long mantissaBits = x & MANTISSA_MASK;
         long mantissa = 0L;
         long multiplier = 1;
@@ -340,5 +336,63 @@ public final class Register {
             mantissaBits >>= 4;
         }
         return mantissa;
+    }
+
+    /**
+     * Устанавливает тетраду с заданным индексом.
+     *
+     * @param x     регистр
+     * @param index номер тетрады [0..11]
+     * @param value значение тетрады
+     * @return модифицированное значение регистра
+     */
+    public static long setTetrad(long x, int index, int value) {
+        int shift = index * 4;
+        long clearMask = ~((long) TETRAD_MASK << shift);
+        return x & clearMask | ((long) (value & 0xF) << shift);
+    }
+
+    public static int getTetrad(long x, int index) {
+        return (int) ((x >> (index * 4)) & TETRAD_MASK);
+    }
+
+    public static IR xToIndicator(long x) {
+        long ri = x & 0xFFFF_FFFF_FFFFL;
+        int exp = getExponent(x);
+        int pz = 7;
+
+        if (exp >= 0 && exp <= 7) {
+            pz = 7 - exp;
+
+            ri = setTetrad(ri, 11, 0xF);
+            ri = setTetrad(ri, 10, 0xF);
+            ri = setTetrad(ri, 9, 0xF);
+        }
+
+        if (getTetrad(x, 11) == 9) {
+            ri = setExponent(ri, -exp);
+            ri = setTetrad(ri, 11, 0xA);
+        } else {
+            ri = setTetrad(ri, 11, 0xF);
+        }
+
+        if (getTetrad(x, 8) != 0) {
+            ri = setTetrad(ri, 8, 0xA);
+        } else {
+            ri = setTetrad(ri, 8, 0xF);
+        }
+
+        for (int i = 0; i <= 7; i++) {
+            if (i >= pz) {
+                break;
+            }
+            int d = getTetrad(ri, i);
+            if (d != 0) {
+                break;
+            }
+            ri = setTetrad(ri, i, 0xF);
+        }
+
+        return new IR(ri, 1 << pz);
     }
 }

@@ -4,11 +4,12 @@
  */
 package org.panteleyev.mk52.program;
 
+import org.panteleyev.mk52.engine.IR;
+import org.panteleyev.mk52.engine.Register;
+
 import java.util.Arrays;
 
-import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;
 import static org.panteleyev.mk52.engine.Constants.PROGRAM_MEMORY_SIZE;
-import static org.panteleyev.mk52.util.StringUtil.pcToString;
 
 public class ProgramMemory {
     private final int[] memory = new int[PROGRAM_MEMORY_SIZE + 3];
@@ -36,37 +37,25 @@ public class ProgramMemory {
         }
     }
 
-    public String getStringValue(Address pc) {
+    public IR getIndicator(Address pc) {
         synchronized (memory) {
-            var buffer = new char[DISPLAY_SIZE];
-            Arrays.fill(buffer, ' ');
+            long ir = IR.EMPTY.indicator();
 
-            var pcString = pcToString(pc);
-            buffer[11] = pcString.charAt(0);
-            buffer[12] = pcString.charAt(1);
+            ir = Register.setTetrad(ir, 9, pc.low());
+            ir = Register.setTetrad(ir, 10, pc.high());
 
-            for (int offset = 2; offset <= 8; offset += 3) {
+            for (int tetrad = 6; tetrad >= 0; tetrad -= 3) {
                 pc = pc.decrement();
-                showMemoryContent(buffer, offset, pc);
+                if (pc.isDark()) {
+                    continue;
+                }
+                var code = memory[pc.getEffectiveAddress()];
+                ir = Register.setTetrad(ir, tetrad, code & 0xF);
+                ir = Register.setTetrad(ir, tetrad + 1, (code & 0xF0) >> 4);
             }
 
-            return new String(buffer);
+            return new IR(ir, 0);
         }
-    }
-
-    private void showMemoryContent(char[] buffer, int offset, Address address) {
-        if (address.isDark()) {
-            buffer[offset] = ' ';
-            buffer[offset + 1] = ' ';
-        } else {
-            var pcString = codeToString(memory[address.getEffectiveAddress()]);
-            buffer[offset] = pcString.charAt(0);
-            buffer[offset + 1] = pcString.charAt(1);
-        }
-    }
-
-    private static String codeToString(int code) {
-        return String.format("%02X", code);
     }
 
     public void storeCode(ProgramCounter pc, int code) {

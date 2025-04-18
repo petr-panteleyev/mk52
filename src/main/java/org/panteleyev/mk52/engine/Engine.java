@@ -5,8 +5,8 @@
 package org.panteleyev.mk52.engine;
 
 import javafx.application.Platform;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import org.panteleyev.mk52.eeprom.Eeprom;
 import org.panteleyev.mk52.eeprom.EepromMode;
 import org.panteleyev.mk52.eeprom.EepromOperation;
@@ -25,8 +25,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.panteleyev.mk52.eeprom.Eeprom.RW_DURATION;
-import static org.panteleyev.mk52.engine.Constants.EMPTY_DISPLAY;
-import static org.panteleyev.mk52.engine.Constants.INITIAL_DISPLAY;
 import static org.panteleyev.mk52.engine.KeyboardButton.BUTTON_TO_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_EXCHANGE;
@@ -34,7 +32,6 @@ import static org.panteleyev.mk52.engine.KeyboardButton.GOSUB;
 import static org.panteleyev.mk52.engine.KeyboardButton.RETURN;
 import static org.panteleyev.mk52.engine.KeyboardButton.RUN_STOP;
 import static org.panteleyev.mk52.program.OpCode.EMPTY;
-import static org.panteleyev.mk52.util.StringUtil.padToDisplay;
 
 public final class Engine {
     public enum OperationMode {
@@ -62,10 +59,15 @@ public final class Engine {
 
     private boolean powered = false;
 
+    // Последний код операции, используется при вводе чисел
     private final AtomicReference<OpCode> lastExecutedOpCode = new AtomicReference<>(null);
 
+    // Глобальные регистры и флаги
+    //
+    // Регистр индикации
+    private final AtomicReference<IR> x2 = new AtomicReference<>(new IR(0xFFFF_FFFF_FFFFL));
     // Stack
-    private final Stack stack = new Stack(lastExecutedOpCode);
+    private final Stack stack = new Stack(this);
     // Регистры
     private final Registers registers = new Registers();
     // Память программ
@@ -79,7 +81,7 @@ public final class Engine {
     private final StepExecutionCallback stepCallback = new StepExecutionCallback() {
         @Override
         public void before() {
-            setDisplay(EMPTY_DISPLAY);
+            setDisplay(IR.EMPTY);
         }
 
         @Override
@@ -92,6 +94,9 @@ public final class Engine {
     private final Executor processorExecutor = Executors.newSingleThreadExecutor(ExecutionThread::new);
 
     private final AtomicBoolean running = new AtomicBoolean(false);
+
+    // Флаг автоматического исполнения
+    private final AtomicBoolean automaticMode = new AtomicBoolean(false);
 
     private final AtomicReference<OperationMode> operationMode = new AtomicReference<>(OperationMode.EXECUTION);
     private KeyboardMode keyboardMode = KeyboardMode.NORMAL;
@@ -109,7 +114,8 @@ public final class Engine {
     private final RegistersUpdateCallback registersUpdateCallback;
     private final MemoryUpdateCallback memoryUpdateCallback;
 
-    private final StringProperty displayProperty = new SimpleStringProperty(EMPTY_DISPLAY);
+    private final ObjectProperty<IR> displayProperty = new SimpleObjectProperty<>(
+            IR.EMPTY);
 
     public Engine(boolean async, RegistersUpdateCallback registersUpdateCallback) {
         this(async, registersUpdateCallback, MemoryUpdateCallback.NOOP);
@@ -119,12 +125,8 @@ public final class Engine {
             MemoryUpdateCallback memoryUpdateCallback) {
         this.async = async;
         this.processor = new Processor(
+                this,
                 async,
-                stack,
-                registers,
-                programMemory,
-                callStack,
-                running,
                 operationMode,
                 lastExecutedOpCode,
                 stepCallback
@@ -135,16 +137,47 @@ public final class Engine {
         init();
     }
 
-    public StringProperty displayProperty() {
+    public AtomicReference<IR> getX2() {
+        return x2;
+    }
+
+    public AtomicReference<OpCode> getLastExecutedOpCode() {
+        return lastExecutedOpCode;
+    }
+
+    public ObjectProperty<IR> displayProperty() {
         return displayProperty;
     }
 
-    private void setDisplay(String display) {
-        var text = padToDisplay(display);
+    public AtomicBoolean running() {
+        return running;
+    }
+
+    public AtomicBoolean automaticMode() {
+        return automaticMode;
+    }
+
+    public Stack stack() {
+        return stack;
+    }
+
+    public Registers registers() {
+        return registers;
+    }
+
+    public ProgramMemory programMemory() {
+        return programMemory;
+    }
+
+    public CallStack callStack() {
+        return callStack;
+    }
+
+    private void setDisplay(IR display) {
         if (!async || Platform.isFxApplicationThread()) {
-            displayProperty.set(text);
+            displayProperty.set(display);
         } else {
-            Platform.runLater(() -> displayProperty.set(text));
+            Platform.runLater(() -> displayProperty.set(display));
         }
     }
 
@@ -337,11 +370,11 @@ public final class Engine {
         if (!powered && on) {
             init();
             powered = true;
-            setDisplay(INITIAL_DISPLAY);
+            setDisplay(IR.INITIAL);
         }
         if (!on) {
             powered = false;
-            setDisplay(EMPTY_DISPLAY);
+            setDisplay(IR.EMPTY);
         }
     }
 
@@ -351,6 +384,7 @@ public final class Engine {
 
     private void execute(Instruction instruction) {
         running.set(true);
+        automaticMode.set(false);
         if (async) {
             processorExecutor.execute(() -> processor.execute(instruction));
         } else {
@@ -360,6 +394,7 @@ public final class Engine {
 
     private void step() {
         running.set(true);
+        automaticMode.set(false);
         if (async) {
             processorExecutor.execute(processor::step);
         } else {
@@ -369,6 +404,7 @@ public final class Engine {
 
     public void run() {
         running.set(true);
+        automaticMode.set(true);
         if (async) {
             processorExecutor.execute(processor::run);
         } else {
@@ -392,6 +428,7 @@ public final class Engine {
     private void setEepromAddress() {
         if (async) {
             running.set(true);
+
             var eepromDisplay = Eeprom.convertDisplay(processor.getCurrentDisplay());
             setDisplay(eepromDisplay);
             eepromExecutor.execute(() -> {

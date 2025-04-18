@@ -6,41 +6,36 @@ package org.panteleyev.mk52.engine;
 
 import org.panteleyev.mk52.program.OpCode;
 
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
-import static org.panteleyev.mk52.engine.Constants.EXPONENT_POSITION;
-import static org.panteleyev.mk52.engine.Constants.EXPONENT_SIGN_POSITION;
-import static org.panteleyev.mk52.engine.Constants.MANTISSA_POSITION;
-import static org.panteleyev.mk52.engine.Constants.MANTISSA_SIZE;
-import static org.panteleyev.mk52.util.StringUtil.padToDisplay;
-
-class Stack {
+public class Stack {
     private final AtomicLong x = new AtomicLong(0);
     private final AtomicLong y = new AtomicLong(0);
     private final AtomicLong z = new AtomicLong(0);
     private final AtomicLong t = new AtomicLong(0);
     private final AtomicLong x1 = new AtomicLong(0);
-    private String display = Register.toString(x);
+
+    private final AtomicReference<IR> x2;
 
     private final AtomicReference<OpCode> lastExecutedOpCode;
 
-    private long xBuffer = 0;
-    private final char[] mantissaBuffer = new char[MANTISSA_SIZE + 1];
-    private int mantissaIndex = 0;
-    private char[] exponentDisplayBuffer = null;
-    private int xBufferPosition = 7;
-    private int xBufferExponent = 0;
-    private boolean hasDot = false;
+    // При вводе экспоненты запоминаем текущую экспоненту регистра X
+    private int xExponent = 0;
     private boolean enteringExponent = false;
-    private int enteredExponent = 0;
-    private int exponentSign = 1;
+    // Текущая позиция вводе
+    private int currentDigit = 7;
+    // Текущая позиция точки
+    private int dot = 7;
+    // Была ли введена точка
+    private boolean hasDot = false;
+    private long xBuffer = 0;
 
-    Stack(AtomicReference<OpCode> lastExecutedOpCode) {
-        this.lastExecutedOpCode = lastExecutedOpCode;
+    Stack(Engine engine) {
+        this.x2 = engine.getX2();
+        this.lastExecutedOpCode = engine.getLastExecutedOpCode();
     }
 
     synchronized void reset() {
@@ -49,7 +44,7 @@ class Stack {
         y.set(0);
         z.set(0);
         t.set(0);
-        display = Register.toString(x);
+        x2.set(Register.xToIndicator(x.get()));
         //
         enteringExponent = false;
     }
@@ -57,12 +52,12 @@ class Stack {
     synchronized long x() {
         var tmp = x.get();
         x.set(Register.normalize(x.get()));
-        display = Register.toString(x);
+        x2.set(Register.xToIndicator(x.get()));
         return tmp;
     }
 
-    synchronized String display() {
-        return display;
+    synchronized IR x2() {
+        return x2.get();
     }
 
     synchronized long xOrBuffer() {
@@ -71,26 +66,30 @@ class Stack {
 
     synchronized public StackSnapshot getSnapshot() {
         return new StackSnapshot(
-                Register.toString(x),
-                Register.toString(y),
-                Register.toString(z),
-                Register.toString(t),
-                Register.toString(x1),
-                display
+                x.get(),
+                y.get(),
+                z.get(),
+                t.get(),
+                x1.get(),
+                x2.get()
         );
     }
 
     synchronized void setX(long x) {
         enteringExponent = false;
         this.x.set(x);
-        display = Register.toString(x);
+        x2.set(Register.xToIndicator(x));
+    }
+
+    public void setX2(IR ri) {
+        x2.set(ri);
     }
 
     synchronized public void clearX() {
         enteringExponent = false;
 
         x.set(0);
-        display = Register.toString(x);
+        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized public void pi() {
@@ -99,7 +98,7 @@ class Stack {
         push();
         x1.set(x.get());
         x.set(Register.PI);
-        display = Register.toString(x);
+        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized void push() {
@@ -109,7 +108,7 @@ class Stack {
         z.set(y.get());
         y.set(Register.normalize(x.get()));
         x.set(Register.normalize(x.get()));
-        display = Register.toString(x);
+        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized void rotate() {
@@ -121,7 +120,7 @@ class Stack {
         z.set(t.get());
         t.set(tempX);
         x1.set(tempX);
-        display = Register.toString(x);
+        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized void swap() {
@@ -131,7 +130,7 @@ class Stack {
         x.set(y.get());
         y.set(tempX);
         x1.set(tempX);
-        display = Register.toString(x);
+        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized void restoreX() {
@@ -141,7 +140,7 @@ class Stack {
         z.set(y.get());
         y.set(x.get());
         x.set(x1.get());
-        display = Register.toString(x);
+        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized void unaryOperation(UnaryOperator<Long> operation) {
@@ -151,7 +150,7 @@ class Stack {
 
         var result = operation.apply(x.get());
         x.set(Register.normalize(result));
-        display = Register.toString(result);
+        x2.set(Register.xToIndicator(result));
     }
 
     synchronized void binaryOperation(BinaryOperator<Long> operation) {
@@ -164,7 +163,7 @@ class Stack {
         x.set(Register.normalize(result));
         y.set(z.get());
         z.set(t.get());
-        display = Register.toString(result);
+        x2.set(Register.xToIndicator(result));
     }
 
     synchronized void binaryKeepYOperation(BinaryOperator<Long> operation) {
@@ -175,13 +174,13 @@ class Stack {
         var result = operation.apply(x.get(), y.get());
 
         x.set(Register.normalize(result));
-        display = Register.toString(result);
+        x2.set(Register.xToIndicator(result));
     }
 
     synchronized void negate() {
         if (!enteringExponent) {
             x.set(Register.normalize(Register.negate(x.get())));
-            display = Register.toString(x);
+            x2.set(Register.xToIndicator(x.get()));
         } else {
             addCharacter('-');
         }
@@ -194,93 +193,102 @@ class Stack {
                 push();
             }
             xBuffer = 0;
-            xBufferPosition = 7;
-            xBufferExponent = 0;
+            currentDigit = 7;
+            dot = 7;
             hasDot = false;
-            mantissaIndex = 0;
-            Arrays.fill(mantissaBuffer, ' ');
         }
 
+        var ri = x2.get().indicator();
         if (enteringExponent) {
             if (c == '.') {
-                throw new ArithmeticException();
+                x2.set(IR.ERROR);
+                enteringExponent = false;
+                return;
             }
             if (c == '-') {
-                exponentSign = -exponentSign;
-            } else {
-                enteredExponent = (enteredExponent * 10 + c - '0') % 100;
-                if (Math.abs(exponentSign * enteredExponent + xBufferExponent) > 99) {
-                    throw new ArithmeticException();
+                if (Register.getTetrad(ri, 11) == 0xA) {
+                    ri = Register.setTetrad(ri, 11, 0xF);
+                } else {
+                    ri = Register.setTetrad(ri, 11, 0xA);
                 }
+                x2.set(new IR(ri, x2.get().dots()));
+            } else {
+                ri = Register.setTetrad(ri, 10, Register.getTetrad(ri, 9));
+                ri = Register.setTetrad(ri, 9, c - '0');
             }
-            xBuffer = Register.setExponent(xBuffer, exponentSign * enteredExponent + xBufferExponent);
-            updateExponentDisplay();
+            // Обновляем экспоненту регистра X
+            var expDelta = Register.getTetrad(ri, 10) * 10 + Register.getTetrad(ri, 9);
+            if (Register.getTetrad(ri, 11) == 0xA) {
+                expDelta = -expDelta;
+            }
+            var newExponent = xExponent + expDelta;
+            if (newExponent < -99) {
+                x.set(0);
+                x2.set(Register.xToIndicator(0));
+                enteringExponent = false;
+            } else if (newExponent > 99) {
+                x2.set(IR.ERROR);
+                enteringExponent = false;
+            } else {
+                x2.set(new IR(ri, x2.get().dots()));
+                var newX = Register.setExponent(x.get(), newExponent);
+                x.set(Register.normalize(newX));
+            }
         } else {
+            if (currentDigit < 0) {
+                return;
+            }
+
             if (c == '.') {
-                if (xBufferPosition == 7 || hasDot) {
+                if (hasDot || currentDigit == 7) {
                     return;
                 }
                 hasDot = true;
-                mantissaBuffer[mantissaIndex++] = c;
-                return;
+            } else {
+                if (currentDigit == 7) {
+                    ri = IR.EMPTY.indicator();
+                }
+
+                ri = Register.setTetrad(ri, currentDigit, c - '0');
+                xBuffer = Register.setTetrad(xBuffer, currentDigit, c - '0');
+                if (!hasDot) {
+                    if (currentDigit != 7) {
+                        dot--;
+                    }
+                }
+                xBuffer = Register.setExponent(xBuffer, 7 - dot);
+                currentDigit--;
             }
 
-            if (xBufferPosition < 0) {
-                return;
-            }
-            xBuffer = Register.setMantissaDigit(xBuffer, xBufferPosition, c);
-            mantissaBuffer[mantissaIndex++] = c;
-            if (!hasDot) {
-                xBufferExponent = 7 - xBufferPosition;
-                xBuffer = Register.setExponent(xBuffer, xBufferExponent);
-                mantissaBuffer[mantissaIndex] = '.';
-            }
-            xBufferPosition--;
-        }
-        if (enteringExponent) {
             x.set(Register.normalize(xBuffer));
-            display = new String(exponentDisplayBuffer).stripTrailing();
-        } else {
-            x.set(Register.normalize(xBuffer));
-            display = " " + new String(mantissaBuffer).stripTrailing();
+            x2.set(new IR(ri, 1 << dot));
         }
-    }
-
-    private void updateExponentDisplay() {
-        if (exponentSign == -1) {
-            exponentDisplayBuffer[EXPONENT_SIGN_POSITION] = '-';
-        } else {
-            exponentDisplayBuffer[EXPONENT_SIGN_POSITION] = ' ';
-        }
-        exponentDisplayBuffer[EXPONENT_POSITION] = (char) (enteredExponent / 10 + '0');
-        exponentDisplayBuffer[EXPONENT_POSITION + 1] = (char) (enteredExponent % 10 + '0');
     }
 
     synchronized void enterExponent() {
         enteringExponent = true;
-        exponentSign = 1;
-
-        // Запоминаем текущий дисплей
-        exponentDisplayBuffer = padToDisplay(display).toCharArray();
 
         // Ставим экспоненту +00
-        exponentDisplayBuffer[EXPONENT_SIGN_POSITION] = ' ';
-        exponentDisplayBuffer[EXPONENT_POSITION] = '0';
-        exponentDisplayBuffer[EXPONENT_POSITION + 1] = '0';
+        var ri = x2.get();
+        var ind = ri.indicator();
+        var dots = ri.dots();
+        ind = Register.setTetrad(ind, 11, 0xF);
+        ind = Register.setTetrad(ind, 10, 0x0);
+        ind = Register.setTetrad(ind, 9, 0x0);
 
-        // Запоминаем текущие байты регистра X
-        xBuffer = x.get();
+        // Запоминаем текущую экспоненту
+        xExponent = Register.getExponent(x.get());
 
         // Если X == 0., то ставим в 1.
-        if (Register.isZero(xBuffer)) {
-            xBuffer = Register.ONE;
+        if (Register.isZero(x.get())) {
+            xBuffer = 0;
+            xBuffer = Register.setTetrad(xBuffer, 7, Register.getTetrad(ind, 7) + 1);
+            ind = Register.setTetrad(ind, 7, Register.getTetrad(xBuffer, 7) + Register.getTetrad(ind, 7));
+            dots = 1 << 7;
+
             x.set(xBuffer);
-            exponentDisplayBuffer[MANTISSA_POSITION] = '1';
         }
 
-        xBufferExponent = Register.getExponent(xBuffer);
-
-        enteredExponent = 0;
-        display = new String(exponentDisplayBuffer);
+        x2.set(new IR(ind, dots));
     }
 }

@@ -4,10 +4,11 @@
  */
 package org.panteleyev.mk52.eeprom;
 
+import org.panteleyev.mk52.engine.IR;
+import org.panteleyev.mk52.engine.Register;
 import org.panteleyev.mk52.engine.Registers;
 import org.panteleyev.mk52.program.Address;
 import org.panteleyev.mk52.program.ProgramMemory;
-import org.panteleyev.mk52.engine.Register;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,7 +29,6 @@ import static org.panteleyev.mk52.engine.Constants.DUR_023;
 import static org.panteleyev.mk52.engine.Constants.EEPROM_LINE_SIZE;
 import static org.panteleyev.mk52.engine.Constants.EEPROM_SIZE;
 import static org.panteleyev.mk52.engine.Constants.TETRADS_PER_EEPROM_LINE;
-import static org.panteleyev.mk52.util.StringUtil.padToDisplay;
 
 public final class Eeprom {
     public static final Duration SET_ADDRESS_DURATION = DUR_023;
@@ -75,17 +75,17 @@ public final class Eeprom {
         }
 
         x >>= EEPROM_STEPS_SHIFT;
-        int steps = (int)(x & 0xF);
+        int steps = (int) (x & 0xF);
         x >>= 4;
-        steps += (int)((x & 0xF) * 10);
+        steps += (int) ((x & 0xF) * 10);
         x >>= 4;
-        var addr = (int)(x & 0xF);
+        var addr = (int) (x & 0xF);
         x >>= 4;
-        addr += (int)((x & 0xF) * 10);
+        addr += (int) ((x & 0xF) * 10);
         x >>= 4;
-        addr += (int)((x & 0xF) * 100);
+        addr += (int) ((x & 0xF) * 100);
         x >>= 4;
-        addr += (int)((x & 0xF) * 1000);
+        addr += (int) ((x & 0xF) * 1000);
 
         steps = steps - steps % EEPROM_LINE_SIZE;
         return new EepromAddress(addr, Math.min(MAX_STEPS, steps));
@@ -151,7 +151,8 @@ public final class Eeprom {
                 }
                 case DATA -> {
                     for (int i = 0; i < addr.steps() / EEPROM_LINE_SIZE; i++) {
-                        var value = EepromUtils.readRegisterFromEeprom(eeprom, addr.start() + i * TETRADS_PER_EEPROM_LINE);
+                        var value = EepromUtils.readRegisterFromEeprom(eeprom,
+                                addr.start() + i * TETRADS_PER_EEPROM_LINE);
                         registers.store(new Address((byte) i, BYTE_0), value);
                     }
                 }
@@ -199,18 +200,21 @@ public final class Eeprom {
         }
     }
 
-    public static String convertDisplay(String text) {
-        text = padToDisplay(text);
-        var builder = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            var ch = text.charAt(i);
-            var conv = switch (ch) {
-                case ' ', '.' -> '-';
-                case '0' -> '8';
-                default -> ch;
+    public static IR convertDisplay(IR ir) {
+        long newInd = 0;
+        long ind = ir.indicator();
+
+        for (int i = 0; i < 12; i++) {
+            int t = (int) (ind & 0xF);
+            int newT = switch (t) {
+                case 0xF -> 0xA;
+                case 0 -> 0x8;
+                default -> t;
             };
-            builder.append(conv);
+            newInd = Register.setTetrad(newInd, i, newT);
+            ind = ind >> 4;
         }
-        return builder.toString();
+
+        return new IR(newInd, ir.dots());
     }
 }

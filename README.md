@@ -1,4 +1,4 @@
-# Симулятор микрокалькулятора МК-52
+# МК-52
 
 ![JDK](docs/java-24.png)
 [![License](docs/license.png)](LICENSE)
@@ -56,15 +56,6 @@
 
 [Подробности реализации](docs/eeprom.md)
 
-## Ссылки
-
-1. https://mk-61.moy.su/emulator.html
-2. https://mk-61.moy.su/memory.html
-3. https://xvadim.github.io/xbasoft/pmk/undocument_features.html
-4. https://ru.wikipedia.org/wiki/Еггогология
-
 ## Примеры программ
 
-Программы сохранены в виде дампа памяти, которые можно загрузить через меню Файл&rarr;Загрузить...
-
-+ [Факториал](docs/programs/factorial.txt)
+[Программы](docs/programs.md) сохранены в виде дампа памяти, которые можно загрузить через меню Файл&rarr;Загрузить...

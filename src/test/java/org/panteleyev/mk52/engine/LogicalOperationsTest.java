@@ -44,27 +44,27 @@ public class LogicalOperationsTest extends BaseTest {
         return List.of(
                 // ИНВ
                 argumentSet("K ИНВ", List.of(D1, DOT, D1, D2, D3, D4, K, CLEAR_X), new StackSnapshot(
-                        " 8.EDCBFFF",
-                        " 0.", " 0.", " 0.", " 1.1234", " 8.EDCBFFF"
+                        0x8_EDCBFFFL, 0, 0, 0, 0x1_1234000L,
+                        new IR(0xFFFF_8_EDCBFFFL, 1 << 7)
                 )),
                 argumentSet("K ИНВ", List.of(F, PLUS, K, CLEAR_X), new StackSnapshot(
-                        " 8.EBEA6D9",
-                        " 0.", " 0.", " 0.", " 3.1415926", " 8.EBEA6D9"
+                        0x8_EBEA6D9L, 0, 0, 0, Register.PI,
+                        new IR(0xFFFF_8_EBEA6D9L, 1 << 7)
                 )),
                 // XOR
                 argumentSet("K ⨁", List.of(D1, DOT, D1, D2, D3, PUSH, D1, DOT, D4, D3, D2, K, EE), new StackSnapshot(
-                        " 8.511",
-                        " 1.123", " 0.", " 0.", " 1.432", " 8.511"
+                        0x8_5110000L, 0x1_1230000L, 0, 0, 0x1_4320000L,
+                        new IR(0xFFFF_8_511FFFFL, 1 << 7)
                 )),
                 // AND
                 argumentSet("K ∧", List.of(D1, DOT, D1, D2, D3, PUSH, D1, DOT, D4, D3, D2, K, DOT), new StackSnapshot(
-                        " 8.022",
-                        " 1.123", " 0.", " 0.", " 1.432", " 8.022"
+                        0x8_0220000L, 0x1_1230000L, 0, 0, 0x1_4320000L,
+                        new IR(0xFFFF_8_022FFFFL, 1 << 7)
                 )),
                 // OR
                 argumentSet("K ∨", List.of(D1, DOT, D1, D2, D3, PUSH, D1, DOT, D4, D3, D2, K, SIGN), new StackSnapshot(
-                        " 8.533",
-                        " 1.123", " 0.", " 0.", " 1.432", " 8.533"
+                        0x8_5330000L, 0x1_1230000L, 0, 0, 0x1_4320000L,
+                        new IR(0xFFFF_8_533FFFFL, 1 << 7)
                 ))
         );
     }

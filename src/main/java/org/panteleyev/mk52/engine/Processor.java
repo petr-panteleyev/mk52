@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static org.panteleyev.mk52.Mk52Application.logger;
-import static org.panteleyev.mk52.engine.Constants.ERROR_DISPLAY;
 import static org.panteleyev.mk52.engine.Constants.STORE_CODE_DURATION;
 import static org.panteleyev.mk52.engine.Constants.TURN_OFF_DISPLAY_DELAY;
 
@@ -43,6 +42,7 @@ final class Processor {
 
     private final boolean async;
     private final AtomicBoolean running;
+    private final AtomicBoolean automaticMode;
     private final AtomicReference<Engine.OperationMode> operationMode;
     private final StepExecutionCallback stepCallback;
 
@@ -54,22 +54,19 @@ final class Processor {
             new AtomicReference<>(TrigonometricMode.RADIAN);
 
     public Processor(
+            Engine engine,
             boolean async,
-            Stack stack,
-            Registers registers,
-            ProgramMemory memory,
-            CallStack callStack,
-            AtomicBoolean running,
             AtomicReference<Engine.OperationMode> operationMode,
             AtomicReference<OpCode> lastExecutedOpCode,
             StepExecutionCallback stepCallback
     ) {
         this.async = async;
-        this.stack = stack;
-        this.memory = memory;
-        this.registers = registers;
-        this.callStack = callStack;
-        this.running = running;
+        this.stack = engine.stack();
+        this.memory = engine.programMemory();
+        this.registers = engine.registers();
+        this.callStack = engine.callStack();
+        this.running = engine.running();
+        this.automaticMode = engine.automaticMode();
         this.operationMode = operationMode;
         this.lastExecutedOpCode = lastExecutedOpCode;
         this.stepCallback = stepCallback;
@@ -108,10 +105,12 @@ final class Processor {
         while (true) {
             if (!running.get() || status != ExecutionStatus.CONTINUE) {
                 running.set(false);
+                automaticMode.set(false);
+
                 if (status == ExecutionStatus.ERROR) {
-                    stepCallback.after(newStepExecutionResult(ERROR_DISPLAY));
+                    stepCallback.after(newStepExecutionResult(IR.ERROR));
                 } else {
-                    stepCallback.after(newStepExecutionResult(Register.toString(stack.x())));
+                    stepCallback.after(newStepExecutionResult(stack.x2()));
                 }
                 break;
             }
@@ -199,8 +198,6 @@ final class Processor {
     }
 
     private ExecutionStatus execute(OpCode opCode) {
-        var codeHigh = opCode.code() & 0xF0;
-
         if (opCode.isStore()) {
             store(Address.of(opCode.getRegister()));
         } else if (opCode.isLoad()) {
@@ -363,17 +360,18 @@ final class Processor {
         }
 
         if (status == ExecutionStatus.ERROR) {
-            stepCallback.after(newStepExecutionResult(ERROR_DISPLAY));
+            stack.setX2(IR.ERROR);
+            stepCallback.after(newStepExecutionResult(IR.ERROR));
         } else {
             stepCallback.after(newStepExecutionResult(getCurrentDisplay()));
         }
         return status;
     }
 
-    public String getCurrentDisplay() {
+    public IR getCurrentDisplay() {
         return switch (operationMode.get()) {
-            case EXECUTION -> stack.display();
-            case PROGRAMMING -> memory.getStringValue(programCounter.get());
+            case EXECUTION -> stack.x2();
+            case PROGRAMMING -> memory.getIndicator(programCounter.get());
         };
     }
 
@@ -391,10 +389,10 @@ final class Processor {
 
         running.set(false);
         var pc = programCounter.get();
-        stepCallback.after(newStepExecutionResult(memory.getStringValue(pc)));
+        stepCallback.after(newStepExecutionResult(memory.getIndicator(pc)));
     }
 
-    private StepExecutionResult newStepExecutionResult(String display) {
+    private StepExecutionResult newStepExecutionResult(IR display) {
         return new StepExecutionResult(
                 display,
                 programCounter.get(),

@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.panteleyev.mk52.BaseTest;
 import org.panteleyev.mk52.engine.Engine;
+import org.panteleyev.mk52.engine.IR;
 import org.panteleyev.mk52.engine.KeyboardButton;
 import org.panteleyev.mk52.engine.TrigonometricMode;
 
@@ -54,33 +55,33 @@ public class Table13Test extends BaseTest {
     private static List<Arguments> testArguments() {
         return List.of(
                 // Программа
-                arguments(List.of(F, EE), "           00"),
-                arguments(List.of(D1, D9, STORE, D7), "  47 09 01 03"),
-                arguments(List.of(K, GOSUB, D7, PLUS, LOAD, DOT), "  6A 10 A7 06"),
-                arguments(List.of(DIVISION, D2, DIVISION), "  13 02 13 09"),
-                arguments(List.of(STORE, D1, K, GOSUB, D7, SWAP), "  14 A7 41 12"),
-                arguments(List.of(MINUS, LOAD, DOT, DIVISION), "  13 6A 11 15"),
-                arguments(List.of(D2, DIVISION, STORE, D2), "  42 13 02 18"),
-                arguments(List.of(RUN_STOP, LOAD, DOT, LOAD, EE), "  6C 6A 50 21"),
-                arguments(List.of(MULTIPLICATION, D4, MULTIPLICATION), "  12 04 12 24"),
-                arguments(List.of(LOAD, SIGN, F, MULTIPLICATION, SWAP), "  14 22 6B 27"),
-                arguments(List.of(MINUS, F, MINUS, LOAD, SIGN), "  6B 21 11 30"),
-                arguments(List.of(SIGN, RETURN), "  52 0B 6B 32"),
-                arguments(List.of(F, SIGN, RETURN), " 0.          "),
+                arguments(List.of(F, EE), new IR(0xF00F_FFFF_FFFFL)),
+                arguments(List.of(D1, D9, STORE, D7), new IR(0xF03F_47_F_09_F_01L)),
+                arguments(List.of(K, GOSUB, D7, PLUS, LOAD, DOT), new IR(0xF06F_6A_F_10_F_A7L)),
+                arguments(List.of(DIVISION, D2, DIVISION), new IR(0xF09F_13_F_02_F_13L)),
+                arguments(List.of(STORE, D1, K, GOSUB, D7, SWAP), new IR(0xF12F_14_F_A7_F_41L)),
+                arguments(List.of(MINUS, LOAD, DOT, DIVISION), new IR(0xF15F_13_F_6A_F_11L)),
+                arguments(List.of(D2, DIVISION, STORE, D2), new IR(0xF18F42_F_13_F_02L)),
+                arguments(List.of(RUN_STOP, LOAD, DOT, LOAD, EE), new IR(0xF21F_6C_F_6A_F_50L)),
+                arguments(List.of(MULTIPLICATION, D4, MULTIPLICATION), new IR(0xF24F_12_F_04_F_12L)),
+                arguments(List.of(LOAD, SIGN, F, MULTIPLICATION, SWAP), new IR(0xF27F_14_F_22_F_6BL)),
+                arguments(List.of(MINUS, F, MINUS, LOAD, SIGN), new IR(0xF30F_6B_F_21_F_11L)),
+                arguments(List.of(SIGN, RETURN), new IR(0xF32F_52_F_0B_F_6BL)),
+                arguments(List.of(F, SIGN, RETURN), new IR(0xFFFF_0FFF_FFFFL, 1 << 7)),
                 // Данные
-                arguments(List.of(D3, STORE, DOT), " 3.          "),
-                arguments(List.of(D2, STORE, SIGN), " 2.          "),
-                arguments(List.of(D1, SIGN, STORE, EE), "-1.          "),
+                arguments(List.of(D3, STORE, DOT), new IR(0xFFFF_3FFF_FFFFL, 1 << 7)),
+                arguments(List.of(D2, STORE, SIGN), new IR(0xFFFF_2FFF_FFFFL, 1 << 7)),
+                arguments(List.of(D1, SIGN, STORE, EE), new IR(0xFFFA_1FFF_FFFFL, 1 << 7)),
                 // Выполнение
-                arguments(List.of(RUN_STOP), "-1.          "),
+                arguments(List.of(RUN_STOP), new IR(0xFFFA_1FFF_FFFFL, 1 << 7)),
                 // Контроль регистров
-                arguments(List.of(LOAD, D1), " 3.3333334-01")               // 3.3333333-01
+                arguments(List.of(LOAD, D1), new IR(0xA01F_3333_3334L, 1 << 7)) // 3.3333333-01
         );
     }
 
     @ParameterizedTest
     @MethodSource("testArguments")
-    public void test(List<KeyboardButton> buttons, String expected) {
+    public void test(List<KeyboardButton> buttons, IR expected) {
         buttons.forEach(engine::processButton);
         assertEquals(expected, engine.displayProperty().get());
     }

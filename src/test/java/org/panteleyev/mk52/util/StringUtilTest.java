@@ -26,6 +26,5 @@ public class StringUtilTest {
     @MethodSource("testPadToDisplayArguments")
     public void testPadToDisplay(String str, String expected) {
         assertEquals(expected, StringUtil.padToDisplay(str));
-
     }
 }

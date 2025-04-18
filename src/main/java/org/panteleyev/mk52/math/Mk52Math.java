@@ -28,15 +28,98 @@ public final class Mk52Math {
     }
 
     public static long add(long x, long y) {
-        var doubleValue = toDouble(x) + toDouble(y);
-        checkResult(doubleValue);
-        return valueOf(doubleValue);
+        long a = Register.isZero(x) ? 0 : x;
+        long b = Register.isZero(y) ? 0 : y;
+
+        if (a == 0) {
+            return b;
+        }
+        if (b == 0) {
+            return a;
+        }
+
+        int aExp = Register.getExponent(a);
+        int bExp = Register.getExponent(b);
+
+        if (bExp > aExp) {
+            // a - число с большим порядком.
+            long tmp = a;
+            a = b;
+            b = tmp;
+            aExp = Register.getExponent(a);
+            bExp = Register.getExponent(b);
+        }
+
+        long mantissaA = Register.calculateAbsoluteMantissa(a);
+        long mantissaB = Register.calculateAbsoluteMantissa(b);
+
+        if (aExp != bExp) {
+            // Выравнивание порядков
+            bExp = Register.getExponent(b);
+
+            while (bExp < aExp) {
+                mantissaB = (mantissaB + 5) / 10;
+                bExp++;
+            }
+            b = Register.setExponent(b, bExp);
+        }
+
+        if (Register.isZero(b)) {
+            return a;
+        }
+
+        int exponent = aExp;
+
+        if (isNegative(a)) {
+            mantissaA = -mantissaA;
+        }
+        if (isNegative(b)) {
+            mantissaB = -mantissaB;
+        }
+        long mantissa = mantissaA + mantissaB;
+        if (mantissa == 0) {
+            return 0;
+        }
+
+        long signum = mantissa > 0 ? 1 : -1;
+        mantissa = mantissa * signum;
+
+        long decimal = 0;
+        int digitCount = 0;
+        long temp = mantissa;
+        while (temp != 0) {
+            decimal = Register.setMantissaDigit(decimal, digitCount++, (int) (temp % 10));
+            temp = temp / 10;
+        }
+
+        while (digitCount > 8) {
+            mantissa = (mantissa + 5) / 10;
+
+            decimal = 0;
+            digitCount = 0;
+            temp = mantissa;
+            while (temp != 0) {
+                decimal = Register.setMantissaDigit(decimal, digitCount++, (int) (temp % 10));
+                temp = temp / 10;
+            }
+
+            exponent++;
+        }
+
+        // TODO: переделать
+        if (exponent > 99) {
+            throw new ArithmeticException();
+        }
+
+        long result = Register.setExponent(decimal, exponent);
+        if (signum < 0) {
+            result = Register.negate(result);
+        }
+        return Register.normalize(result);
     }
 
     public static long subtract(long x, long y) {
-        var doubleValue = toDouble(y) - toDouble(x);
-        checkResult(doubleValue);
-        return valueOf(doubleValue);
+        return add(Register.negate(x), y);
     }
 
     public static long multiply(long x, long y) {
@@ -98,6 +181,7 @@ public final class Mk52Math {
         return valueOf(doubleValue);
     }
 
+    /* exp(y * ln(x)) */
     public static long pow(long x, long y) {
         if (isNegative(x)) {
             throw new ArithmeticException();

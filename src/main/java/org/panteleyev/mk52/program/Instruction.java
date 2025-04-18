@@ -14,8 +14,4 @@ public record Instruction(OpCode opCode, Address address) {
     public Instruction(OpCode opCode) {
         this(opCode, null);
     }
-
-    public int size() {
-        return address == null ? 1 : 2;
-    }
 }

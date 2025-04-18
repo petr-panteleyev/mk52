@@ -13,11 +13,13 @@ import org.panteleyev.mk52.BaseTest;
 import org.panteleyev.mk52.eeprom.EepromMode;
 import org.panteleyev.mk52.eeprom.EepromOperation;
 import org.panteleyev.mk52.engine.Engine;
+import org.panteleyev.mk52.engine.IR;
 import org.panteleyev.mk52.engine.KeyboardButton;
 
 import java.util.List;
 import java.util.function.Consumer;
 
+import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import static org.panteleyev.mk52.engine.KeyboardButton.D0;
@@ -58,60 +60,70 @@ public class Table1Test extends BaseTest {
     }
 
     private static List<Arguments> testArguments() {
-        return List.of(
-                argumentSet("1:" + PASS, NOOP, List.of(D1, D2, D3, D4), " 1234.       "),
-                argumentSet("2:" + PASS, NOOP, List.of(D5, D6, D7, D8), " 12345678.   "),
-                argumentSet("3:" + PASS, NOOP, List.of(EE, D9, SIGN), " 12345678.-09"),
-                argumentSet("4:" + PASS, NOOP, List.of(PUSH), " 1.2345678-02"),
-                argumentSet("5:" + PASS, NOOP, List.of(D0, DOT, D9), " 0.9         "),
-                argumentSet("6:" + PASS, NOOP, List.of(MULTIPLICATION), " 1.111111 -02"),
-                argumentSet("7:" + PASS, TR_DEGREE, List.of(F, D7), " 1.9392545-04"),
-                argumentSet("8:" + PASS, TR_GRADIAN, List.of(F, D8), " 1.          "),
-                argumentSet("9:" + DIFF, TR_RADIAN, List.of(F, D9), " 1.5574077   "),           // 1.5574078
-                argumentSet("10:" + DIFF, NOOP, List.of(STORE, D1), " 1.5574077   "),           // 1.5574078
-                argumentSet("11:" + PASS, NOOP, List.of(F, PLUS), " 3.1415926   "),
+        return of(
+                argumentSet("1:" + PASS, NOOP, of(D1, D2, D3, D4), new IR(0xFFFF_1234_FFFFL, 1 << 4)),
+                argumentSet("2:" + PASS, NOOP, of(D5, D6, D7, D8), new IR(0xFFFF_12345678L, 1)),
+                argumentSet("3:" + PASS, NOOP, of(EE, D9, SIGN), new IR(0xA09F_12345678L, 1)),
+                argumentSet("4:" + PASS, NOOP, of(PUSH), new IR(0xA02F_1_2345678L, 1 << 7)),
+                argumentSet("5:" + PASS, NOOP, of(D0, DOT, D9), new IR(0xFFFF_0_9FFFFFFL, 1 << 7)),
+                argumentSet("6:" + PASS, NOOP, of(MULTIPLICATION), new IR(0xA02F_1_111111FL, 1 << 7)),
+                argumentSet("7:" + PASS, TR_DEGREE, of(F, D7), new IR(0xA04F_1_9392545L, 1 << 7)),
+                argumentSet("8:" + PASS, TR_GRADIAN, of(F, D8), new IR(0xFFFF_1FFF_FFFFL, 1 << 7)),
+                // 1.5574078
+                argumentSet("9:" + DIFF, TR_RADIAN, of(F, D9), new IR(0xFFFF_1_5574077L, 1 << 7)),
+                // 1.5574078
+                argumentSet("10:" + DIFF, NOOP, of(STORE, D1), new IR(0xFFFF_1_5574077L, 1 << 7)),
+                argumentSet("11:" + PASS, NOOP, of(F, PLUS), IR.PI),
                 argumentSet("12:" + PASS, (Consumer<Engine>) engine -> {
                     engine.setEepromOperation(EepromOperation.ERASE);
                     engine.setEepromMode(EepromMode.PROGRAM);
-                }, List.of(EEPROM_ADDRESS), " 3.1415926   "),
-                argumentSet("13:" + PASS, NOOP, List.of(EEPROM_EXCHANGE), " 3.1415926   "),
-                argumentSet("14:" + DIFF, NOOP, List.of(F, D2), " 4.9714987-01"),               // 4.9714983-01
-                argumentSet("15:" + DIFF, NOOP, List.of(STORE, D2), " 4.9714987-01"),           // 4.9714983-01
-                argumentSet("16:" + PASS, NOOP, List.of(F, PLUS), " 3.1415926   "),
+                }, of(EEPROM_ADDRESS), IR.PI),
+                argumentSet("13:" + PASS, NOOP, of(EEPROM_EXCHANGE), IR.PI),
+                // 4.9714983-01
+                argumentSet("14:" + DIFF, NOOP, of(F, D2), new IR(0xA01F_4_9714987L, 1 << 7)),
+                // 4.9714983-01
+                argumentSet("15:" + DIFF, NOOP, of(STORE, D2), new IR(0xA01F_4_9714987L, 1 << 7)),
+                argumentSet("16:" + PASS, NOOP, of(F, PLUS), IR.PI),
                 argumentSet("17:" + PASS, (Consumer<Engine>) engine -> {
                     engine.setEepromOperation(EepromOperation.WRITE);
                     engine.setEepromMode(EepromMode.DATA);
-                }, List.of(EEPROM_EXCHANGE), " 3.1415926   "),
-                argumentSet("18:" + PASS, (Consumer<Engine>) engine -> engine.setEepromOperation(EepromOperation.READ),
-                        List.of(), " 3.1415926   "),
-                argumentSet("19:" + PASS, POWEROFF, List.of(), "             "),
+                }, of(EEPROM_EXCHANGE), IR.PI),
+                argumentSet("18:" + PASS,
+                        (Consumer<Engine>) engine -> engine.setEepromOperation(EepromOperation.READ),
+                        of(), IR.PI),
+                argumentSet("19:" + PASS, POWEROFF, of(), IR.EMPTY),
                 argumentSet("20:" + PASS, (Consumer<Engine>) engine -> {
                     engine.togglePower(true);
                     engine.setEepromOperation(EepromOperation.READ);
                     engine.setEepromMode(EepromMode.DATA);
-                }, List.of(F, PLUS), " 3.1415926   "),
-                argumentSet("21:" + PASS, NOOP, List.of(EEPROM_ADDRESS), " 3.1415926   "),
-                argumentSet("22:" + PASS, NOOP, List.of(EEPROM_EXCHANGE), " 3.1415926   "),
-                argumentSet("23:" + DIFF, NOOP, List.of(LOAD, D1), " 1.5574077   "),            // 1.5574078
-                argumentSet("24:" + DIFF, NOOP, List.of(LOAD, D2), " 4.9714987-01"),            // 4.9714983-01
-                argumentSet("25:" + PASS, NOOP, List.of(F, EE), "           00"),
-                argumentSet("26:" + PASS, NOOP, List.of(K, D9), "  36       01"),
-                argumentSet("27:" + PASS, NOOP, List.of(K, D4), "  31 36    02"),
-                argumentSet("28:" + PASS, NOOP, List.of(STORE, D3), "  43 31 36 03"),
-                argumentSet("29:" + PASS, NOOP, List.of(F, SWAP), "  24 43 31 04"),
-                argumentSet("30:" + PASS, NOOP, List.of(K, SIGN), "  38 24 43 05"),
-                argumentSet("31:" + PASS, NOOP, List.of(F, GOSUB), "  5A 38 24 06"),
-                argumentSet("32:" + PASS, NOOP, List.of(D0, D4), "  04 5A 38 07"),
-                argumentSet("33:" + PASS, NOOP, List.of(RUN_STOP), "  50 04 5A 08"),
-                argumentSet("34:" + DIFF, NOOP, List.of(F, SIGN), " 4.9714987-01"),             // 4.9714983-01
-                argumentSet("35:" + DIFF, NOOP, List.of(RETURN), " 4.9714987-01"),              // 4.9714983-01
-                argumentSet("36:" + DIFF, NOOP, List.of(RUN_STOP), " 8.DD764F7   ")             // 8.DD76578
+                }, of(F, PLUS), IR.PI),
+                argumentSet("21:" + PASS, NOOP, of(EEPROM_ADDRESS), IR.PI),
+                argumentSet("22:" + PASS, NOOP, of(EEPROM_EXCHANGE), IR.PI),
+                // 1.5574078
+                argumentSet("23:" + DIFF, NOOP, of(LOAD, D1), new IR(0xFFFF_1_5574077L, 1 << 7)),
+                // 4.9714983-01
+                argumentSet("24:" + DIFF, NOOP, of(LOAD, D2), new IR(0xA01F_4_9714987L, 1 << 7)),
+                argumentSet("25:" + PASS, NOOP, of(F, EE), new IR(0xF00F_FFFF_FFFFL)),
+                argumentSet("26:" + PASS, NOOP, of(K, D9), new IR(0xF01F_36_FFFFFFL)),
+                argumentSet("27:" + PASS, NOOP, of(K, D4), new IR(0xF02F_31_F_36_FFFL)),
+                argumentSet("28:" + PASS, NOOP, of(STORE, D3), new IR(0xF03F_43_F_31_F_36L)),
+                argumentSet("29:" + PASS, NOOP, of(F, SWAP), new IR(0xF04F_24_F_43_F_31L)),
+                argumentSet("30:" + PASS, NOOP, of(K, SIGN), new IR(0xF05F_38_F_24_F_43L)),
+                argumentSet("31:" + PASS, NOOP, of(F, GOSUB), new IR(0xF06F_5A_F_38_F_24L)),
+                argumentSet("32:" + PASS, NOOP, of(D0, D4), new IR(0xF07F_04_F_5A_F_38L)),
+                argumentSet("33:" + PASS, NOOP, of(RUN_STOP), new IR(0xF08F_50_F_04_F_5AL)),
+                // 4.9714983-01
+                argumentSet("34:" + DIFF, NOOP, of(F, SIGN), new IR(0xA01F_4_9714987L, 1 << 7)),
+                // 4.9714983-01
+                argumentSet("35:" + DIFF, NOOP, of(RETURN), new IR(0xA01F_4_9714987L, 1 << 7)),
+                // 8.DD76578
+                argumentSet("36:" + DIFF, NOOP, of(RUN_STOP), new IR(0xFFFF_8_DD764F7L, 1 << 7))
         );
     }
 
     @ParameterizedTest
     @MethodSource("testArguments")
-    public void test(Consumer<Engine> preOperation, List<KeyboardButton> buttons, String expected) {
+    public void test(Consumer<Engine> preOperation, List<KeyboardButton> buttons, IR expected) {
         preOperation.accept(engine);
         buttons.forEach(engine::processButton);
         assertEquals(expected, engine.displayProperty().get());
