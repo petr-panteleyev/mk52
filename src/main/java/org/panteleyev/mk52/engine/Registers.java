@@ -6,9 +6,7 @@ package org.panteleyev.mk52.engine;
 
 import org.panteleyev.mk52.program.Address;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.panteleyev.mk52.engine.Constants.REGISTERS_SIZE;
 
@@ -73,13 +71,9 @@ public class Registers {
         }
     }
 
-    public List<String> getSnapshot() {
+    public long[] getSnapshot() {
         synchronized (registers) {
-            var snapshot = new ArrayList<String>(REGISTERS_SIZE);
-            for (var register : registers) {
-                snapshot.add(Register.toString(register));
-            }
-            return snapshot;
+            return Arrays.copyOf(registers, registers.length);
         }
     }
 

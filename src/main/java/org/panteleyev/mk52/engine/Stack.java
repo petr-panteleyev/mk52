@@ -18,13 +18,10 @@ public class Stack {
     private final AtomicLong t = new AtomicLong(0);
     private final AtomicLong x1 = new AtomicLong(0);
 
-    private final AtomicReference<IR> x2;
-
     private final AtomicReference<OpCode> lastExecutedOpCode;
 
     // При вводе экспоненты запоминаем текущую экспоненту регистра X
     private int xExponent = 0;
-    private boolean enteringExponent = false;
     // Текущая позиция вводе
     private int currentDigit = 7;
     // Текущая позиция точки
@@ -33,8 +30,10 @@ public class Stack {
     private boolean hasDot = false;
     private long xBuffer = 0;
 
+    private final Engine engine;
+
     Stack(Engine engine) {
-        this.x2 = engine.getX2();
+        this.engine = engine;
         this.lastExecutedOpCode = engine.getLastExecutedOpCode();
     }
 
@@ -44,20 +43,42 @@ public class Stack {
         y.set(0);
         z.set(0);
         t.set(0);
-        x2.set(Register.xToIndicator(x.get()));
+        engine.x2().set(Register.xToIndicator(x.get()));
         //
-        enteringExponent = false;
+        engine.enteringExponent().set(false);
+        //
+        dot = 7;
+        currentDigit = 7;
+        xBuffer = 0;
+        hasDot = false;
     }
 
-    synchronized long x() {
-        var tmp = x.get();
+    /**
+     * Нормализует значение в регистре X и возвращает уже нормализованное значение.
+     */
+    synchronized long normalizeX() {
         x.set(Register.normalize(x.get()));
-        x2.set(Register.xToIndicator(x.get()));
-        return tmp;
+        return x.get();
     }
 
-    synchronized IR x2() {
-        return x2.get();
+    synchronized public long xValue() {
+        return x.get();
+    }
+
+    synchronized public long x1Value() {
+        return x1.get();
+    }
+
+    synchronized public long yValue() {
+        return y.get();
+    }
+
+    synchronized public long zValue() {
+        return z.get();
+    }
+
+    synchronized public long tValue() {
+        return t.get();
     }
 
     synchronized long xOrBuffer() {
@@ -71,48 +92,51 @@ public class Stack {
                 z.get(),
                 t.get(),
                 x1.get(),
-                x2.get()
+                engine.x2().get()
         );
     }
 
-    synchronized void setX(long x) {
-        enteringExponent = false;
-        this.x.set(x);
-        x2.set(Register.xToIndicator(x));
+    /**
+     * Загрузка X из регистра.
+     * В X попадает нормализованное значение, на индикатор - как есть.
+     */
+    synchronized void loadX(long x) {
+        engine.enteringExponent().set(false);
+        this.x.set(Register.normalize(x));
+
+        if (engine.checkResultAndDisplayIfError()) {
+            engine.x2().set(Register.xToIndicator(x));
+        }
     }
 
     public void setX2(IR ri) {
-        x2.set(ri);
+        engine.x2().set(ri);
     }
 
     synchronized public void clearX() {
-        enteringExponent = false;
-
+        engine.enteringExponent().set(false);
         x.set(0);
-        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized public void pi() {
-        enteringExponent = false;
+        engine.enteringExponent().set(false);
 
         push();
         x1.set(x.get());
         x.set(Register.PI);
-        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized void push() {
-        enteringExponent = false;
+        engine.enteringExponent().set(false);
 
         t.set(z.get());
         z.set(y.get());
         y.set(Register.normalize(x.get()));
         x.set(Register.normalize(x.get()));
-        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized void rotate() {
-        enteringExponent = false;
+        engine.enteringExponent().set(false);
 
         var tempX = Register.normalize(x.get());
         x.set(y.get());
@@ -120,41 +144,37 @@ public class Stack {
         z.set(t.get());
         t.set(tempX);
         x1.set(tempX);
-        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized void swap() {
-        enteringExponent = false;
+        engine.enteringExponent().set(false);
 
         var tempX = Register.normalize(x.get());
         x.set(y.get());
         y.set(tempX);
         x1.set(tempX);
-        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized void restoreX() {
-        enteringExponent = false;
+        engine.enteringExponent().set(false);
 
         t.set(z.get());
         z.set(y.get());
         y.set(x.get());
         x.set(x1.get());
-        x2.set(Register.xToIndicator(x.get()));
     }
 
     synchronized void unaryOperation(UnaryOperator<Long> operation) {
-        enteringExponent = false;
+        engine.enteringExponent().set(false);
 
         x1.set(Register.normalize(x.get()));
 
         var result = operation.apply(x.get());
         x.set(Register.normalize(result));
-        x2.set(Register.xToIndicator(result));
     }
 
     synchronized void binaryOperation(BinaryOperator<Long> operation) {
-        enteringExponent = false;
+        engine.enteringExponent().set(false);
 
         x1.set(Register.normalize(x.get()));
 
@@ -163,32 +183,21 @@ public class Stack {
         x.set(Register.normalize(result));
         y.set(z.get());
         z.set(t.get());
-        x2.set(Register.xToIndicator(result));
     }
 
     synchronized void binaryKeepYOperation(BinaryOperator<Long> operation) {
-        enteringExponent = false;
+        engine.enteringExponent().set(false);
 
         x1.set(x.get());
 
         var result = operation.apply(x.get(), y.get());
 
         x.set(Register.normalize(result));
-        x2.set(Register.xToIndicator(result));
-    }
-
-    synchronized void negate() {
-        if (!enteringExponent) {
-            x.set(Register.normalize(Register.negate(x.get())));
-            x2.set(Register.xToIndicator(x.get()));
-        } else {
-            addCharacter('-');
-        }
     }
 
     synchronized void addCharacter(char c) {
         var lastOpCode = lastExecutedOpCode.get();
-        if (!OpCode.isDigit(lastOpCode) && lastOpCode != OpCode.DOT && !enteringExponent) {
+        if (!OpCode.isDigit(lastOpCode) && lastOpCode != OpCode.DOT && !engine.enteringExponent().get()) {
             if (lastOpCode != OpCode.PUSH && lastOpCode != OpCode.CLEAR_X) {
                 push();
             }
@@ -198,11 +207,11 @@ public class Stack {
             hasDot = false;
         }
 
-        var ri = x2.get().indicator();
-        if (enteringExponent) {
+        var ri = engine.x2().get().indicator();
+        if (engine.enteringExponent().get()) {
             if (c == '.') {
-                x2.set(IR.ERROR);
-                enteringExponent = false;
+                engine.x2().set(IR.ERROR);
+                engine.enteringExponent().set(false);
                 return;
             }
             if (c == '-') {
@@ -211,7 +220,7 @@ public class Stack {
                 } else {
                     ri = Register.setTetrad(ri, 11, 0xA);
                 }
-                x2.set(new IR(ri, x2.get().dots()));
+                engine.x2().set(new IR(ri, engine.x2().get().dots()));
             } else {
                 ri = Register.setTetrad(ri, 10, Register.getTetrad(ri, 9));
                 ri = Register.setTetrad(ri, 9, c - '0');
@@ -224,13 +233,13 @@ public class Stack {
             var newExponent = xExponent + expDelta;
             if (newExponent < -99) {
                 x.set(0);
-                x2.set(Register.xToIndicator(0));
-                enteringExponent = false;
+                engine.x2().set(Register.xToIndicator(0));
+                engine.enteringExponent().set(false);
             } else if (newExponent > 99) {
-                x2.set(IR.ERROR);
-                enteringExponent = false;
+                engine.x2().set(IR.ERROR);
+                engine.enteringExponent().set(false);
             } else {
-                x2.set(new IR(ri, x2.get().dots()));
+                engine.x2().set(new IR(ri, engine.x2().get().dots()));
                 var newX = Register.setExponent(x.get(), newExponent);
                 x.set(Register.normalize(newX));
             }
@@ -261,15 +270,15 @@ public class Stack {
             }
 
             x.set(Register.normalize(xBuffer));
-            x2.set(new IR(ri, 1 << dot));
+            engine.x2().set(new IR(ri, 1 << dot));
         }
     }
 
     synchronized void enterExponent() {
-        enteringExponent = true;
+        engine.enteringExponent().set(true);
 
         // Ставим экспоненту +00
-        var ri = x2.get();
+        var ri = engine.x2().get();
         var ind = ri.indicator();
         var dots = ri.dots();
         ind = Register.setTetrad(ind, 11, 0xF);
@@ -281,7 +290,6 @@ public class Stack {
 
         // Если X == 0., то ставим в 1.
         if (Register.isZero(x.get())) {
-            xBuffer = 0;
             xBuffer = Register.setTetrad(xBuffer, 7, Register.getTetrad(ind, 7) + 1);
             ind = Register.setTetrad(ind, 7, Register.getTetrad(xBuffer, 7) + Register.getTetrad(ind, 7));
             dots = 1 << 7;
@@ -289,6 +297,6 @@ public class Stack {
             x.set(xBuffer);
         }
 
-        x2.set(new IR(ind, dots));
+        engine.x2().set(new IR(ind, dots));
     }
 }

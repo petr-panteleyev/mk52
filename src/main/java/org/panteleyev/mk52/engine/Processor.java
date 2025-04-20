@@ -8,7 +8,6 @@ import org.panteleyev.mk52.math.Mk52Math;
 import org.panteleyev.mk52.program.Address;
 import org.panteleyev.mk52.program.Instruction;
 import org.panteleyev.mk52.program.OpCode;
-import org.panteleyev.mk52.program.ProgramCounter;
 import org.panteleyev.mk52.program.ProgramMemory;
 import org.panteleyev.mk52.program.StepExecutionCallback;
 import org.panteleyev.mk52.program.StepExecutionResult;
@@ -16,39 +15,31 @@ import org.panteleyev.mk52.program.StepExecutionResult;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BinaryOperator;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 import static org.panteleyev.mk52.Mk52Application.logger;
 import static org.panteleyev.mk52.engine.Constants.STORE_CODE_DURATION;
 import static org.panteleyev.mk52.engine.Constants.TURN_OFF_DISPLAY_DELAY;
 
 final class Processor {
-    private enum ExecutionStatus {
-        STOP,
-        CONTINUE,
-        ERROR
-    }
-
     private static final Predicate<Long> LT_0 = Register::isNegative;
     private static final Predicate<Long> EQ_0 = Register::isZero;
     private static final Predicate<Long> GE_0 = x -> Register.isZero(x) || !Register.isNegative(x);
     private static final Predicate<Long> NE_0 = x -> !Register.isZero(x);
 
-    private final ProgramCounter programCounter = new ProgramCounter();
+    private final Engine engine;
     private final Stack stack;
     private final Registers registers;
     private final ProgramMemory memory;
     private final CallStack callStack;
 
     private final boolean async;
-    private final AtomicBoolean running;
     private final AtomicBoolean automaticMode;
-    private final AtomicReference<Engine.OperationMode> operationMode;
     private final StepExecutionCallback stepCallback;
 
     private final AtomicReference<OpCode> lastExecutedOpCode;
-
-    private final AtomicBoolean fetchedInstruction = new AtomicBoolean(false);
 
     private final AtomicReference<TrigonometricMode> trigonometricMode =
             new AtomicReference<>(TrigonometricMode.RADIAN);
@@ -56,24 +47,18 @@ final class Processor {
     public Processor(
             Engine engine,
             boolean async,
-            AtomicReference<Engine.OperationMode> operationMode,
             AtomicReference<OpCode> lastExecutedOpCode,
             StepExecutionCallback stepCallback
     ) {
+        this.engine = engine;
         this.async = async;
         this.stack = engine.stack();
         this.memory = engine.programMemory();
         this.registers = engine.registers();
         this.callStack = engine.callStack();
-        this.running = engine.running();
         this.automaticMode = engine.automaticMode();
-        this.operationMode = operationMode;
         this.lastExecutedOpCode = lastExecutedOpCode;
         this.stepCallback = stepCallback;
-    }
-
-    public Address getProgramCounter() {
-        return programCounter.get();
     }
 
     public void setTrigonometricMode(TrigonometricMode trigonometricMode) {
@@ -81,7 +66,7 @@ final class Processor {
     }
 
     public void reset() {
-        programCounter.set(Address.ZERO);
+        engine.programCounter().set(Address.ZERO);
         lastExecutedOpCode.set(null);
         stack.reset();
         registers.reset();
@@ -89,32 +74,13 @@ final class Processor {
     }
 
     public void step() {
-        step(true);
-    }
-
-    private ExecutionStatus step(boolean single) {
-        var instruction = memory.fetchInstruction(programCounter);
-        fetchedInstruction.set(true);
-        var status = execute(instruction, single);
-        fetchedInstruction.set(false);
-        return status;
+        var instruction = memory.fetchInstruction(engine.programCounter());
+        execute(instruction);
     }
 
     public void run() {
-        var status = ExecutionStatus.CONTINUE;
-        while (true) {
-            if (!running.get() || status != ExecutionStatus.CONTINUE) {
-                running.set(false);
-                automaticMode.set(false);
-
-                if (status == ExecutionStatus.ERROR) {
-                    stepCallback.after(newStepExecutionResult(IR.ERROR));
-                } else {
-                    stepCallback.after(newStepExecutionResult(stack.x2()));
-                }
-                break;
-            }
-            status = step(false);
+        while (automaticMode.get()) {
+            step();
         }
     }
 
@@ -127,68 +93,71 @@ final class Processor {
     }
 
     private void stepLeft() {
-        programCounter.decrement();
+        engine.programCounter().decrement();
     }
 
     private void stepRight() {
-        programCounter.increment();
+        engine.programCounter().increment();
     }
 
     private void store(Address address) {
-        registers.store(address, stack.x());
+        registers.store(address, stack.normalizeX());
+        checkResultAndDisplay();
     }
 
     private void indirectStore(Address address) {
-        registers.store(registers.modifyAndGetAddressValue(address), stack.x());
+        registers.store(registers.modifyAndGetAddressValue(address), stack.normalizeX());
+        checkResultAndDisplay();
     }
 
     private void load(Address address) {
         stack.push();
-        stack.setX(registers.load(address));
+        stack.loadX(registers.load(address));
     }
 
     private void indirectLoad(Address address) {
         stack.push();
-        stack.setX(registers.load(registers.modifyAndGetAddressValue(address)));
+        stack.loadX(registers.load(registers.modifyAndGetAddressValue(address)));
     }
 
     public void returnTo0() {
-        programCounter.set(Address.ZERO);
+        engine.programCounter().set(Address.ZERO);
     }
 
     private void goTo(Address pc) {
-        programCounter.set(pc);
+        engine.programCounter().set(pc);
     }
 
     private void goSub(Address pc) {
-        callStack.push(programCounter.get().decrement());
+        callStack.push(engine.programCounter().get().decrement());
         goTo(pc);
     }
 
     public void returnFromSubroutine() {
-        stack.x();
+        stack.normalizeX();
+        checkResultAndDisplay(false);
         var newPc = callStack.pop().increment();
         goTo(newPc);
     }
 
     private void conditionalGoto(Address pc, Predicate<Long> predicate) {
-        if (!predicate.test(stack.x())) {
+        if (!predicate.test(stack.xValue())) {
             goTo(pc);
         }
     }
 
     private void indirectGoto(Address address) {
-        programCounter.set(registers.modifyAndGetAddressValue(address));
+        engine.programCounter().set(registers.modifyAndGetAddressValue(address));
     }
 
     private void loop(Address pc, int register) {
         if (registers.modifyAndGetLoopValue(register) > 0) {
-            programCounter.set(pc);
+            engine.programCounter().set(pc);
         }
     }
 
     private void conditionalIndirectGoto(Address address, Predicate<Long> predicate) {
-        if (!predicate.test(stack.x())) {
+        if (!predicate.test(stack.xValue())) {
             indirectGoto(address);
         }
     }
@@ -197,7 +166,7 @@ final class Processor {
         goSub(registers.modifyAndGetAddressValue(address));
     }
 
-    private ExecutionStatus execute(OpCode opCode) {
+    private void execute(OpCode opCode) {
         if (opCode.isStore()) {
             store(Address.of(opCode.getRegister()));
         } else if (opCode.isLoad()) {
@@ -219,21 +188,17 @@ final class Processor {
         } else if (opCode.isIndirectGosub()) {
             indirectGoSub(Address.of(opCode.getRegister()));
         } else if (opCode == OpCode.RETURN) {
-            if (fetchedInstruction.get()) {
-                returnFromSubroutine();
-            } else {
-                returnTo0();
-            }
+            returnFromSubroutine();
         } else if (opCode == OpCode.STOP_RUN) {
-            stack.x();
-            return ExecutionStatus.STOP;
+            automaticMode.set(false);
+            checkResultAndDisplay(false);
         } else {
             switch (opCode) {
                 // Инструкции эмулятора
                 case OpCode.STEP_LEFT -> stepLeft();
                 case OpCode.STEP_RIGHT -> stepRight();
-                case OpCode.TO_EXECUTION_MODE -> operationMode.set(Engine.OperationMode.EXECUTION);
-                case OpCode.TO_PROGRAMMING_MODE -> operationMode.set(Engine.OperationMode.PROGRAMMING);
+                case OpCode.TO_EXECUTION_MODE -> engine.programming().set(false);
+                case OpCode.TO_PROGRAMMING_MODE -> engine.programming().set(true);
 
                 case OpCode.ZERO -> stack.addCharacter('0');
                 case OpCode.ONE -> stack.addCharacter('1');
@@ -246,61 +211,84 @@ final class Processor {
                 case OpCode.EIGHT -> stack.addCharacter('8');
                 case OpCode.NINE -> stack.addCharacter('9');
                 case OpCode.DOT -> stack.addCharacter('.');
-                case OpCode.SIGN -> stack.negate();
+                case OpCode.SIGN -> {
+                    if (engine.enteringExponent().get()) {
+                        stack.addCharacter('-');
+                    } else {
+                        unaryOperation(Mk52Math::negate);
+                    }
+                }
                 case OpCode.ENTER_EXPONENT -> stack.enterExponent();
 
-                case OpCode.PUSH -> stack.push();
-                case OpCode.SWAP -> stack.swap();
-                case OpCode.ROTATE -> stack.rotate();
-                case OpCode.RESTORE_X -> stack.restoreX();
-                case OpCode.CLEAR_X -> stack.clearX();
+                case OpCode.PUSH -> {
+                    stack.push();
+                    checkResultAndDisplay(false);
+                }
+                case OpCode.SWAP -> {
+                    stack.swap();
+                    checkResultAndDisplay();
+                }
+                case OpCode.ROTATE -> {
+                    stack.rotate();
+                    checkResultAndDisplay();
+                }
+                case OpCode.RESTORE_X -> {
+                    stack.restoreX();
+                    checkResultAndDisplay(false);
+                }
+                case OpCode.CLEAR_X -> {
+                    stack.clearX();
+                    checkResultAndDisplay(false);
+                }
 
                 // Арифметика
-                case OpCode.ADD -> stack.binaryOperation(Mk52Math::add);
-                case OpCode.SUBTRACT -> stack.binaryOperation(Mk52Math::subtract);
-                case OpCode.MULTIPLY -> stack.binaryOperation(Mk52Math::multiply);
-                case OpCode.DIVIDE -> stack.binaryOperation(Mk52Math::divide);
+                case OpCode.ADD -> binaryOperation(Mk52Math::add);
+                case OpCode.SUBTRACT -> binaryOperation(Mk52Math::subtract);
+                case OpCode.MULTIPLY -> binaryOperation(Mk52Math::multiply);
+                case OpCode.DIVIDE -> binaryOperation(Mk52Math::divide);
 
                 // Логические операции
-                case OpCode.INVERSION -> stack.unaryOperation(Mk52Math::inversion);
-                case OpCode.AND -> stack.binaryKeepYOperation(Mk52Math::and);
-                case OpCode.OR -> stack.binaryKeepYOperation(Mk52Math::or);
-                case OpCode.XOR -> stack.binaryKeepYOperation(Mk52Math::xor);
+                case OpCode.INVERSION -> unaryOperation(Mk52Math::inversion);
+                case OpCode.AND -> binaryKeepYOperation(Mk52Math::and);
+                case OpCode.OR -> binaryKeepYOperation(Mk52Math::or);
+                case OpCode.XOR -> binaryKeepYOperation(Mk52Math::xor);
 
-                case OpCode.SQRT -> stack.unaryOperation(Mk52Math::sqrt);
-                case OpCode.SQR -> stack.unaryOperation(Mk52Math::sqr);
-                case OpCode.POWER_OF_TEN -> stack.unaryOperation(Mk52Math::pow10);
-                case OpCode.LG -> stack.unaryOperation(Mk52Math::lg);
-                case OpCode.LN -> stack.unaryOperation(Mk52Math::ln);
-                case OpCode.EXP -> stack.unaryOperation(Mk52Math::exp);
-                case OpCode.ONE_BY_X -> stack.unaryOperation(Mk52Math::oneByX);
-                case OpCode.POWER_OF_X -> stack.binaryKeepYOperation(Mk52Math::pow);
-                case OpCode.PI -> stack.pi();
-                case OpCode.RANDOM -> stack.unaryOperation(_ -> Mk52Math.rand());
+                case OpCode.SQRT -> unaryOperation(Mk52Math::sqrt);
+                case OpCode.SQR -> unaryOperation(Mk52Math::sqr);
+                case OpCode.POWER_OF_TEN -> unaryOperation(Mk52Math::pow10);
+                case OpCode.LG -> unaryOperation(Mk52Math::lg);
+                case OpCode.LN -> unaryOperation(Mk52Math::ln);
+                case OpCode.EXP -> unaryOperation(Mk52Math::exp);
+                case OpCode.ONE_BY_X -> unaryOperation(Mk52Math::oneByX);
+                case OpCode.POWER_OF_X -> binaryKeepYOperation(Mk52Math::pow);
+                case OpCode.PI -> {
+                    stack.pi();
+                    checkResultAndDisplay();
+                }
+                case OpCode.RANDOM -> unaryOperation(_ -> Mk52Math.rand());
 
-                case OpCode.ABS -> stack.unaryOperation(Mk52Math::abs);
-                case OpCode.INTEGER -> stack.unaryOperation(Mk52Math::integer);
-                case OpCode.FRACTIONAL -> stack.unaryOperation(Mk52Math::fractional);
-                case OpCode.MAX -> stack.binaryKeepYOperation(Mk52Math::max);
-                case OpCode.SIGNUM -> stack.unaryOperation(Mk52Math::signum);
+                case OpCode.ABS -> unaryOperation(Mk52Math::abs);
+                case OpCode.INTEGER -> unaryOperation(Mk52Math::integer);
+                case OpCode.FRACTIONAL -> unaryOperation(Mk52Math::fractional);
+                case OpCode.MAX -> binaryKeepYOperation(Mk52Math::max);
+                case OpCode.SIGNUM -> unaryOperation(Mk52Math::signum);
 
                 // Тригонометрия
-                case OpCode.SIN -> stack.unaryOperation(x -> Mk52Math.sin(x, trigonometricMode.get()));
-                case OpCode.ASIN -> stack.unaryOperation(x -> Mk52Math.asin(x, trigonometricMode.get()));
-                case OpCode.COS -> stack.unaryOperation(x -> Mk52Math.cos(x, trigonometricMode.get()));
-                case OpCode.ACOS -> stack.unaryOperation(x -> Mk52Math.acos(x, trigonometricMode.get()));
-                case OpCode.TAN -> stack.unaryOperation(x -> Mk52Math.tan(x, trigonometricMode.get()));
-                case OpCode.ATAN -> stack.unaryOperation(x -> Mk52Math.atan(x, trigonometricMode.get()));
+                case OpCode.SIN -> unaryOperation(x -> Mk52Math.sin(x, trigonometricMode.get()));
+                case OpCode.ASIN -> unaryOperation(x -> Mk52Math.asin(x, trigonometricMode.get()));
+                case OpCode.COS -> unaryOperation(x -> Mk52Math.cos(x, trigonometricMode.get()));
+                case OpCode.ACOS -> unaryOperation(x -> Mk52Math.acos(x, trigonometricMode.get()));
+                case OpCode.TAN -> unaryOperation(x -> Mk52Math.tan(x, trigonometricMode.get()));
+                case OpCode.ATAN -> unaryOperation(x -> Mk52Math.atan(x, trigonometricMode.get()));
 
                 // Угловые
-                case OpCode.HH_MM_TO_DEG -> stack.unaryOperation(Mk52Math::hoursMinutesToDegrees);
-                case OpCode.HH_MM_SS_TO_DEG -> stack.unaryOperation(Mk52Math::hoursMinutesSecondsToDegrees);
-                case OpCode.DEG_TO_HH_MM -> stack.unaryOperation(Mk52Math::degreesToHoursMinutes);
-                case OpCode.DEG_TO_HH_MM_SS -> stack.unaryOperation(Mk52Math::degreesToHoursMinutesSeconds);
+                case OpCode.HH_MM_TO_DEG -> unaryOperation(Mk52Math::hoursMinutesToDegrees);
+                case OpCode.HH_MM_SS_TO_DEG -> unaryOperation(Mk52Math::hoursMinutesSecondsToDegrees);
+                case OpCode.DEG_TO_HH_MM -> unaryOperation(Mk52Math::degreesToHoursMinutes);
+                case OpCode.DEG_TO_HH_MM_SS -> unaryOperation(Mk52Math::degreesToHoursMinutesSeconds);
 
                 // NOP
-                case OpCode.NOOP, OpCode.K_1, OpCode.K_2 -> {
-                }
+                case OpCode.NOOP, OpCode.K_1, OpCode.K_2 -> unaryOperation(Mk52Math::noop);
 
                 default -> {
                     logger().severe("Неизвестный код операции: " + Integer.toString(opCode.code(), 16));
@@ -308,14 +296,9 @@ final class Processor {
                 }
             }
         }
-        return ExecutionStatus.CONTINUE;
     }
 
     public void execute(Instruction instruction) {
-        execute(instruction, true);
-    }
-
-    private ExecutionStatus execute(Instruction instruction, boolean single) {
         if (async) {
             sleep(TURN_OFF_DISPLAY_DELAY);
         }
@@ -323,7 +306,6 @@ final class Processor {
         stepCallback.before();
 
         var opCode = instruction.opCode();
-        var status = ExecutionStatus.CONTINUE;
         if (opCode.hasAddress()) {
             var address = instruction.address();
             if (opCode == OpCode.GOTO) {
@@ -343,9 +325,10 @@ final class Processor {
             }
         } else {
             try {
-                status = execute(opCode);
+                execute(opCode);
             } catch (ArithmeticException ex) {
-                status = ExecutionStatus.ERROR;
+                stack.setX2(IR.ERROR);
+                automaticMode.set(false);
             }
         }
 
@@ -355,24 +338,7 @@ final class Processor {
             sleep(instruction.opCode().duration().minus(TURN_OFF_DISPLAY_DELAY));
         }
 
-        if (single) {
-            running.set(false);
-        }
-
-        if (status == ExecutionStatus.ERROR) {
-            stack.setX2(IR.ERROR);
-            stepCallback.after(newStepExecutionResult(IR.ERROR));
-        } else {
-            stepCallback.after(newStepExecutionResult(getCurrentDisplay()));
-        }
-        return status;
-    }
-
-    public IR getCurrentDisplay() {
-        return switch (operationMode.get()) {
-            case EXECUTION -> stack.x2();
-            case PROGRAMMING -> memory.getIndicator(programCounter.get());
-        };
+        stepCallback.after(newStepExecutionResult(engine.getCurrentDisplay()));
     }
 
     public void storeCode(int code) {
@@ -381,24 +347,71 @@ final class Processor {
         }
 
         stepCallback.before();
-        memory.storeCode(programCounter, code);
+        memory.storeCode(engine.programCounter(), code);
 
         if (async) {
             sleep(STORE_CODE_DURATION);
         }
 
-        running.set(false);
-        var pc = programCounter.get();
+        var pc = engine.programCounter().get();
         stepCallback.after(newStepExecutionResult(memory.getIndicator(pc)));
     }
 
     private StepExecutionResult newStepExecutionResult(IR display) {
         return new StepExecutionResult(
                 display,
-                programCounter.get(),
+                engine.programCounter().get(),
                 stack.getSnapshot(),
                 registers.getSnapshot(),
                 callStack.getSnapshot()
         );
+    }
+
+    private void unaryOperation(UnaryOperator<Long> operation) {
+        stack.unaryOperation(operation);
+        checkResultAndDisplay();
+    }
+
+    private void binaryOperation(BinaryOperator<Long> operation) {
+        stack.binaryOperation(operation);
+        checkResultAndDisplay();
+    }
+
+    private void binaryKeepYOperation(BinaryOperator<Long> operation) {
+        stack.binaryKeepYOperation(operation);
+        checkResultAndDisplay();
+    }
+
+    private void checkResultAndDisplay() {
+        checkResultAndDisplay(automaticMode.get());
+    }
+
+    private void checkResultAndDisplay(boolean skip) {
+        if (skip) {
+            return;
+        }
+
+        IR ir;
+        var x = stack.normalizeX();
+
+        var exponent = Register.getExponent(x);
+        if (exponent >= -99 && exponent <= 99) {
+            ir = Register.xToIndicator(x);
+        } else if (exponent <= 199) {
+            // Ярус 1
+            ir = IR.ERROR;
+            automaticMode.set(false);
+        } else if (exponent <= 299) {
+            // Ярус 2
+            ir = IR.ERROR_2;
+            engine.programCounter().set(new Address((exponent - 200) / 10, 2));
+            automaticMode.set(false);
+        } else {
+            // Верхние ярусы не реализованы, просто гасим экран и останавливаемся
+            ir = IR.EMPTY;
+            automaticMode.set(false);
+        }
+
+        stack.setX2(ir);
     }
 }

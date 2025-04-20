@@ -7,5 +7,5 @@ package org.panteleyev.mk52.engine;
 import org.panteleyev.mk52.program.StepExecutionResult;
 
 public interface RegistersUpdateCallback {
-    void update(StepExecutionResult snapshot, boolean running);
+    void update(StepExecutionResult snapshot);
 }

@@ -14,7 +14,7 @@ public record StepExecutionResult(
         IR display,
         Address programCounter,
         StackSnapshot stack,
-        List<String> registers,
+        long[] registers,
         CallStackSnapshot callStack
 ) {
 }

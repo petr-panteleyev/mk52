@@ -30,7 +30,7 @@ public class IndirectRegisterTrickTest {
 
     @Test
     public void test() {
-        var engine = new Engine(false, (_, _) -> {});
+        var engine = new Engine(false, _ -> {});
         engine.togglePower(true);
         engine.loadMemoryBytes(PROGRAM);
 

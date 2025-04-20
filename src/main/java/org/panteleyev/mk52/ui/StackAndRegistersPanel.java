@@ -149,9 +149,9 @@ class StackAndRegistersPanel extends BorderPane {
     }
 
     public void displaySnapshot(StepExecutionResult snapshot) {
-        if (snapshot.registers().size() == REGISTERS_SIZE) {
+        if (snapshot.registers().length == REGISTERS_SIZE) {
             for (int i = 0; i < REGISTERS_SIZE; i++) {
-                registers.get(i).setText(padToDisplay(snapshot.registers().get(i)));
+                registers.get(i).setText(padToDisplay(Register.toString(snapshot.registers()[i])));
             }
         }
 

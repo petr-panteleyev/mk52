@@ -49,7 +49,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 
 @DisplayName("Ввод в режиме Программирование")
 public class ProgrammingModeTest extends BaseTest {
-    private static final Engine engine = new Engine(false, (_, _) -> {});
+    private static final Engine engine = new Engine(false, _ -> {});
 
     @BeforeAll
     public static void beforeAll() {

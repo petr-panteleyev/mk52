@@ -16,8 +16,8 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 public class StringUtilTest {
     private static List<Arguments> testPadToDisplayArguments() {
         return List.of(
-                arguments("", "             "),
-                arguments("1234567890123", "1234567890123"),
+                arguments("", "              "),
+                arguments("1234567890123", "1234567890123 "),
                 arguments("12345678901234", "12345678901234")
         );
     }

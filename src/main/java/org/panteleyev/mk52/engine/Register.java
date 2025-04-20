@@ -5,7 +5,6 @@
 package org.panteleyev.mk52.engine;
 
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.panteleyev.mk52.engine.Constants.DISPLAY_SIZE;
 
@@ -29,13 +28,13 @@ public final class Register {
     private static final long MANTISSA_LOGICAL_BITS = 0x8000_0000L;
 
     // Экспонента
-    private static final long EXPONENT_MASK = 0x1FF0_0000_0000L;
     private static final long EXPONENT_AND_SIGN_MASK = 0xFFF0_0000_0000L;
     private static final long EXPONENT_LO_MASK = 0x0F0_0000_0000L;
     private static final int EXPONENT_LO_SHIFT = 36;
     private static final long EXPONENT_HI_MASK = 0xF00_0000_0000L;
     private static final int EXPONENT_HI_SHIFT = 40;
     private static final long EXPONENT_SIGN_MASK = 0xF000_0000_0000L;
+    private static final int EXPONENT_SIGN_SHIFT = 44;
     private static final long EXPONENT_NEGATIVE_BITS = 0x9000_0000_0000L;
 
     private static final int TETRAD_MASK = 0xF;
@@ -46,7 +45,7 @@ public final class Register {
     }
 
     public static boolean isExpNegative(long register) {
-        return (register & EXPONENT_SIGN_MASK) != 0;
+        return (register & EXPONENT_SIGN_MASK) == EXPONENT_NEGATIVE_BITS;
     }
 
     public static boolean isZero(long register) {
@@ -54,18 +53,26 @@ public final class Register {
     }
 
     public static int getExponent(long register) {
-        var exp = (int) (((register & EXPONENT_HI_MASK) >> EXPONENT_HI_SHIFT) * 10
+        var exp = (int) (((register & EXPONENT_SIGN_MASK) >> EXPONENT_SIGN_SHIFT) * 100
+                + ((register & EXPONENT_HI_MASK) >> EXPONENT_HI_SHIFT) * 10
                 + ((register & EXPONENT_LO_MASK) >> EXPONENT_LO_SHIFT));
-        return isExpNegative(register) ? exp - 100 : exp;
+        if (exp > 900) {
+            exp = exp - 1000;
+        }
+        return exp;
     }
 
     public static long setExponent(long register, int exponent) {
-        var expSign = 0L;
-        if (exponent < 0) {
-            exponent = 100 + exponent;
-            expSign = EXPONENT_NEGATIVE_BITS;
+        if (exponent < -99) {
+            return 0;
         }
 
+        if (exponent < 0) {
+            exponent = 100 + exponent + 900;
+        }
+
+        long expSign = (long) ((exponent / 100) & TETRAD_MASK) << EXPONENT_SIGN_SHIFT;
+        exponent = exponent % 100;
         long exponentLo = (long) ((exponent % 10) & TETRAD_MASK) << EXPONENT_LO_SHIFT;
         long exponentHi = (long) ((exponent / 10) & TETRAD_MASK) << EXPONENT_HI_SHIFT;
 
@@ -78,10 +85,6 @@ public final class Register {
     public static long modifyExponent(long x, int delta) {
         var exponent = Register.getExponent(x);
         return Register.setExponent(x, exponent + delta);
-    }
-
-    public static long setMantissaDigit(long x, int index, char digit) {
-        return setMantissaDigit(x, index, digit - '0');
     }
 
     public static long setMantissaDigit(long x, int index, int digit) {
@@ -142,16 +145,12 @@ public final class Register {
         return register & ~MANTISSA_SIGN_MASK;
     }
 
-    public static String toString(AtomicLong register) {
-        return toString(register.get());
-    }
-
     public static long toLogical(long register) {
         return register & MANTISSA_LOGICAL_MASK | MANTISSA_LOGICAL_BITS;
     }
 
     public static String toString(long register) {
-        var charBuffer = new char[DISPLAY_SIZE - 1];
+        var charBuffer = new char[DISPLAY_SIZE];
         Arrays.fill(charBuffer, ' ');
 
         var negative = isNegative(register);
@@ -190,12 +189,16 @@ public final class Register {
         }
 
         if (exponent != 0) {
-            var expStr = String.format("%02d", Math.abs(exponent));
+            var expStr = String.format("%03d", Math.abs(exponent));
             if (exponent < 0) {
-                charBuffer[9] = '-';
+                charBuffer[10] = '-';
+            } else {
+                if (exponent > 99) {
+                    charBuffer[10] = expStr.charAt(0);
+                }
             }
-            charBuffer[10] = expStr.charAt(0);
             charBuffer[11] = expStr.charAt(1);
+            charBuffer[12] = expStr.charAt(2);
         }
 
         var result = new StringBuilder().append(charBuffer);
@@ -215,27 +218,15 @@ public final class Register {
     }
 
     public static long valueOf(double x) {
-//        var format = new DecimalFormat("0.0000000E00");
-//        format.setMaximumIntegerDigits(1);
-//        format.setRoundingMode(RoundingMode.HALF_DOWN);
-//        format.setPositivePrefix("+");
-//        var normalized = format.format(x)
-//                .replace("e", "")
-//                .replace("E", "")
-//                .replace(".", "")
-//                .replace(",", "");
-//        var bbb = new StringBuilder(normalized);
-//        if (bbb.charAt(9) != '-') {
-//            bbb.insert(9, "+");
-//            normalized = bbb.toString();
-//        }
-
         var normalized = String.format("% .7e", x)
                 .replace("e", "")
                 .replace(".", "")
                 .replace(",", "");
 
-        var expValue = Integer.parseInt(normalized.substring(9, 12));
+        var expValue = Integer.parseInt(normalized.substring(9));
+        if (expValue < -99) {
+            return 0;
+        }
 
         var result = 0L;
         result = setExponent(result, expValue);

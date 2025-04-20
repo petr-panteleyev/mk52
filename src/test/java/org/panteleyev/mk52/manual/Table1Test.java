@@ -51,7 +51,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 
 @DisplayName("Таблица 1")
 public class Table1Test extends BaseTest {
-    private static final Engine engine = new Engine(false, (_, _) -> {});
+    private static final Engine engine = new Engine(false, (_) -> {});
 
     @BeforeAll
     public static void beforeAll() {

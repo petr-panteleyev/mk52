@@ -27,6 +27,10 @@ public final class Mk52Math {
         }
     }
 
+    public static long noop(long x) {
+        return x;
+    }
+
     public static long add(long x, long y) {
         long a = Register.isZero(x) ? 0 : x;
         long b = Register.isZero(y) ? 0 : y;
@@ -106,16 +110,11 @@ public final class Mk52Math {
             exponent++;
         }
 
-        // TODO: переделать
-        if (exponent > 99) {
-            throw new ArithmeticException();
-        }
-
         long result = Register.setExponent(decimal, exponent);
         if (signum < 0) {
             result = Register.negate(result);
         }
-        return Register.normalize(result);
+        return result;
     }
 
     public static long subtract(long x, long y) {
@@ -132,6 +131,10 @@ public final class Mk52Math {
         var doubleValue = toDouble(y) / toDouble(x);
         checkResult(doubleValue);
         return valueOf(doubleValue);
+    }
+
+    public static long negate(long x) {
+        return Register.negate(x);
     }
 
     public static long sqrt(long x) {

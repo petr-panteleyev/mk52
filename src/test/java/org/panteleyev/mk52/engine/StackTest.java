@@ -38,8 +38,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 @DisplayName("Операции со стеком")
 public class StackTest extends BaseTest {
     private static StackSnapshot stack = null;
-    private static final Engine engine = new Engine(false,
-            (result, _) -> stack = result == null ? null : result.stack());
+    private static final Engine engine = new Engine(false, result -> stack = result == null ? null : result.stack());
 
     @BeforeEach
     public void beforeEach() {

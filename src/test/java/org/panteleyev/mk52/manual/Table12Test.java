@@ -39,7 +39,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.STORE;
 
 @DisplayName("Таблица 12")
 public class Table12Test extends BaseTest {
-    private static final Engine engine = new Engine(false, (_, _) -> {});
+    private static final Engine engine = new Engine(false, _ -> {});
 
     @BeforeAll
     public static void beforeAll() {

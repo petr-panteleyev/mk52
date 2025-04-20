@@ -31,8 +31,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.SIGN;
 @DisplayName("Логические операции")
 public class LogicalOperationsTest extends BaseTest {
     private static StackSnapshot stack = null;
-    private static final Engine engine = new Engine(false,
-            (result, _) -> stack = result == null ? null : result.stack());
+    private static final Engine engine = new Engine(false, result -> stack = result == null ? null : result.stack());
 
     @BeforeEach
     public void beforeEach() {

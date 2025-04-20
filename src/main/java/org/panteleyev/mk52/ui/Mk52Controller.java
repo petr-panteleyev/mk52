@@ -69,7 +69,7 @@ public class Mk52Controller extends Controller {
 
     private final RegistersUpdateCallback registersUpdateCallback = new RegistersUpdateCallback() {
         @Override
-        public void update(StepExecutionResult snapshot, boolean running) {
+        public void update(StepExecutionResult snapshot) {
             Platform.runLater(() -> {
                 stackAndRegistersPanel.displaySnapshot(snapshot);
                 memoryPanel.showPc(snapshot.programCounter().getEffectiveAddress());

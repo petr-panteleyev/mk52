@@ -8,10 +8,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
 public final class Constants {
-    public static final double MAX_VALUE = 9.9999999e99;
-
     public static final int DISPLAY_SIZE = 13;
-    public static final String ERROR_DISPLAY = " EDDOD";
 
     public static final byte BYTE_0 = (byte) 0;
 

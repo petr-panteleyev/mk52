@@ -41,7 +41,7 @@ import static org.panteleyev.mk52.engine.KeyboardButton.SWAP;
 
 @DisplayName("Таблица 17")
 public class Table17Test extends BaseTest {
-    private static final Engine engine = new Engine(false, (_, _) -> {});
+    private static final Engine engine = new Engine(false, _ -> {});
 
     @BeforeAll
     public static void beforeAll() {
@@ -70,7 +70,6 @@ public class Table17Test extends BaseTest {
     @MethodSource("testArguments")
     public void test(List<KeyboardButton> buttons, IR expected) {
         buttons.forEach(engine::processButton);
-        var actual = engine.displayProperty().get();
         assertEquals(expected, engine.displayProperty().get());
     }
 }

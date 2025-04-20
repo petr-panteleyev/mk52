@@ -18,18 +18,8 @@ public final class StringUtil {
     }
 
     public static String padToDisplay(String s) {
-        var padCount = DISPLAY_SIZE - s.length();
-        return padCount > 0 ? s + " ".repeat(DISPLAY_SIZE - s.length()) : s;
-    }
-
-    public static void stripTrailingZeroes(StringBuilder sb, int delta) {
-        for (int index = sb.length() - delta; index > 0; index--) {
-            if (sb.charAt(index) == '0') {
-                sb.setCharAt(index, ' ');
-            } else {
-                break;
-            }
-        }
+        var padCount = DISPLAY_SIZE + 1 - s.length();
+        return padCount > 0 ? s + " ".repeat(DISPLAY_SIZE + 1 - s.length()) : s;
     }
 
     private StringUtil() {

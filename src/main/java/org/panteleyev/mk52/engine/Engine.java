@@ -13,6 +13,7 @@ import org.panteleyev.mk52.eeprom.EepromOperation;
 import org.panteleyev.mk52.program.Address;
 import org.panteleyev.mk52.program.Instruction;
 import org.panteleyev.mk52.program.OpCode;
+import org.panteleyev.mk52.program.ProgramCounter;
 import org.panteleyev.mk52.program.ProgramMemory;
 import org.panteleyev.mk52.program.StepExecutionCallback;
 import org.panteleyev.mk52.program.StepExecutionResult;
@@ -34,11 +35,6 @@ import static org.panteleyev.mk52.engine.KeyboardButton.RUN_STOP;
 import static org.panteleyev.mk52.program.OpCode.EMPTY;
 
 public final class Engine {
-    public enum OperationMode {
-        EXECUTION,
-        PROGRAMMING
-    }
-
     private static class ExecutionThread extends Thread {
         ExecutionThread(Runnable runnable) {
             super(runnable);
@@ -64,14 +60,22 @@ public final class Engine {
 
     // Глобальные регистры и флаги
     //
+    // Флаг автоматического исполнения
+    private final AtomicBoolean automaticMode = new AtomicBoolean(false);
+    // Флаг режима программирования
+    private final AtomicBoolean programming = new AtomicBoolean(false);
+    // Флаг ввода экспоненты
+    private final AtomicBoolean enteringExponent = new AtomicBoolean(false);
     // Регистр индикации
     private final AtomicReference<IR> x2 = new AtomicReference<>(new IR(0xFFFF_FFFF_FFFFL));
-    // Stack
+    // Стек
     private final Stack stack = new Stack(this);
     // Регистры
     private final Registers registers = new Registers();
     // Память программ
     private final ProgramMemory programMemory = new ProgramMemory();
+    // Счетчик команд
+    private final ProgramCounter programCounter = new ProgramCounter();
     // Стек вызовов
     private final CallStack callStack = new CallStack();
     // ППЗУ
@@ -87,7 +91,7 @@ public final class Engine {
         @Override
         public void after(StepExecutionResult stepExecutionResult) {
             setDisplay(stepExecutionResult.display());
-            registersUpdateCallback.update(stepExecutionResult, running.get());
+            registersUpdateCallback.update(stepExecutionResult);
         }
     };
     private final Processor processor;
@@ -95,12 +99,9 @@ public final class Engine {
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
-    // Флаг автоматического исполнения
-    private final AtomicBoolean automaticMode = new AtomicBoolean(false);
-
-    private final AtomicReference<OperationMode> operationMode = new AtomicReference<>(OperationMode.EXECUTION);
     private KeyboardMode keyboardMode = KeyboardMode.NORMAL;
 
+    // ППЗУ
     private EepromOperation eepromOperation = EepromOperation.READ;
     private EepromMode eepromMode = EepromMode.DATA;
 
@@ -114,8 +115,7 @@ public final class Engine {
     private final RegistersUpdateCallback registersUpdateCallback;
     private final MemoryUpdateCallback memoryUpdateCallback;
 
-    private final ObjectProperty<IR> displayProperty = new SimpleObjectProperty<>(
-            IR.EMPTY);
+    private final ObjectProperty<IR> displayProperty = new SimpleObjectProperty<>(IR.EMPTY);
 
     public Engine(boolean async, RegistersUpdateCallback registersUpdateCallback) {
         this(async, registersUpdateCallback, MemoryUpdateCallback.NOOP);
@@ -127,7 +127,6 @@ public final class Engine {
         this.processor = new Processor(
                 this,
                 async,
-                operationMode,
                 lastExecutedOpCode,
                 stepCallback
         );
@@ -137,7 +136,7 @@ public final class Engine {
         init();
     }
 
-    public AtomicReference<IR> getX2() {
+    public AtomicReference<IR> x2() {
         return x2;
     }
 
@@ -149,12 +148,16 @@ public final class Engine {
         return displayProperty;
     }
 
-    public AtomicBoolean running() {
-        return running;
+    public AtomicBoolean programming() {
+        return programming;
     }
 
     public AtomicBoolean automaticMode() {
         return automaticMode;
+    }
+
+    public AtomicBoolean enteringExponent() {
+        return enteringExponent;
     }
 
     public Stack stack() {
@@ -169,6 +172,10 @@ public final class Engine {
         return programMemory;
     }
 
+    public ProgramCounter programCounter() {
+        return programCounter;
+    }
+
     public CallStack callStack() {
         return callStack;
     }
@@ -181,8 +188,12 @@ public final class Engine {
         }
     }
 
+    public IR getCurrentDisplay() {
+        return programming.get() ? programMemory.getIndicator(getProgramCounter()) : x2.get();
+    }
+
     public void init() {
-        operationMode.set(OperationMode.EXECUTION);
+        programming.set(false);
         keyboardMode = KeyboardMode.NORMAL;
         processor.reset();
     }
@@ -192,7 +203,7 @@ public final class Engine {
     }
 
     public Address getProgramCounter() {
-        return processor.getProgramCounter();
+        return programCounter.get();
     }
 
     public void processButton(KeyboardButton button) {
@@ -200,16 +211,17 @@ public final class Engine {
             return;
         }
 
-        if (running.get()) {
+        if (automaticMode.get()) {
             if (button != EEPROM_ADDRESS && button != EEPROM_EXCHANGE) {
-                running.set(false);
+                automaticMode.set(false);
             }
             return;
         }
 
-        switch (operationMode.get()) {
-            case EXECUTION -> processButtonExecutionMode(button);
-            case PROGRAMMING -> processButtonProgrammingMode(button);
+        if (programming.get()) {
+            processButtonProgrammingMode(button);
+        } else {
+            processButtonExecutionMode(button);
         }
     }
 
@@ -225,7 +237,7 @@ public final class Engine {
         }
 
         if (keyboardMode == KeyboardMode.NORMAL && button == RETURN) {
-            execute(new Instruction(OpCode.RETURN));
+            processor.returnTo0();
             return;
         }
 
@@ -414,7 +426,7 @@ public final class Engine {
 
     public void storeCode(int code) {
         running.set(true);
-        var pc = processor.getProgramCounter();
+        var pc = programCounter.get();
 
         if (async) {
             processorExecutor.execute(() -> processor.storeCode(code));
@@ -429,12 +441,12 @@ public final class Engine {
         if (async) {
             running.set(true);
 
-            var eepromDisplay = Eeprom.convertDisplay(processor.getCurrentDisplay());
+            var eepromDisplay = Eeprom.convertDisplay(getCurrentDisplay());
             setDisplay(eepromDisplay);
             eepromExecutor.execute(() -> {
                 eeprom.setAddress(stack.xOrBuffer());
                 processor.sleep(Eeprom.SET_ADDRESS_DURATION);
-                setDisplay(processor.getCurrentDisplay());
+                setDisplay(getCurrentDisplay());
                 running.set(false);
             });
         } else {
@@ -445,13 +457,13 @@ public final class Engine {
     private void handleEepromOperation(boolean async) {
         if (async) {
             running.set(true);
-            var eepromDisplay = Eeprom.convertDisplay(processor.getCurrentDisplay());
+            var eepromDisplay = Eeprom.convertDisplay(getCurrentDisplay());
             setDisplay(eepromDisplay);
             eepromExecutor.execute(() -> {
                 eeprom.exchange(eepromOperation, eepromMode);
                 processor.sleep(RW_DURATION);
                 memoryUpdateCallback.store(getMemoryBytes());
-                setDisplay(processor.getCurrentDisplay());
+                setDisplay(getCurrentDisplay());
                 running.set(false);
             });
         } else {
@@ -478,5 +490,38 @@ public final class Engine {
 
     public void importEeprom(InputStream in) {
         eeprom.importDump(in);
+    }
+
+
+    /**
+     * Проверяет содержимое регистра X.
+     * При переполнении останавливает исполнение, показывает на индикаторе ошибку.
+     * Если переполнения нет, что ничего не делает.
+     *
+     * @return true нет переполнения
+     */
+    public boolean checkResultAndDisplayIfError() {
+        IR ir;
+        var x = stack.xValue();
+        var exponent = Register.getExponent(x);
+        if (exponent >= -99 && exponent <= 99) {
+            return true;
+        } else if (exponent <= 199) {
+            // Ярус 1
+            ir = IR.ERROR;
+            automaticMode.set(false);
+        } else if (exponent <= 299) {
+            // Ярус 2
+            ir = IR.ERROR_2;
+            programCounter.set(new Address((exponent - 200) / 10, 2));
+            automaticMode.set(false);
+        } else {
+            // Верхние ярусы не реализованы, просто гасим экран и останавливаемся
+            ir = IR.EMPTY;
+            automaticMode.set(false);
+        }
+
+        stack.setX2(ir);
+        return false;
     }
 }

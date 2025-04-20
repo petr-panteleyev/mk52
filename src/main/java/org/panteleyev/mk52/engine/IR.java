@@ -12,6 +12,7 @@ public record IR(long indicator, int dots) {
     public static final IR EMPTY = new IR(0xFFFF_FFFF_FFFFL);
     public static final IR INITIAL = new IR(0xFFFF_0FFF_FFFFL, 0b10000000);
     public static final IR ERROR = new IR(0xFFFF_EDD0_DFFFL);
+    public static final IR ERROR_2 = new IR(0xFFFF_3DD0_DFFFL);
 
     public static final IR PI = new IR(0xFFFF_3_1415926L, 1 << 7);
 
