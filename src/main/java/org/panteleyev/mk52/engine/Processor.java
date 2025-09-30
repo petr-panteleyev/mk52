@@ -65,23 +65,11 @@ final class Processor {
         this.trigonometricMode.set(trigonometricMode);
     }
 
-    public void reset() {
-        engine.programCounter().set(Address.ZERO);
-        lastExecutedOpCode.set(null);
-        stack.reset();
-        registers.reset();
-        callStack.reset();
-    }
-
-    public void step() {
-        var instruction = memory.fetchInstruction(engine.programCounter());
-        execute(instruction);
-    }
-
     public void run() {
-        while (automaticMode.get()) {
-            step();
-        }
+        do  {
+            var instruction = memory.fetchInstruction(engine.programCounter());
+            execute(instruction);
+        } while (automaticMode.get());
     }
 
     void sleep(Duration duration) {

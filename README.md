@@ -1,7 +1,8 @@
 # МК-52
 
-![JDK](docs/java-24.png)
-[![License](docs/license.png)](LICENSE)
+[![License](https://www.panteleyev.org/badges/license-bsd-2.svg)](LICENSE)
+[![JDK](https://www.panteleyev.org/badges/java-25.svg)](https://jdk.java.net/25/)
+[![JDK](https://www.panteleyev.org/badges/javafx-25.svg)](https://jdk.java.net/javafx25/)
 
 ![МК-52](docs/main-window-big.png)
 

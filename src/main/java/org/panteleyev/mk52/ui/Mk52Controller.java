@@ -1,5 +1,5 @@
 /*
- Copyright © 2025 Petr Panteleyev <petr@panteleyev.org>
+ Copyright © 2025 Petr Panteleyev
  SPDX-License-Identifier: BSD-2-Clause
  */
 package org.panteleyev.mk52.ui;
@@ -287,7 +287,7 @@ public class Mk52Controller extends Controller {
         var grid = gridPane(List.of(
                 gridRow(
                         new ButtonNode("F", "", "", "fButton", KeyboardButton.F, keyboardButtonConsumer).node(),
-                        new ButtonNode("ШГ>", "x<0", "", "blackButton", KeyboardButton.STEP_RIGHT,
+                        new ButtonNode("ШГ→", "x<0", "", "blackButton", KeyboardButton.STEP_RIGHT,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("П→x", "L0", "", "blackButton", KeyboardButton.LOAD,
                                 keyboardButtonConsumer).node(),
@@ -297,13 +297,13 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("9", "tg", "max", "grayButton", KeyboardButton.D9,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("➖", "√", "", "grayButton", KeyboardButton.MINUS, keyboardButtonConsumer).node(),
+                        new ButtonNode("➖", "√¯", "", "grayButton", KeyboardButton.MINUS, keyboardButtonConsumer).node(),
                         new ButtonNode("➗", "1/x", "", "grayButton", KeyboardButton.DIVISION,
                                 keyboardButtonConsumer).node()
                 ),
                 gridRow(
                         new ButtonNode("K", "", "", "kButton", KeyboardButton.K, keyboardButtonConsumer).node(),
-                        new ButtonNode("<ШГ", "x=0", "", "blackButton", KeyboardButton.STEP_LEFT,
+                        new ButtonNode("←ШГ", "x=0", "", "blackButton", KeyboardButton.STEP_LEFT,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("x→П", "L1", "", "blackButton", KeyboardButton.STORE,
                                 keyboardButtonConsumer).node(),
@@ -311,9 +311,9 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("5", "cos⁻¹", "ЗН", "grayButton", KeyboardButton.D5,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("6", "tg⁻¹", "°←′", "grayButton", KeyboardButton.D6,
+                        new ButtonNode("6", "tg⁻¹", ".⃖,", "grayButton", KeyboardButton.D6,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("➕", "π", "°→′", "grayButton", KeyboardButton.PLUS,
+                        new ButtonNode("➕", "π", ".⃗,", "grayButton", KeyboardButton.PLUS,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("✖", "x²", "", "grayButton", KeyboardButton.MULTIPLICATION,
                                 keyboardButtonConsumer).node()
@@ -329,9 +329,9 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("2", "lg", "", "grayButton", KeyboardButton.D2,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("3", "ln", "°←‴", "grayButton", KeyboardButton.D3,
+                        new ButtonNode("3", "ln", ".‚⃖„", "grayButton", KeyboardButton.D3,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode("←→", "xy", "°→‴", "grayButton", KeyboardButton.SWAP,
+                        new ButtonNode("←→", "xʸ", "․‚⃗„", "grayButton", KeyboardButton.SWAP,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("В↑", "Вх", "СЧ", "grayButton", KeyboardButton.PUSH,
                                 keyboardButtonConsumer).node(),
@@ -346,7 +346,7 @@ public class Mk52Controller extends Controller {
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("0", "10ˣ", "НОП", "grayButton", KeyboardButton.D0,
                                 keyboardButtonConsumer).node(),
-                        new ButtonNode(".", "⟳", "⋀", "grayButton", KeyboardButton.DOT, keyboardButtonConsumer).node(),
+                        new ButtonNode("∙", "⟳", "⋀", "grayButton", KeyboardButton.DOT, keyboardButtonConsumer).node(),
                         new ButtonNode("/-/", "АВТ", "⋁", "grayButton", KeyboardButton.SIGN,
                                 keyboardButtonConsumer).node(),
                         new ButtonNode("ВП", "ПРГ", "⨁", "grayButton", KeyboardButton.EE,

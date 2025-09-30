@@ -1,11 +1,11 @@
 # Сборка и запуск приложения
 
-Для сборки и работы с программой требуется JDK 24+.
+Для сборки и работы с программой требуется [JDK 25](https://jdk.java.net/25/).
 
 ## Сборка
 
 ```shell
-export JAVA_HOME=/path/to/jdk24
+export JAVA_HOME=/path/to/jdk25
 ./mvnw clean verify
 ```
 
@@ -19,7 +19,10 @@ export JAVA_HOME=/path/to/jdk24
 
 Для Linux можно собрать исполняемый образ и запускать его как обычную программу.
 
+Скачайте и распакуйте [JavaFX JMODs distribution](https://jdk.java.net/javafx25/).
+
 ```shell
+export JAVAFX_JMODS=/path/to/javafx-jmods-25
 ./bin/jlink.sh
 [sudo] ./bin/install </install/path>
 ```

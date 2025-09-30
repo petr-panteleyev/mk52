@@ -294,19 +294,19 @@ public final class Mk52Math {
     // Логические операции
 
     public static long inversion(long x) {
-        return Register.toLogical(~x);
+        return Register.toLogical(~Register.normalize(x));
     }
 
     public static long and(long x, long y) {
-        return Register.toLogical(x & y);
+        return Register.toLogical(Register.normalize(x) & Register.normalize(y));
     }
 
     public static long or(long x, long y) {
-        return Register.toLogical(x | y);
+        return Register.toLogical(Register.normalize(x) | Register.normalize(y));
     }
 
     public static long xor(long x, long y) {
-        return Register.toLogical(x ^ y);
+        return Register.toLogical(Register.normalize(x) ^ Register.normalize(y));
     }
 
     // Угловые операции

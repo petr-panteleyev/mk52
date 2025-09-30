@@ -21,8 +21,7 @@ $INSTALL_DIR/bin/java \\
   -XX:NewRatio=1 \\
   -Xms100m \\
   -Xmx100m \\
-  -XX:+AutoCreateSharedArchive \\
-  -XX:SharedArchiveFile=\$TMP/mk52.jsa \\
+  -XX:+UseCompactObjectHeaders \\
   --enable-native-access=javafx.graphics \\
   --sun-misc-unsafe-memory-access=allow \\
   --module mk/org.panteleyev.mk52.Mk52Application

@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.panteleyev.mk52.eeprom.Eeprom.RW_DURATION;
 import static org.panteleyev.mk52.engine.KeyboardButton.BUTTON_TO_ADDRESS;
+import static org.panteleyev.mk52.engine.KeyboardButton.CLEAR_X;
 import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_ADDRESS;
 import static org.panteleyev.mk52.engine.KeyboardButton.EEPROM_EXCHANGE;
 import static org.panteleyev.mk52.engine.KeyboardButton.GOSUB;
@@ -194,8 +195,14 @@ public final class Engine {
 
     public void init() {
         programming.set(false);
+        automaticMode.set(false);
+        enteringExponent.set(false);
         keyboardMode = KeyboardMode.NORMAL;
-        processor.reset();
+        programCounter.set(Address.ZERO);
+        lastExecutedOpCode.set(null);
+        stack.reset();
+        registers.reset();
+        callStack.reset();
     }
 
     public int[] getMemoryBytes() {
@@ -215,6 +222,11 @@ public final class Engine {
             if (button != EEPROM_ADDRESS && button != EEPROM_EXCHANGE) {
                 automaticMode.set(false);
             }
+            return;
+        }
+
+        if (keyboardMode == KeyboardMode.F && button == CLEAR_X) {
+            keyboardMode = KeyboardMode.NORMAL;
             return;
         }
 
@@ -408,9 +420,9 @@ public final class Engine {
         running.set(true);
         automaticMode.set(false);
         if (async) {
-            processorExecutor.execute(processor::step);
+            processorExecutor.execute(processor::run);
         } else {
-            processor.step();
+            processor.run();
         }
     }
 

@@ -1,9 +1,10 @@
 /*
- Copyright © 2025 Petr Panteleyev <petr@panteleyev.org>
+ Copyright © 2025 Petr Panteleyev
  SPDX-License-Identifier: BSD-2-Clause
  */
 package org.panteleyev.mk52.eeprom;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -14,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+@DisplayName("Экспорт ППЗУ")
 public class EepromUtilsTest {
 
     private static List<Arguments> testWriteEepromLineArguments() {
