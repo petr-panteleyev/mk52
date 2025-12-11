@@ -4,7 +4,7 @@
 [![JDK](https://www.panteleyev.org/badges/java-25.svg)](https://jdk.java.net/25/)
 [![JDK](https://www.panteleyev.org/badges/javafx-25.svg)](https://jdk.java.net/javafx25/)
 
-![МК-52](docs/main-window-big.png)
+![МК-52](docs/main-window.png)
 
 Проект носит исключительно развлекательный характер. Основная цель - более или менее похоже воспроизвести внешнее
 поведение микрокалькулятора МК-52 в соответствии с Руководством по эксплуатации (РЭ):

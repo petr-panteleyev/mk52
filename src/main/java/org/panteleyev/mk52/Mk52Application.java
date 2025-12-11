@@ -1,7 +1,5 @@
-/*
- Copyright © 2025 Petr Panteleyev <petr@panteleyev.org>
- SPDX-License-Identifier: BSD-2-Clause
- */
+// Copyright © 2025 Petr Panteleyev
+// SPDX-License-Identifier: BSD-2-Clause
 package org.panteleyev.mk52;
 
 import javafx.application.Application;
@@ -41,7 +39,7 @@ public class Mk52Application extends Application {
         files().initialize();
 
         Font.loadFont(
-                Mk52Application.class.getResource("/fonts/neat-lcd.ttf").toString(),
+                Mk52Application.class.getResource("/fonts/Pixel-LCD-7.ttf").toString(),
                 14
         );
         Font.loadFont(

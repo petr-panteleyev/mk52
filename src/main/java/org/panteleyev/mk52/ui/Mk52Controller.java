@@ -1,7 +1,5 @@
-/*
- Copyright © 2025 Petr Panteleyev
- SPDX-License-Identifier: BSD-2-Clause
- */
+// Copyright © 2025 Petr Panteleyev
+// SPDX-License-Identifier: BSD-2-Clause
 package org.panteleyev.mk52.ui;
 
 import javafx.application.Platform;
@@ -89,6 +87,10 @@ public class Mk52Controller extends Controller {
         }
     };
 
+    private final String[] LCD_MAP = new String[] {
+              "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "-", "L", "C", "Г", "E", " "
+    };
+
     private final StackAndRegistersPanel stackAndRegistersPanel = new StackAndRegistersPanel();
     private final MemoryPanel memoryPanel = new MemoryPanel();
 
@@ -96,9 +98,9 @@ public class Mk52Controller extends Controller {
     private final Consumer<KeyboardButton> keyboardButtonConsumer = engine::processButton;
 
     private final Label[] digitCells = new Label[]{
-            new Label("F"), new Label("F"), new Label("F"), new Label("F"),
-            new Label("F"), new Label("F"), new Label("F"), new Label("F"),
-            new Label("F"), new Label("F"), new Label("F"), new Label("F")
+            new Label(" "), new Label(" "), new Label(" "), new Label(" "),
+            new Label(" "), new Label(" "), new Label(" "), new Label(" "),
+            new Label(" "), new Label(" "), new Label(" "), new Label(" ")
     };
     private final Label[] dotCells = new Label[]{
             new Label(" "), new Label(" "), new Label(" "), new Label(" "),
@@ -144,7 +146,7 @@ public class Mk52Controller extends Controller {
             var opacity = engine.automaticMode().get() ? 0.3 : 1.0;
 
             for (int i = 0; i < 12; i++) {
-                digitCells[i].setText(Long.toString(ri & 0xF, 16).toUpperCase());
+                digitCells[i].setText(LCD_MAP[(int)(ri & 0xF)]);
                 digitCells[i].setOpacity(opacity);
                 dotCells[i].setText((dots & 1) == 1 ? "." : " ");
                 dotCells[i].setOpacity(opacity);
@@ -191,11 +193,13 @@ public class Mk52Controller extends Controller {
         pane.getStyleClass().add("lcdPanel");
         pane.setMouseTransparent(true);
 
-        for (var l : digitCells) {
-            l.getStyleClass().add("lcd");
+        for (var cell : digitCells) {
+            cell.getStyleClass().add("lcd");
+            HBox.setMargin(cell, new Insets(0, 0, 0, -7));
         }
-        for (var d : dotCells) {
-            d.getStyleClass().add("dotLcd");
+        for (var cell : dotCells) {
+            cell.getStyleClass().add("dotLcd");
+            HBox.setMargin(cell, new Insets(0, 0, 0, -6));
         }
         var cellsPane = new HBox(0);
         cellsPane.getChildren().addAll(
@@ -217,9 +221,6 @@ public class Mk52Controller extends Controller {
                 digitCells[9], dotCells[9]
         );
         cellsPane.setAlignment(Pos.BOTTOM_LEFT);
-        for (var dc : digitCells) {
-            HBox.setMargin(dc, new Insets(0, 0, 0, -3));
-        }
 
         pane.setCenter(cellsPane);
         return pane;
