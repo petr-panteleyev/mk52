@@ -1,5 +1,5 @@
-// Copyright © 2025 Petr Panteleyev
-// SPDX-License-Identifier: BSD-2-Clause
+// Copyright (c) Petr Panteleyev
+// SPDX-License-Identifier: MIT
 package org.panteleyev.mk52.ui;
 
 import javafx.application.Platform;
@@ -23,6 +23,10 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.controlsfx.control.SegmentedButton;
+import org.panteleyev.freedesktop.Utility;
+import org.panteleyev.freedesktop.entry.DesktopEntryBuilder;
+import org.panteleyev.freedesktop.entry.DesktopEntryType;
+import org.panteleyev.freedesktop.menu.Category;
 import org.panteleyev.fx.Controller;
 import org.panteleyev.mk52.ApplicationFiles;
 import org.panteleyev.mk52.eeprom.EepromMode;
@@ -34,16 +38,12 @@ import org.panteleyev.mk52.engine.RegistersUpdateCallback;
 import org.panteleyev.mk52.engine.TrigonometricMode;
 import org.panteleyev.mk52.program.StepExecutionResult;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.panteleyev.freedesktop.Utility.isLinux;
+import static org.panteleyev.freedesktop.entry.DesktopEntryBuilder.localeString;
 import static org.panteleyev.fx.BoxFactory.hBox;
 import static org.panteleyev.fx.BoxFactory.vBox;
 import static org.panteleyev.fx.LabelFactory.label;
@@ -171,11 +171,16 @@ public class Mk52Controller extends Controller {
     }
 
     private MenuBar createMenuBar() {
+        var desktopEntryMenuItem = menuItem("Создать ярлык приложения",
+                _ -> onCreateDesktopEntry());
+
         return menuBar(
                 menu("Файл",
                         menuItem("Сохранить...", _ -> onSaveMemoryDump()),
                         menuItem("Загрузить...", _ -> onLoadMemoryDump()),
                         new SeparatorMenuItem(),
+                        isLinux() ? desktopEntryMenuItem : null,
+                        isLinux() ? new SeparatorMenuItem() : null,
                         menuItem("Выход", _ -> onExit())
                 ),
                 menu("Инструменты",
@@ -514,4 +519,26 @@ public class Mk52Controller extends Controller {
                 new KeyCodeCombination(KeyCode.RIGHT),
                 () -> engine.processButton(KeyboardButton.STEP_RIGHT));
     }
+
+    private void onCreateDesktopEntry() {
+        if (!isLinux()) return;
+
+        Utility.getExecutablePath().ifPresent(command -> {
+            var execFile = new File(command);
+            var rootDir = execFile.getParentFile().getParentFile().getAbsolutePath();
+
+            var desktopEntry = new DesktopEntryBuilder(DesktopEntryType.APPLICATION)
+                    .version(DesktopEntryBuilder.VERSION_1_5)
+                    .name("MK-52")
+                    .name(localeString("МК-52", "ru_RU"))
+                    .categories(List.of(Category.GAME, Category.JAVA))
+                    .comment("MK-52 simulator")
+                    .comment(localeString("Симулятор микрокалькулятора МК-52", "ru_RU"))
+                    .exec("\"" + command + "\"")
+                    .icon(rootDir + "/lib/MK-52.png")
+                    .build();
+            desktopEntry.write("mk52");
+        });
+    }
+
 }

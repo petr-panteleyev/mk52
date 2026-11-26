@@ -1,0 +1,26 @@
+<!-- Copyright (c) Petr Panteleyev -->
+<!-- SPDX-License-Identifier: MIT -->
+<assembly>
+    <id>linux-x86_64</id>
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>${project.basedir}/target/dist/MK-52</directory>
+            <outputDirectory>mk52-${project.version}</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>bin</directory>
+            <outputDirectory>mk52-${project.version}</outputDirectory>
+            <includes>
+                <include>mk52.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+    </fileSets>
+</assembly>

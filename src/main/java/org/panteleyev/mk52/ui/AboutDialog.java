@@ -1,7 +1,5 @@
-/*
- Copyright © 2024-2025 Petr Panteleyev <petr@panteleyev.org>
- SPDX-License-Identifier: BSD-2-Clause
- */
+// Copyright (c) Petr Panteleyev
+// SPDX-License-Identifier: MIT
 package org.panteleyev.mk52.ui;
 
 import javafx.scene.control.ButtonType;
@@ -9,7 +7,6 @@ import javafx.scene.image.ImageView;
 import org.panteleyev.fx.BaseDialog;
 import org.panteleyev.fx.Controller;
 
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -20,9 +17,7 @@ import static java.util.ResourceBundle.getBundle;
 import static org.panteleyev.fx.BoxFactory.vBox;
 import static org.panteleyev.fx.LabelFactory.label;
 import static org.panteleyev.mk52.ui.Mk52Controller.APP_TITLE;
-import static org.panteleyev.mk52.ui.Styles.BIG_SPACING;
-import static org.panteleyev.mk52.ui.Styles.SMALL_SPACING;
-import static org.panteleyev.mk52.ui.Styles.STYLE_ABOUT_LABEL;
+import static org.panteleyev.mk52.ui.Styles.*;
 
 public class AboutDialog extends BaseDialog<Object> {
     private static final ResourceBundle BUILD_INFO_BUNDLE = getBundle("buildInfo");
@@ -35,8 +30,6 @@ public class AboutDialog extends BaseDialog<Object> {
             );
         }
     }
-
-    private static final String YEAR = Integer.toString(LocalDate.now().getYear());
 
     private static final String RUNTIME = System.getProperty("java.vm.version") + " " + System.getProperty("os.arch");
     private static final String VM = System.getProperty("java.vm.name") + " by " + System.getProperty("java.vm.vendor");
@@ -70,7 +63,7 @@ public class AboutDialog extends BaseDialog<Object> {
                         label("VM: " + VM)
                 ),
                 vBox(SMALL_SPACING,
-                        label("Copyright © " + YEAR + " Petr Panteleyev")
+                        label("Copyright (c) Petr Panteleyev")
                 )
         );
 

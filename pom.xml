@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Copyright © 2025 Petr Panteleyev
-  SPDX-License-Identifier: BSD-2-Clause
-  -->
+<!-- Copyright (c) Petr Panteleyev -->
+<!-- SPDX-License-Identifier: MIT -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.panteleyev</groupId>
     <artifactId>mk52</artifactId>
-    <version>0.0.19</version>
+    <version>26.11.1</version>
     <packaging>jar</packaging>
     <name>MK-52</name>
 
@@ -82,29 +80,30 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>25</maven.compiler.release>
+        <maven.compiler.release>27</maven.compiler.release>
         <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>
         <appModule>mk</appModule>
         <appMainClass>org.panteleyev.mk52.Mk52Application</appMainClass>
         <timestamp>${maven.build.timestamp}</timestamp>
         <!-- Plugins -->
         <mavenCleanPluginVersion>3.5.0</mavenCleanPluginVersion>
-        <mavenResourcePluginVersion>3.3.1</mavenResourcePluginVersion>
-        <mavenCompilerPluginVersion>3.14.1</mavenCompilerPluginVersion>
-        <mavenJarPluginVersion>3.4.2</mavenJarPluginVersion>
+        <mavenResourcePluginVersion>3.4.0</mavenResourcePluginVersion>
+        <mavenCompilerPluginVersion>3.16.0</mavenCompilerPluginVersion>
+        <mavenJarPluginVersion>3.5.0</mavenJarPluginVersion>
         <mavenSurefirePluginVersion>3.5.4</mavenSurefirePluginVersion>
         <mavenSurefireReportPluginVersion>3.5.4</mavenSurefireReportPluginVersion>
-        <mavenDependencyPluginVersion>3.8.1</mavenDependencyPluginVersion>
+        <mavenDependencyPluginVersion>3.9.0</mavenDependencyPluginVersion>
         <mavenExecPluginVersion>3.5.0</mavenExecPluginVersion>
         <jlinkMavenPluginVersion>1.2.0</jlinkMavenPluginVersion>
-        <jpackageMavenPluginVersion>1.7.1</jpackageMavenPluginVersion>
+        <mavenAssemblyPluginVersion>3.8.0</mavenAssemblyPluginVersion>
+        <jpackageMavenPluginVersion>1.8.0</jpackageMavenPluginVersion>
         <!-- Dependencies -->
-        <javaFxVersion>25</javaFxVersion>
+        <javaFxVersion>27.0.1</javaFxVersion>
         <controlsFxVersion>11.2.2</controlsFxVersion>
         <javaCommonsVersion>1.6.0</javaCommonsVersion>
         <javaFxHelpersVersion>1.21.0</javaFxHelpersVersion>
         <javaFreeDesktopVersion>0.5.1</javaFreeDesktopVersion>
-        <jUnitVersion>5.13.1</jUnitVersion>
+        <jUnitVersion>6.1.3</jUnitVersion>
     </properties>
 
     <dependencies>
@@ -164,6 +163,8 @@
     </dependencies>
 
     <build>
+        <defaultGoal>clean verify</defaultGoal>
+
         <resources>
             <resource>
                 <directory>${project.basedir}/src/main/resources</directory>
@@ -255,52 +256,54 @@
             </plugin>
             <plugin>
                 <groupId>org.panteleyev</groupId>
-                <artifactId>jlink-maven-plugin</artifactId>
-                <version>${jlinkMavenPluginVersion}</version>
-                <configuration>
-                    <output>${project.build.directory}/jlink</output>
-                    <modulePaths>
-                        <modulePath>${project.build.directory}/jmods</modulePath>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <modulePath>${JAVAFX_JMODS}</modulePath>
-                    </modulePaths>
-                    <addModules>
-                        <addModule>${appModule}</addModule>
-                    </addModules>
-                    <noHeaderFiles>true</noHeaderFiles>
-                    <noManPages>true</noManPages>
-                    <stripDebug>true</stripDebug>
-                    <generateCdsArchive>false</generateCdsArchive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.panteleyev</groupId>
                 <artifactId>jpackage-maven-plugin</artifactId>
                 <version>${jpackageMavenPluginVersion}</version>
                 <configuration>
-                    <name>Sapper</name>
+                    <name>MK-52</name>
                     <appVersion>${project.version}</appVersion>
                     <vendor>panteleyev.org</vendor>
                     <module>${appModule}/${appMainClass}</module>
                     <modulePaths>
                         <modulePath>${project.build.directory}/jmods</modulePath>
+                        <modulePath>${env.JAVAFX_JMODS}</modulePath>
                     </modulePaths>
                     <destination>${project.build.directory}/dist</destination>
                     <removeDestination>true</removeDestination>
                     <javaOptions>
                         <option>-XX:NewRatio=1</option>
-                        <option>-Xms100m</option>
-                        <option>-Xmx100m</option>
-                        <option>-XX:+UseCompactObjectHeaders</option>
                         <option>--enable-native-access=javafx.graphics</option>
                         <option>--sun-misc-unsafe-memory-access=allow</option>
                     </javaOptions>
+                    <jLink>
+                        <noHeaderFiles>true</noHeaderFiles>
+                        <noManPages>true</noManPages>
+                        <stripDebug>true</stripDebug>
+                        <stripNativeCommands>true</stripNativeCommands>
+                    </jLink>
                     <!-- Windows -->
                     <winMenu>true</winMenu>
                     <winDirChooser>true</winDirChooser>
                     <winUpgradeUuid>7bc6ec6d-10ea-4738-b7c5-4837ea378f5b</winUpgradeUuid>
                     <winMenuGroup>panteleyev.org</winMenuGroup>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${mavenAssemblyPluginVersion}</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assembly/linux-tarball.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>create-tarball</id>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -318,9 +321,6 @@
                         <configuration>
                             <arguments>
                                 <argument>-XX:NewRatio=1</argument>
-                                <argument>-Xms100m</argument>
-                                <argument>-Xmx100m</argument>
-                                <argument>-XX:+UseCompactObjectHeaders</argument>
                                 <argument>--enable-native-access=javafx.graphics</argument>
                                 <argument>--sun-misc-unsafe-memory-access=allow</argument>
                                 <argument>--module-path</argument>
@@ -338,9 +338,6 @@
                         <configuration>
                             <arguments>
                                 <argument>-XX:NewRatio=1</argument>
-                                <argument>-Xms100m</argument>
-                                <argument>-Xmx100m</argument>
-                                <argument>-XX:+UseCompactObjectHeaders</argument>
                                 <argument>--enable-native-access=javafx.graphics</argument>
                                 <argument>--sun-misc-unsafe-memory-access=allow</argument>
                                 <!--suppress UnresolvedMavenProperty -->

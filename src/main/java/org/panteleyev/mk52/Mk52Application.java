@@ -1,5 +1,5 @@
-// Copyright © 2025 Petr Panteleyev
-// SPDX-License-Identifier: BSD-2-Clause
+// Copyright (c) Petr Panteleyev
+// SPDX-License-Identifier: MIT
 package org.panteleyev.mk52;
 
 import javafx.application.Application;

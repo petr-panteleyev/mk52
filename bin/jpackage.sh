@@ -1,3 +1,3 @@
 #!/bin/sh
 
-./mvnw -DskipTests=true clean verify jpackage:jpackage
+mvn -DskipTests=true clean verify jpackage:jpackage

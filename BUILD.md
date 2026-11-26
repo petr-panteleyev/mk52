@@ -1,31 +1,44 @@
 # Сборка и запуск приложения
 
-Для сборки и работы с программой требуется [JDK 25](https://jdk.java.net/25/).
+Для сборки и работы с программой требуется [JDK 27](https://jdk.java.net/27/).
 
 ## Сборка
 
 ```shell
-export JAVA_HOME=/path/to/jdk25
-./mvnw clean verify
+export JAVA_HOME=/path/to/jdk27
+mvn
 ```
 
 ## Запуск из проекта
 
 ```shell
-./mvnw exec:exec@run
+mvn exec:exec@run
 ```
+
+# Дистрибутив
+
+Скачайте и распакуйте [JavaFX JMODs distribution](https://jdk.java.net/javafx26/).
+
+```shell
+export JAVAFX_JMODS=/path/to/javafx-jmods-27
+mvn -DskipTests=true clean verify jpackage:jpackage
+```
+
+## OS X и MS Windows
+
+На этих платформах каталог `target/dist` будет содержать пакет для установки.
 
 ## Linux
 
-Для Linux можно собрать исполняемый образ и запускать его как обычную программу.
-
-Скачайте и распакуйте [JavaFX JMODs distribution](https://jdk.java.net/javafx25/).
-
 ```shell
-export JAVAFX_JMODS=/path/to/javafx-jmods-25
-./bin/jlink.sh
-[sudo] ./bin/install </install/path>
+mvn -DskipTests=true clean verify jpackage:jpackage assembly:single
 ```
 
-В каталоге ```/install/path/mk52``` будет находиться исполняемый образ, скрипт для запуска ```mk52.sh```, а также
-готовый к использованию файл ```mk52.desktop```.
+Каталог ```target``` будет содержать архив `mk52-${project.version}-linux-x86_64.tar.gz` со следующей структурой:
+
+```text
+mk52-${project.version}/
+├── mk52.sh
+├── bin/
+└── lib/
+```

@@ -1,3 +1,5 @@
+// Copyright (c) Petr Panteleyev
+// SPDX-License-Identifier: MIT
 module mk {
     requires org.panteleyev.fx;
     requires org.controlsfx.controls;

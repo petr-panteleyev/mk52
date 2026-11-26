@@ -1,7 +1,5 @@
-/*
- Copyright © 2025 Petr Panteleyev <petr@panteleyev.org>
- SPDX-License-Identifier: BSD-2-Clause
- */
+// Copyright (c) Petr Panteleyev
+// SPDX-License-Identifier: MIT
 package org.panteleyev.mk52.engine;
 
 import org.panteleyev.mk52.program.StepExecutionResult;
